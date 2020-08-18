@@ -1,17 +1,23 @@
 
-
-
-enum TokenType {
-    Literal, Separator, Symbol, Identifier, 
-};
-interface Token {
-    token: string;
-    type: TokenType;
-    subtype: string; // TODO enumerate
+// Enum
+let TokenType = {
+    Literal : 0, Separator : 1, Symbol : 2, Identifier : 3, 
 };
 
+/**
+ * Describes tokenized string
+ * 
+ * @param {string} token - 
+ * @param {Object} options - override/extend defaults
+ */
+function toToken(token, options) {
+    // Trim whitespace
+    token = token.trim();
 
-function toToken(token : string, options?: Token | Object) : Token {
+    // Filter empty tokens
+    if (token.length === 0)
+        return null;
+
     // String
     if (token[0] === '"') {
         return {
@@ -21,7 +27,7 @@ function toToken(token : string, options?: Token | Object) : Token {
             ...options,
         };
 
-    // Number
+    // Number (note this makes NaN an identifier)
     } else if (!isNaN(Number(token))) {
         return {
             token, 
@@ -46,14 +52,15 @@ function toToken(token : string, options?: Token | Object) : Token {
 
 
 /**
- * Compiles 
+ * Generates a list of tokens from given program source 
  * 
- * @param src - program source code
+ * @param {string} src - program source code
+ * @returns {Token[]} - List of tokens
  */
-function lex(src : string) : Token[] {
+function lex(src) {
     
     // TODO optimize, use regex, etc.
-    const ret : Token[] = [];
+    const ret = [];
     let i = 0, prev = 0;
     
     while (i < src.length) {
@@ -61,11 +68,11 @@ function lex(src : string) : Token[] {
         // Find end of string
         const endStr = () => {
             // Determine if quote is escaped
-            function isEscaped(s : string, i : number) : boolean {
-                let n = false;
+            function isEscaped(s, i) {
+                let e = false;
                 while (s[--i] === '\\')
-                    n = !n;
-                return n;
+                    e = !e;
+                return e;
             }
 
             // Find end of string
@@ -75,13 +82,13 @@ function lex(src : string) : Token[] {
         };
 
         // Reached end of symbol
-        if (src[i] === ' ') {
+        if ([' ', '\t', '\n'].includes(src[i])) {
             // Push token
             if (prev !== i) 
                 ret.push(toToken(src.substring(prev, i)));
             
             // Find start of next token
-            while (src[i] === ' ' && i < src.length)
+            while ([' ', '\t', '\n'].includes(src[i]) && i < src.length)
                 i++;
             
         // Line comment
@@ -100,6 +107,7 @@ function lex(src : string) : Token[] {
 
             // Push string literal
             endStr();
+            i++;
             ret.push(toToken(src.substring(prev, i)));
 
         } else {
@@ -112,5 +120,8 @@ function lex(src : string) : Token[] {
         prev = i;
     }
 
-    return ret;
+    return ret.filter(t => t);
 }
+
+// Export
+module.exports = { lex, TokenType, toToken };
