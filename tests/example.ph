@@ -3,8 +3,6 @@
 # none : evaluate
 # $ , ' : symbol
 
-"wasm" import use ;
-
 # Numeric Types
 I64 I32 | Int typedef
 F64 F32 | Float typedef

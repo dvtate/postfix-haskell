@@ -4,11 +4,19 @@ let TokenType = {
     Literal : 0, Separator : 1, Symbol : 2, Identifier : 3, 
 };
 
+/*
+Interface
+
+*/
+
+
 /**
  * Describes tokenized string
  * 
  * @param {string} token - 
  * @param {Object} options - override/extend defaults
+ * 
+ * @returns {LexerToken}
  */
 function toToken(token, options) {
     // Trim whitespace
