@@ -30,7 +30,7 @@ function toToken(token, options) {
     if (token[0] === '"') {
         return {
             token,
-            type: TokenType.Symbol,
+            type: TokenType.Literal,
             subtype: 'string',
             ...options,
         };
