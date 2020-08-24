@@ -44,13 +44,29 @@ function toToken(token, options) {
             ...options,
         };
 
-    // Identifier
+    // Separators
+    } else if ('{}[]()'.includes(token)) {
+        return {
+            token, 
+            type: TokenType.Separator,
+            subtype: [
+                'open-curly',
+                'close-curly',
+                'open-bracket',
+                'close-bracket',
+                'open-paren',
+                'close-paren',
+            ]['{}[]()'.indexOf(token)],
+        }
+
+    // Operator
     } else {
         return {
             token,
             type: TokenType.Identifier,
+            // TODO should be more prefixes probably
             subtype: token[0] === '$' ? 'escaped' 
-                : token.match(/[A-z].*/) ? 'upper'
+                : token.match(/[A-Z].*/) ? 'upper'
                 : token.match(/[a-z].*/) ? 'lower'
                 : 'symbolic',
             ...options,
@@ -66,69 +82,62 @@ function toToken(token, options) {
  * @returns {Token[]} - List of tokens
  */
 function lex(src) {
-    
-    // TODO optimize, use regex, etc.
-    const ret = [];
     let i = 0, prev = 0;
-    
-    while (i < src.length) {
+    const ret = [];
+
+    // Find end of string
+    const endStr = () => {
+        // Determine if quote is escaped
+        function isEscaped(s, i) {
+            let e = false;
+            while (s[--i] === '\\')
+                e = !e;
+            return e;
+        }
 
         // Find end of string
-        const endStr = () => {
-            // Determine if quote is escaped
-            function isEscaped(s, i) {
-                let e = false;
-                while (s[--i] === '\\')
-                    e = !e;
-                return e;
-            }
+        while (++i < src.length)
+            if (src[i] === '"' && !isEscaped(src, i))
+                break;
+    };
 
-            // Find end of string
-            while (++i < src.length)
-                if (src[i] === '"' && !isEscaped(src, i))
-                    break;
-        };
+    // For each char...
+    while (i < src.length) {
+        // Separator
+        if (['[', ']', '{', '}', '(', ')'].includes(src[i])) {
+            ret.push(src.substring(prev, i));
+            ret.push(src[i]);
 
-        // Reached end of symbol
-        if ([' ', '\t', '\n'].includes(src[i])) {
-            // Push token
-            if (prev !== i) 
-                ret.push(toToken(src.substring(prev, i)));
-            
-            // Find start of next token
-            while ([' ', '\t', '\n'].includes(src[i]) && i < src.length)
-                i++;
-            
-        // Line comment
+        // Line-Comment
         } else if (src[i] === '#') {
-            // Push token
-            if (prev !== i)
-                ret.push(toToken(src.substring(prev, i)));
-
-            // Find start of next token
+            ret.push(src.substring(prev, i));
             while (i < src.length && src[i] !== '\n')
                 i++;
-            i++;
 
+        // End of token
+        } else if ([' ', '\t', '\n'].includes(src[i])) {
+            ret.push(src.substring(prev, i));
         // String literal
-        } else if (src[i] === '"') {
-
-            // Push string literal
+        } else if (['"', "'"].includes(src[i])) {
+            ret.push(src.substring(prev, i));
+            prev = i;
             endStr();
             i++;
-            ret.push(toToken(src.substring(prev, i)));
-
+            ret.push(src.substring(prev, i));
+        
+        // Middle of a token
         } else {
-            // Probably part of a symbol... keep chugging
             i++;
             continue;
         }
-
-        // Start of a new token
-        prev = i;
+        
+        prev = ++i;
     }
 
-    return ret.filter(t => t);
+    // Return list of token objects
+    return ret
+        .map(s => s.trim()).filter(s => s.length)
+        .map(toToken);
 }
 
 // Export
