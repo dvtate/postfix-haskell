@@ -1,19 +1,28 @@
 
-// Enum
+// TODO optimize, use regex, etc.
+
+// Enums
 let TokenType = {
-    Literal : 0, Separator : 1, Symbol : 2, Identifier : 3, 
+    String: 0,
+    Number: 1,
+    ContainerOpen: 2,
+    ContainerClose: 3, 
+    Identifier: 4,
+    Block: 5,
 };
 
-/*
-Interface
-
-*/
+// Internal
+let ContainerType = {
+    Curly: 0,
+    Bracket: 1,
+    Paren: 2,
+};
 
 
 /**
  * Describes tokenized string
  * 
- * @param {string} token - 
+ * @param {string} token - lexical token string
  * @param {Object} options - override/extend defaults
  * 
  * @returns {LexerToken}
@@ -30,8 +39,7 @@ function toToken(token, options) {
     if (token[0] === '"') {
         return {
             token,
-            type: TokenType.Literal,
-            subtype: 'string',
+            type: TokenType.String,
             ...options,
         };
 
@@ -39,27 +47,24 @@ function toToken(token, options) {
     } else if (!isNaN(Number(token))) {
         return {
             token, 
-            type: TokenType.Literal,
-            subtype: 'number',
+            type: TokenType.Number,
             ...options,
         };
 
     // Separators
     } else if ('{}[]()'.includes(token)) {
         return {
-            token, 
-            type: TokenType.Separator,
+            token,
+            type: '[{('.includes(token) ? TokenType.ContainerOpen : TokenType.ContainerClose,
             subtype: [
-                'open-curly',
-                'close-curly',
-                'open-bracket',
-                'close-bracket',
-                'open-paren',
-                'close-paren',
+                ContainerType.Curly, ContainerType.Curly,
+                ContainerType.Bracket, ContainerType.Bracket,
+                ContainerType.Paren, ContainerType.Paren,
             ]['{}[]()'.indexOf(token)],
+            ...options,
         }
 
-    // Operator
+    // Word
     } else {
         return {
             token,
@@ -79,11 +84,14 @@ function toToken(token, options) {
  * Generates a list of tokens from given program source 
  * 
  * @param {string} src - program source code
- * @returns {Token[]} - List of tokens
+ * @returns {LexerToken[]} - List of tokens
  */
 function lex(src) {
     let i = 0, prev = 0;
     const ret = [];
+
+    // Add token to return
+    const addToken = s => ret.push(toToken(s, { position: i }));
 
     // Find end of string
     const endStr = () => {
@@ -105,25 +113,26 @@ function lex(src) {
     while (i < src.length) {
         // Separator
         if (['[', ']', '{', '}', '(', ')'].includes(src[i])) {
-            ret.push(src.substring(prev, i));
-            ret.push(src[i]);
+            addToken(src.substring(prev, i));
+            addToken(src[i]);
 
         // Line-Comment
         } else if (src[i] === '#') {
-            ret.push(src.substring(prev, i));
+            addToken(src.substring(prev, i));
             while (i < src.length && src[i] !== '\n')
                 i++;
 
         // End of token
         } else if ([' ', '\t', '\n'].includes(src[i])) {
-            ret.push(src.substring(prev, i));
+            addToken(src.substring(prev, i));
+
         // String literal
         } else if (['"', "'"].includes(src[i])) {
-            ret.push(src.substring(prev, i));
+            addToken(src.substring(prev, i));
             prev = i;
             endStr();
             i++;
-            ret.push(src.substring(prev, i));
+            addToken(src.substring(prev, i));
         
         // Middle of a token
         } else {
@@ -131,13 +140,12 @@ function lex(src) {
             continue;
         }
         
+        // Next character in token
         prev = ++i;
     }
 
     // Return list of token objects
-    return ret
-        .map(s => s.trim()).filter(s => s.length)
-        .map(toToken);
+    return ret.filter(s => s);
 }
 
 // Export

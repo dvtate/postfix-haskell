@@ -1,23 +1,23 @@
 
 // Abstract base
-interface DataType {
+declare interface DataType {
 
-    // Used for typechecking
-    compare(other) {}
-};
+    // Used for typecheckin
+}
 
-enum UnderlyingPrimitives {
+declare enum UnderlyingPrimitiveType {
     I32, I64, F32, F64,
-};
+}
 
-interface BasicType extends DataType {
-    type: 
-};
+declare interface BasicType extends DataType {\
+    type: UnderlyingPrimitiveType,
 
-interface EnumType extends DataType {
+}
 
-};
+declare interface EnumType extends DataType {
 
-interface StructType extends DataType {
+}
 
-};
+declare interface StructType extends DataType {
+
+}

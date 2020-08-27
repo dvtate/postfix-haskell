@@ -18,37 +18,68 @@ function convertToToken(token) {
 }
 
 /**
- * Generates a parse tree from list of tokens
+ * Throw syntax error
  * 
- * @param {LexerToken} tokens
+ * @param {string} message - reason for error
+ * @param {lex.LexerToken[]} tokens - problematic tokens
+ */
+function throwParseError(message, tokens) {
+    throw {
+        type: 'SyntaxError',
+        message,
+        tokens,
+        stack: new Error(),
+    };
+}
+
+/**
+ * Generates a parse tree from list of tokens
+ * Really only benefit here is that this collapses containers
+ * 
+ * @param {lex.LexerToken} tokens
  * @returns {ParseTree}
  */
 function parse(tokens) {
+
     let ret = [];
 
+    // Parse tokens
     tokens.forEach((tok, i) => {
         switch (tok.type) {
-            // Parse Identifier
+            // Handle basic tokens
             case lex.TokenType.Identifier:
-                switch(tok.subtype) {
-                    // Operator
-                    case 'symbolic':
-                        ret.push({
-                            ...token,
-                            type: 'operator',
-                        });
-                    // Reference ($)
-                    case 'escaped':
-
-                    // Type
-                    case 'upper':
-
-                    // Function
-                    case 'lower':
-                } 
+            case lex.TokenType.String:
+            case lex.TokenType.Number:
+            case lex.TokenType.ContainerOpen:
+                ret.push(tok);
                 break;
-            case lex.TokenType.Literal:
 
+            // Collapse containers
+            case lex.TokenType.ContainerClose: {
+                // Index of most recent container
+                let ind;
+                for (ind = ret.length - 1; ind >= 0; ind--)
+                    if (ret[ind].type === lex.TokenType.ContainerOpen)
+                        break;
+                
+                // No openers
+                if (ind === -1)
+                    throwParseError('Unexpected symbol ' + tok.token, [tok]);
+                
+                // Not matching
+                if (ret[ind].subtype !== tok.subtype)
+                    throwParseError(`Container mismatch ${ret[ind].token} vs. ${tok.token}`, [ret[ind], tok]);
+        
+                // Collapse body
+                // Note for now only containers are for 'Block'
+                ret[ind].body = ret.splice(ind + 1);
+                ret[ind].type = lex.TokenType.Block;
+            };
+            break;
         }
     });
+
+    return ret;
 }
+
+module.exports = { parse, lex };
