@@ -9,7 +9,7 @@ declare enum UnderlyingPrimitiveType {
     I32, I64, F32, F64,
 }
 
-declare interface BasicType extends DataType {\
+declare interface BasicType extends DataType {
     type: UnderlyingPrimitiveType,
 
 }
@@ -17,7 +17,7 @@ declare interface BasicType extends DataType {\
 declare interface EnumType extends DataType {
 
 }
-
+        
 declare interface StructType extends DataType {
 
 }

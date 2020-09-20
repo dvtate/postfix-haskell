@@ -18,12 +18,12 @@ Int Float | Num typedef
 		{
 			1
 		} {
-			dup 1 - fac_fn @	
+			dup 1 - $fac_fn @	
 		} {
 			dup 0 >
 		}
 	} cond
-} fac_fn =
+} $fac_fn =
 
 
 # Factorial defined as a recursive macro
@@ -41,6 +41,13 @@ Int Float | Num typedef
 			dup 0 >
 		}
 	} cond
-} fac_mac define
+} "fac_mac" define
 
+
+# lambda
+
+# Factorial
+
+{ Num typecheck } { dup 1 - * fac * } $fac defun
+{ 0 == check } { 1 } $fac defun
 
