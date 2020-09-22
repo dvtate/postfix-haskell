@@ -1,44 +1,70 @@
+# Quick Intro
+# Although language is stack-oriented, it's only used to generate expressions
+#
 
+'wasm' use
 
-; numeric types
+# Numeric types
 I32 I64 | Int =
 F32 F64 | Float =
 Int Float | Num =
 
-# Absolute value function
-{ type Num == } { } $abs defun			# by default leave the value on the stack
-{ 0 < check } { 0 swap - } $abs defun	# if the value is negative, make it positive
+# Absolute value defined as a function
+#  Functions allow user to overload it later if needed
 
+# Not negative: leave it on stack
+{ type Num == } { } 		 $abs defun
+
+# Negative: make it positive
+{ 0 < } 		{ -1 * } $abs defun
+
+# Absolute value defiend as a macro
+#  these are like lambdas
+{
+	{
+		{ type Num == } { }
+		{ 0 < }			{ -1 * }
+	} cond
+} $abs2 =
 
 
 # Function fizzbuzz
-{ type Num == check } {
+# Accepts numbers of any sign
+{ type Num == } {
+	# Pull n from top of stack
 	$n =
 
 	# Make a lambda fb_repr that converts a number to fizzbuzz notation
 	{
-		{ # branch
-			{ dup 3 % 0 == check 5 % 0 == check }	{ pop "fizzbuzz" }
-			{ dup 3 % 0 == check }					{ pop "fizz" }
-			{ dup 5 % 0 == check }					{ pop "buzz" }
-			{ }										{ repr }
+		{
+			{ }							{ repr }
+			{ 3 % 0 == }			    { pop "fizz" }
+			{ 5 % 0 == }				{ pop "buzz" }
+			{ 3 % 0 == 5 % 0 == && }	{ pop "fizzbuzz" }
 		} cond
 	} $fb_repr =
 
-	# for i goes from 0 to n
+	# Generate fizzbuzz for i goes from 0 to n
 	{
-		$i =
+		{ { n < } {
 
-		i fb_repr ++ " " ++
+			# Pop i from top of stack
+			$i =
 
-		# Loop while i < n
-		i { { n < } { 1 + iter } } cond
+			# Add text to string that was below i
+			i fb_repr ++ " " ++
+
+			# Push i back onto stack
+			i
+
+			# Loop while i < n
+			iter
+		}} cond
 	} $iter =
 	"" 0 iter
 
 } $fizzbuzz defun
+{ 0 < } { abs fizzbuzz } $fizzbuzz defun
 
-
-# Note constexpr
+# Get value
 100 fizzbuzz print
-
