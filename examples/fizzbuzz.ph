@@ -1,6 +1,6 @@
 # Quick Intro
-# Although language is stack-oriented, it's only used to generate expressions
-#
+# - Although language is stack-oriented, it's only used to generate expressions
+# -
 
 'wasm' use
 
@@ -8,6 +8,7 @@
 I32 I64 | Int =
 F32 F64 | Float =
 Int Float | Num =
+
 
 # Absolute value defined as a function
 #  Functions allow user to overload it later if needed
@@ -29,7 +30,7 @@ Int Float | Num =
 
 
 # Function fizzbuzz
-# Accepts numbers of any sign
+# Accepts positive or negative numbers and returns fizzbuzz sequence
 { type Num == } {
 	# Pull n from top of stack
 	$n =
@@ -47,7 +48,6 @@ Int Float | Num =
 	# Generate fizzbuzz for i goes from 0 to n
 	{
 		{ { n < } {
-
 			# Pop i from top of stack
 			$i =
 
