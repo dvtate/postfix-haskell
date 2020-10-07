@@ -7,7 +7,6 @@
 
 
 # Function to add items to map
-fun $set =
 { # takes 3 arguments with bottom one being a Function
     drop drop type Fun ==
 } {
@@ -16,7 +15,7 @@ fun $set =
     $key =
     $map =
 
-    { $key == } {}
+    { $key == } { $value } $map defun
 
 } $set defun
 
@@ -29,3 +28,12 @@ $config 4 "four" set
 
 #
 "email" config print
+
+
+
+
+
+####
+# Lets do something different
+####
+

@@ -1,8 +1,14 @@
+const { stat } = require('fs');
 const readline = require('readline');
 
-const lex = require('../src/lex');
+const lex = require('../lib/scan');
+const parse = require('../lib/parse');
+const Context = require('../lib/context');
+const ctx = new Context();
 
-const cmd = process.argv.find(arg => arg[0] !== '/');
+const flags = process.argv
+    .filter(arg => arg.startsWith('--'))
+    .map(a => a.substr(2));
 
 const rl = readline.createInterface ({
     input: process.stdin,
@@ -11,7 +17,13 @@ const rl = readline.createInterface ({
     prompt: "> "
 });
 
-rl.on('line', line => {
-    const toks = lex(line);
-    console.log(toks);
+
+rl.on('line', async line => {
+    const toks = lex.parse(line);
+    if (flags.includes('lex'))
+        console.log(toks);
+
+    if (!flags.includes('lex')) {
+        console.log(parse(toks, ctx));
+    }
 });
