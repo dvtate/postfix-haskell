@@ -18,12 +18,20 @@ const rl = readline.createInterface ({
 });
 
 
-rl.on('line', async line => {
+rl.on('line', line => {
     const toks = lex.parse(line);
     if (flags.includes('lex'))
         console.log(toks);
 
     if (!flags.includes('lex')) {
-        console.log(parse(toks, ctx));
+        if (flags.includes('verbose'))
+            console.log(parse(toks, ctx));
+        else {
+            const e = parse(toks, ctx);
+            if (e instanceof Context)
+                console.log(ctx.stack);
+            else
+                console.log(e);
+        }
     }
 });
