@@ -4,7 +4,7 @@ export enum TokenType {
     String,
     Number,
     ContainerOpen,
-    ContainerClose, 
+    ContainerClose,
     Identifier,
 }
 
