@@ -4,9 +4,14 @@
 # $ , ' : symbol
 
 # Numeric Types
-I64 I32 | Int typedef
-F64 F32 | Float typedef
-Int Float | Num typedef
+I64 I32 | Int =
+F64 F32 | Float =
+Int Float | Num =
+
+# Factorial
+{ type Num ==  } { dup 1 - * fac * } $fac defun
+{ 0.0 == } { 1 } $fac defun
+
 
 # Factorial defined as a recursive function
 {
@@ -62,5 +67,3 @@ Int Float | Num typedef
 	} $fac =
 	dup fac
 } $fac =
-{ Num typecheck } { dup 1 - * fac * } $fac defun
-{ 0 == check } { 1 } $fac defun
