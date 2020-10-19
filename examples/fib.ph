@@ -9,7 +9,7 @@ F64 F32 | Float =
 Int Float | Num =
 
 # Factorial
-{ type Num ==  } { dup 1 - * fac * } $fac defun
+{ type Num ==  } { dup 1 - fac * } $fac defun
 { 0.0 == } { 1 } $fac defun
 
 

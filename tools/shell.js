@@ -1,4 +1,3 @@
-const { stat } = require('fs');
 const readline = require('readline');
 
 const lex = require('../lib/scan');
