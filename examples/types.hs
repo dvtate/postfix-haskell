@@ -2,11 +2,11 @@
 -- Still undecided on comments
 
 -- These would probably be defined in standard library
-I32 I64 | $Int =
-F32 F64 | $Float =
+{ I32 I64 | } $Int =
+{ F32 F64 | } $Float =
 
 -- datatype
-{ Int Float } newtype $FloatSequence =
+{ Int Float } struct newtype $FloatSequence =
 
 -- accessor methods
 { typeof FloatSequence == } { destruct pop pop } $.count fun
@@ -63,16 +63,73 @@ seq .value -- => 0.5
 seq .count -- => 10
 seq .sum  -- => 5
 
--- Likely defined in std lib
-I32 I64 | $Int =
+
+-- Here we're defining a union type
 F32 F64 | $Float =
 
--- make a structure consiting of two member types
-{ Int Float } type $FloatSeq =
+-- Like for expressions, braces can be used for lazy evaluation
+{ I32 I64 | } $Int =
 
---
-{ typeof FloatSequence == } { destruct pop pop } $.count fun
-{ typeof FloatSequence == } { destruct pop } $.value fun
+-- Here we specify a tuple type
+{ Int Float } pack $IntFloatPair =
 
---
-{ $A = Int A } type $Seq =
+-- Using the `class` operator makes the type more strict
+--  It will only accept instances of the same type
+IntFloatPair class $FloatSeq =
+
+-- Notice that class expects either a type or macro as argument
+{ { Int Int } pack } class $IntSeq =
+
+-- We can emulate objects by defining access operators
+{ type FloatSeq == } { unpack pop } $.count fun
+{ type FloatSeq == } { unpack swap pop } $.value fun
+
+-- Use the make operator to make an instance of a class
+{ 10 3.14 } pack FloatSeq make $seq =
+seq .value -- => 3.14
+seq .count -- => 10
+
+-- Equvalent to methods
+-- This method performs scalar mulitplication
+{ $s = $v =
+	v type Float Int | ==
+	s type FloatSeq == &&
+} {
+	$seq = $v =
+	{ seq .count seq .value v * } pack FloatSeq make
+} $.mul_scalar fun
+
+2 seq .mul_scalar $seq2 =
+
+-- Operator overloading
+{ $v1 = $v0 =
+	v0 type FloatSeq ==
+	v1 type FloatSeq == &&
+} {
+	$v1 = $v0 =
+	v0 .value v0 .count * $total =
+	total v1 .count total type convert / $delta =
+	{ v1 .count v1 .value delta + } pack FloatSeq make
+} $+ fun
+
+seq seq2 + $seq3 =
+
+-- Parametric type to describe Sequence of a given type
+--  Impl: maybe class creates wrapper that modifies whatever type is returned w/ id
+{ $T =
+	{ Int T } pack
+} class $Sequence =
+
+-- Using $_ because we don't care what given type is
+{ type $_ Sequence = } { unpack pop } $.count fun
+{ type $_ Sequence = } { unpack swap pop } $.value fun
+
+-- Make instance
+{ 10 3.14 } pack Float Sequence make $seq =
+
+-- Make specialized type alias
+Float Sequence $FloatSequence =
+
+-- these function only accept int sequences
+{ type Int Sequence == } {} $myfun fun
+{ type unpack Int == } {} $myfun2 fun
