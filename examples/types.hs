@@ -133,3 +133,39 @@ Float Sequence $FloatSequence =
 -- these function only accept int sequences
 { type Int Sequence == } {} $myfun fun
 { type unpack Int == } {} $myfun2 fun
+
+-- This concept distinguishes types from classes further and represents
+-- Behind the scenes implementation for the above system
+
+# Sequence_t is an interface for Sequence Functionality
+interface $Sequence_t =
+
+# Sequence is a class
+{
+	$A =					# Take another type as argument
+	{ Int A } pack 			# Specify data
+	Sequence_t implement	# Apply functionality
+} $Sequence =
+
+# Returns 1/0 if value is a qualified sequence_t
+{ $v =
+	v type $_ Sequence == 		#
+	v Sequence_t implements &&  #
+} $is_Sequence_t =
+
+# Define accessors
+{ is_Sequence_t } { unpack pop } $.count
+{ is_Sequence_t } { unpack swap pop } $.value
+
+# Constructor
+{ $T = $b = $a =
+	T Sequence_t ==
+	a type Int == &&
+} {
+	$T = $b = $a =
+	{ a b } pack T implements
+} $make fun
+
+10 3.14 Sequence_t make $seq =
+seq .value # => 3.14
+seq .count # => 10
