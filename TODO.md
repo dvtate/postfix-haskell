@@ -2,7 +2,9 @@
 Running list of tasks and stuff
 
 ## a. Behavior
-1. `volatile`: marks current value as dirty so that the compiler is forced to form AST instead of compile-time operations
+1. `volatile` / `opaque`: marks current value as dirty so that the compiler is forced to form AST instead of compile-time operations
+2. `fun`: create an operator that has conditions (similar to `std::visit`)
+3. `cond`: like a shittier version of `fun` (similar to ys)
 
 ## b. Types
 1. `class`: wraps a macro, applies unique class to output
