@@ -4,7 +4,8 @@ Running list of tasks and stuff
 ## a. Behavior
 1. `volatile` / `opaque`: marks current value as dirty so that the compiler is forced to form AST instead of compile-time operations
 2. `fun`: create an operator that has conditions (similar to `std::visit`)
-3. `cond`: like a shittier version of `fun` (similar to ys)
+3. `cond`: like a shittier wrapper of `fun` (similar to ys)
+4. `global`: use global version of escaped identifer
 
 ## b. Types
 1. `class`: wraps a macro, applies unique class to output
@@ -29,6 +30,7 @@ So many omg
 ## f. AST -> WAT
 Still not sure how this should work tbh, but gonna probably need new syntax
 - Inline WAT syntax (probably using `(...)`)
+- `export`: type signature and identifier. Generates WASM to operate on generic values
 
 ## g. Standard library
 So many omg. Tbh a lot of other features could be put into standard library instead of compiler because they'd just be wrappers around wasm. But at first likely will be in compiler.
