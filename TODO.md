@@ -2,23 +2,33 @@
 Running list of tasks and stuff
 
 ## a. Behavior
-1. `volatile` / `opaque`: marks current value as dirty so that the compiler is forced to form AST instead of compile-time operations
-2. `fun`: create an operator that has conditions (similar to `std::visit`)
-3. `cond`: like a shittier wrapper of `fun` (similar to ys)
-4. `global`: use global version of escaped identifer
+- `volatile` / `opaque`: marks current value as dirty so that the compiler is forced to form AST instead of compile-time operations
+- `fun`: create an operator that has conditions (similar to `std::visit`)
+- `global`: use global version of escaped identifer
+- `import`: load file as a module
+### Low priority
+- `cond`: like a shittier wrapper of `fun` (similar to ys and lisp)
 
 ## b. Types
-1. `class`: wraps a macro, applies unique class to output
-2. `make`: Applies classes to value
-2. `pack`: treat executable array of values as a single tuple value
+- `class`: wraps a macro, applies unique class to output
+- `make`: Applies classes to value
+- `pack`: treat executable array of values as a single tuple value
     + also works on types to make tuple types
-3. `unpack`: opposite of pack, pushes values onto stack
+- `unpack`: opposite of pack, pushes values onto stack
     + also works on types
-4. `|`:
+- `|`:
     + types: make a union type
     + ints: OR
+- `==`
+
+### Track aliasing
+When user uses an identifier to produce a type we should add some property to the type
+that lets us track the name they gave to it so that debugging is easier.
+This is espescially important for classes.
 
 ## c. Lex
+- Module syntax `:`
+- Optimize scanner
 
 ## d. Tokens -> AST
 - Expression Syntax Type: This is for results for non-constexprs, completed expression trees can be used
