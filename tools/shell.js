@@ -16,12 +16,14 @@ const rl = readline.createInterface ({
     prompt: "> "
 });
 
-
+// For each line
 rl.on('line', line => {
-    const toks = lex.parse(line);
+    // Tokenize the line
+    const toks = lex.parse(line, 'stdin');
     if (flags.includes('lex'))
         console.log(toks);
 
+    // Parse line
     if (!flags.includes('lex')) {
         if (flags.includes('verbose'))
             console.log(parse(toks, ctx));
