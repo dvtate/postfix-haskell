@@ -23,7 +23,7 @@ rl.on('line', line => {
     if (flags.includes('lex'))
         console.log(toks);
 
-    // Parse line
+    // Parse
     if (!flags.includes('lex')) {
         if (flags.includes('verbose'))
             console.log(parse(toks, ctx));
