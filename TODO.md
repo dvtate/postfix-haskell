@@ -3,23 +3,22 @@ Running list of tasks and stuff
 
 ## a. Behavior
 - `volatile` / `opaque`: marks current value as dirty so that the compiler is forced to form AST instead of compile-time operations
-- `fun`: create an operator that has conditions (similar to `std::visit`)
-- `global`: use global version of escaped identifer
+- [x] `fun`: create an operator that has conditions (similar to `std::visit`)
+- [x] `global`: use global version of escaped identifer
 - `import`: load file as a module
-### Low priority
-- `cond`: like a shittier wrapper of `fun` (similar to ys and lisp)
 
 ## b. Types
-- `class`: wraps a macro, applies unique class to output
-- `make`: Applies classes to value
-- `pack`: treat executable array of values as a single tuple value
+- [x] `class`: wraps a macro, applies unique class to output
+- [x] `make`: Applies classes to value
+- [x] `pack`: treat executable array of values as a single tuple value
     + also works on types to make tuple types
-- `unpack`: opposite of pack, pushes values onto stack
+- [x] `unpack`: opposite of pack, pushes values onto stack
     + also works on types
-- `|`:
+- [x] `|`:
     + types: make a union type
     + ints: OR
-- `==`
+- [x] `==`:
+    + todo: overload for ints
 
 ### Track aliasing
 When user uses an identifier to produce a type we should add some property to the type
