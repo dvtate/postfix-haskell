@@ -1,0 +1,19 @@
+
+# Y-Combinator
+{
+	$f =
+	{f} f
+} $yc =
+
+# Modified factorial
+{
+	$rec =
+	$n =
+
+	{ 1 } { n n -1 + {rec} rec + } $cond fun
+	{ n 0 == } { 1 } $cond fun
+	cond
+} $action =
+
+# Factorial of 5
+5 {action} yc

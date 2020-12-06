@@ -1,69 +1,25 @@
-
-# Prefixes:
-# none : evaluate
-# $ , ' : symbol
-
-# Numeric Types
-I64 I32 | Int =
-F64 F32 | Float =
-Int Float | Num =
-
-# Factorial
-{ type Num ==  } { dup 1 - fac * } $fac defun
-{ 0.0 == } { 1 } $fac defun
-
-
-# Factorial defined as a recursive function
+# Y-Combinator
 {
-	{ # Only accept numeric types
-		dup Num typecheck
-	} check
+	$f =
+	{f} f
+} $yc =
 
-	{ # kinda like pattern matching but with explicit conditions
-		{
-			1
-		} {
-			dup 1 - $fac_fn @
-		} {
-			dup 0 >
-		}
-	} cond
-} $fac_fn =
-
-
-# Factorial defined as a recursive macro
+# Modified fibonacci
 {
-	{ # Only accept numberic types
-		dup Num typecheck
-	} check
-
 	{
+		$rec =
+		$n =
+
+		{ 1 } {
+			n -1 + {rec} rec
+			n -2 + {rec} rec +
+		} $cond fun
 		{
-			1
-		} {
-			dup 1 - fac_mac
-		} {
-			dup 0 >
-		}
-	} cond
-} $fac_mac =
+			n 0 ==
+			n 1 == +
+		} { 1 } $cond fun
+		cond
+	} yc
+} $fib =
 
 
-# lambda
-
-# Factorial
-
-{
-	{ # fac: Tail-recursive helper
-		# <return n> <countdown n>
-		{
-			{ } {
-				$i =		# pull i from stack
-				$i *		# ret *= i
-				i 1 - fac	# recursive
-			}
-			{ 1 == } { drop }
-		} cond
-	} $fac =
-	dup fac
-} $fac =
