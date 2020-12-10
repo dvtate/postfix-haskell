@@ -1,5 +1,7 @@
-# This pops a value from the stack that we don't care about
-{ $_ = } $; =
+# Stack operators
+{ $_ = } $; =				# Pop value
+{ $v = v v } $dup =			# Duplicate value
+{ $b = $a = b a } $swap =	# swap values
 
 # Not operator
 { 1 }    { ; 0 } $! global fun	# Always returns false
@@ -20,6 +22,7 @@
 { 0 == ! } {	# One of the conditions is true
 	; ; 1	# Or result must be true
 } $|| global fun
+
 
 1 ! :data
 0 ! :data

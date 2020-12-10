@@ -1,0 +1,45 @@
+
+# Integer union type
+I32 I64 | $Int =
+
+# Floating point union type
+# Note braces make expressions lazy evaluated
+{ F32 F64 | } $Float =
+
+# Specify a tuple type consiting of two numbers
+{ Float Int | dup } pack $Pair =
+
+# Using `class` makes the type more strict
+#  It will only accept instance of same class
+Pair class $Vector2 =
+
+# Access operators to emulate objects
+{ type Vector2 == } { unpack pop } $.x fun
+{ type Vector2 == } { unpack swap pop } $.y fun
+
+# Use the make operator to instantiate a class
+{ 4 20 } pack Vector2 make $v =
+
+# These are similar to methods but don'
+{ $v = $f =
+	f type Float Int | ==
+	v type Vector2 == &&
+} {
+	# Return a new vector with scaled coords
+	$v = $f =
+	{	v .x f *
+		v .y f *
+	} pack Vector2 make
+} $.scale fun
+
+# Operator overloading
+{ $b = $a =
+	a type Vector2 ==
+	b type Vector2 == &&
+} {
+	# Return new vector with sum
+	$b = $a =
+	{	a .x b .x +
+		a .y b .y +
+	} pack Vector2 make
+} $+ fun
