@@ -1,3 +1,4 @@
+# Import standard library
 
 # Integer union type
 I32 I64 | $Int =
@@ -18,7 +19,11 @@ Pair class $Vector2 =
 { type Vector2 == } { unpack swap pop } $.y fun
 
 # Use the make operator to instantiate a class
-{ 4 20 } pack Vector2 make $v =
+{ 2 1 } pack Vector2 make $v =
+
+# Access fields by invoking operators
+v .x :data	# 2
+v .y :data	# 1
 
 # These are similar to methods but don'
 { $v = $f =
@@ -39,7 +44,16 @@ Pair class $Vector2 =
 } {
 	# Return new vector with sum
 	$b = $a =
-	{	a .x b .x +
-		a .y b .y +
+	{	a .x  b .x +
+		a .y  b .y +
 	} pack Vector2 make
 } $+ fun
+
+# Make a scaled version of v
+# Notice it's 2x as big
+2 v .scale $v2 =
+v2 :data # [ 4, 2 ]
+
+# Add the vectors
+v v2 + $v3 =
+v3 :data
