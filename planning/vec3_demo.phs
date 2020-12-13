@@ -1,0 +1,93 @@
+# Copypasta std library
+# Booleans
+1 $true =
+0 $false =
+
+# Stack operators
+{ $_ = } $pop =				# Pop value
+{ $v = v v } $dup =			# Duplicate value
+{ $b = $a = b a } $swap =	# swap values
+
+# Not operator
+{ 1 }    { pop 0 } $! global fun	# Always returns false
+{ 0 == } { pop 1 } $! global fun	# Unless given value is false
+
+# And operator
+{ 0 == } {	# One of the conditions is false
+	pop pop 0	# And result must be false
+} $&& global fun
+{ 0 == ! } {	# One of the conditions is true
+	pop		# And result will be the other condition
+} $&& global fun
+
+# Or operator
+{ 0 == } {	# One of the conditions is false
+	pop		# Or results will be the other condition
+} $|| global fun
+{ 0 == ! } {	# One of the conditions is true
+	pop pop 1	# Or result must be true
+} $|| global fun
+
+
+# Above this is standard library
+
+# Number type
+I32 I64 | F32 F64 | | $Num =
+
+# Parametric type
+{
+    $A =
+    { A A A } pack
+} class $Vector3 =
+
+# Generic Accessors
+{ type Any Vector3 == } { unpack pop pop } $.x fun
+{ type Any Vector3 == } { unpack pop swap pop } $.y fun
+{ type Any Vector3 == } { unpack swap pop swap pop } $.z fun
+
+# Overload * for dot-product
+{ $b = $a =
+    a type Num Vector3 ==
+    b type Num Vector3 == &&
+} {
+    $b = $a =
+    a .x  b .x *
+    a .y  b .y * +
+    a .z  b .z * +
+} $* global fun
+
+# Overload * for scalar multiplication
+{ $v = $k =
+    k type Num ==
+    v type Num Vector3 == &&
+} {
+    $v = $k =
+    {
+        v .x k *
+        v .y k *
+        v .z k *
+    } pack v type make
+} $* global fun
+
+# Project a onto b
+{ $b = $a =
+    a type Num Vector3 ==
+    b type Num Vector3 == &&
+} {
+    $b = $a =
+    a b *
+    b b * /     # ||b|| ^ 2
+    b *
+} $proj fun
+
+# Two perpendicular vectors
+{ 1 1 0 } pack Num Vector3 make $v1 =
+{ -1 1 0 } pack Num Vector3 make $v2 =
+
+v1 v2 * :data # 0 dot product is zero
+
+# Project
+{ 1.0 2.0 1.0 } pack Num Vector3 make $x_axis =
+{ 5.0 6.0 7.0 } pack Num Vector3 make $v =
+
+v x_axis proj :data # [ 4, 8, 4 ]

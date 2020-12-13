@@ -1,5 +1,32 @@
 # Import standard library
 
+# Stack operators
+{ $_ = } $pop =				# Pop value
+{ $v = v v } $dup =			# Duplicate value
+{ $b = $a = b a } $swap =	# swap values
+
+# Not operator
+{ 1 }    { pop 0 } $! global fun	# Always returns false
+{ 0 == } { pop 1 } $! global fun	# Unless given value is false
+
+# And operator
+{ 0 == } {	# One of the conditions is false
+	pop pop 0	# And result must be false
+} $&& global fun
+{ 0 == ! } {	# One of the conditions is true
+	pop		# And result will be the other condition
+} $&& global fun
+
+# Or operator
+{ 0 == } {	# One of the conditions is false
+	pop		# Or results will be the other condition
+} $|| global fun
+{ 0 == ! } {	# One of the conditions is true
+	pop pop 1	# Or result must be true
+} $|| global fun
+
+# Above this is standard library
+
 # Integer union type
 I32 I64 | $Int =
 
@@ -18,14 +45,7 @@ Pair class $Vector2 =
 { type Vector2 == } { unpack pop } $.x fun
 { type Vector2 == } { unpack swap pop } $.y fun
 
-# Use the make operator to instantiate a class
-{ 2 1 } pack Vector2 make $v =
-
-# Access fields by invoking operators
-v .x :data	# 2
-v .y :data	# 1
-
-# These are similar to methods but don'
+# These are equivalent to methods
 { $v = $f =
 	f type Float Int | ==
 	v type Vector2 == &&
@@ -47,7 +67,14 @@ v .y :data	# 1
 	{	a .x  b .x +
 		a .y  b .y +
 	} pack Vector2 make
-} $+ fun
+} $+ global fun
+
+# Use the make operator to instantiate a class
+{ 2 1 } pack Vector2 make $v =
+
+# Access fields via access operators
+v .x :data	# 2
+v .y :data	# 1
 
 # Make a scaled version of v
 # Notice it's 2x as big
@@ -56,4 +83,4 @@ v2 :data # [ 4, 2 ]
 
 # Add the vectors
 v v2 + $v3 =
-v3 :data
+v3 :data # [ 6, 3 ]
