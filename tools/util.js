@@ -35,4 +35,4 @@ function formatErrorPos(errors) {
         }`).join('\n\n');
 }
 
-module.exports = { showFilePos : fileLocate, fileLocate, formatErrorPos };
+module.exports = { fileLocate, formatErrorPos };

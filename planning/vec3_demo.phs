@@ -35,15 +35,14 @@
 I32 I64 | F32 F64 | | $Num =
 
 # Parametric type
-{
-    $A =
+{ $A =
     { A A A } pack
 } class $Vector3 =
 
 # Generic Accessors
 { type Any Vector3 == } { unpack pop pop } $.x fun
 { type Any Vector3 == } { unpack pop swap pop } $.y fun
-{ type Any Vector3 == } { unpack swap pop swap pop } $.z fun
+{ type Any Vector3 == } { unpack $z = pop pop z } $.z fun
 
 # Overload * for dot-product
 { $b = $a =
@@ -76,7 +75,7 @@ I32 I64 | F32 F64 | | $Num =
 } {
     $b = $a =
     a b *
-    b b * /     # ||b|| ^ 2
+    b b * /     # ||b|| ^ 2 = b dot b
     b *
 } $proj fun
 
@@ -84,10 +83,10 @@ I32 I64 | F32 F64 | | $Num =
 { 1 1 0 } pack Num Vector3 make $v1 =
 { -1 1 0 } pack Num Vector3 make $v2 =
 
-v1 v2 * :data # 0 dot product is zero
+v1 v2 * :data # 0
 
-# Project
-{ 1.0 2.0 1.0 } pack Num Vector3 make $x_axis =
-{ 5.0 6.0 7.0 } pack Num Vector3 make $v =
+# Project a onto b
+{ 5.0 6.0 7.0 } pack Num Vector3 make $a =
+{ 1.0 2.0 1.0 } pack Num Vector3 make $b =
 
-v x_axis proj :data # [ 4, 8, 4 ]
+a b proj :data # [ 4, 8, 4 ]

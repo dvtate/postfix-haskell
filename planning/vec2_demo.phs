@@ -27,7 +27,7 @@
 
 # Above this is standard library
 
-# Integer union type
+# A type that accepts an integer of any size
 I32 I64 | $Int =
 
 # Floating point union type
@@ -38,7 +38,7 @@ I32 I64 | $Int =
 { Float Int | dup } pack $Pair =
 
 # Using `class` makes the type more strict
-#  It will only accept instance of same class
+#  It will only accept instances of same class
 Pair class $Vector2 =
 
 # Access operators to emulate objects
@@ -82,5 +82,4 @@ v .y :data	# 1
 v2 :data # [ 4, 2 ]
 
 # Add the vectors
-v v2 + $v3 =
-v3 :data # [ 6, 3 ]
+v v2 + :data # [ 6, 3 ]
