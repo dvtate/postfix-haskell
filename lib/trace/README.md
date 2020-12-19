@@ -1,0 +1,2 @@
+# Trace
+This system determines the number of inputs and outputs for a given macro so that we can bind arguments and return values. In a perfect world I would have designed the syntax such that the number of inputs and outputs was known without having to use context clues, but alas. This seemed much simpler in my head although I knew that it would be a painpoint.
