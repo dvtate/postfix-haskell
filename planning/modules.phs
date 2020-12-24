@@ -1,0 +1,37 @@
+
+
+# Import using compiler import paths
+$wasm import $wasm =
+
+# Import via absolute path
+$/home/users/tate/Desktop/libmath.phs import $math =
+
+# Import via relative path
+$./vector.phs import $vec =
+
+# Define all module children locally
+vec $ use
+
+# Define module children starting with . locally
+math $. use
+
+# Note: @ == unescape identifier
+# n = math::fib(10)
+10 $fib math @ $n =
+
+# fn = (new math::FancyNum(11)).succ
+11 $FancyNum math @ make .succ $fn =
+
+# s = wasm::i32::add(10, 22)
+10 22 $i32.add wasm @ $s =
+
+# Override fib function in math library to accept vectors
+{
+    type Any Vector2 ==
+} {
+    v .x v .y + $fib math @
+} $fib math fun
+
+# :debug math::fib(new Vector2<I32>(1, 2))
+{ 1 2 } pack I32 Vector2 make $fib math @ :data
+
