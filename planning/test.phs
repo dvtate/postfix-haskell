@@ -1,0 +1,2 @@
+# Increment function
+{ I32 } { 1 + } $succ target

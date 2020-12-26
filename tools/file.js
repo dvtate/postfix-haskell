@@ -23,3 +23,5 @@ if (ctx instanceof error.SyntaxError) {
     // console.log(ctx.tokens);
     console.log(utils.formatErrorPos([ctx]));
 }
+
+console.log(ctx.outWast());
