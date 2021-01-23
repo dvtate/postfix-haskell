@@ -1,0 +1,36 @@
+# Increment function
+# { I32 } { 1 + } $succ target
+
+# { I32 I32 } { + 2 / } $average target
+
+
+# Average
+{ + 2 / } $avg =
+
+# Absolute value
+{ true } {} $abs fun
+{ 0 < } { -1 * } $abs fun
+
+{ # Square route via newton's method
+	{ # Tail-recursive helper
+        $guess =
+        $x =
+
+        # Is the value accurate to 3 decimals?
+        { guess guess * x - abs 0.001 < } $good_enough =
+
+        # We can improve the value by averaging with quotient
+        { x x guess / guess avg iter } $improve =
+
+        # Improve value until it's good enough
+        { 1 } { improve } $cond fun
+        { good_enough } { guess } $cond fun
+        cond
+	} $iter =
+
+    # Start calculating with first guess being 1
+    1 iter
+} $sqrt =
+
+
+2 sqrt :data
