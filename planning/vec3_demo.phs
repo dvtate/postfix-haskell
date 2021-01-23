@@ -90,3 +90,14 @@ v1 v2 * :data # 0
 { 1.0 2.0 1.0 } pack Num Vector3 make $b =
 
 a b proj :data # [ 4, 8, 4 ]
+
+# Export
+{ F64 } {
+    $v =
+    { v 1.0 v } pack Num Vector3 make $c =
+    a b proj c *
+} $test target
+
+# (module
+# (func $test (param $0 f64) (result f64)
+#        (f64.add (f64.add (f64.mul (f64.const 4) (local.get 0)) (f64.const 8)) (f64.mul (f64.const 4) (local.get 0)))))
