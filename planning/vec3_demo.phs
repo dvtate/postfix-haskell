@@ -99,7 +99,7 @@ a b proj :data # [ 4, 8, 4 ]
 } $test target
 
 { I32 } { 1 + } $incr target
-{ I32 I32 } {+} $add target
+{ I32 I32 } { swap 1 + +} $add target
 
 # (module
 # (func $test (param $0 f64) (result f64)
