@@ -98,6 +98,12 @@ a b proj :data # [ 4, 8, 4 ]
     a b proj c *
 } $test target
 
+{ I32 } { 1 + } $incr target
+{ I32 I32 } {+} $add target
+
 # (module
 # (func $test (param $0 f64) (result f64)
 #        (f64.add (f64.add (f64.mul (f64.const 4) (local.get 0)) (f64.const 8)) (f64.mul (f64.const 4) (local.get 0)))))
+
+
+# v => v == 1 ? 0 : v == 0 ? -1 : v;
