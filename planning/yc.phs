@@ -1,9 +1,6 @@
 
 # Y-Combinator
-{
-	$f =
-	{f} f
-} $yc =
+{ $f = {f} f } $yc =
 
 # Modified factorial
 {
