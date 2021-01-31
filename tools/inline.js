@@ -9,6 +9,7 @@ async function compile(src, importObject = {}, options = {}) {
     if (!(ctx instanceof Context))
         throw ctx;
     const wasm = await ctx.outWasm({});
+    const valid = WebAssembly.validate(wasm.buffer);
     return await WebAssembly.instantiate(wasm.buffer, importObject);
 }
 
