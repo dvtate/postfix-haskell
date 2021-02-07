@@ -11,7 +11,7 @@ function fileLocate(file, pos) {
     let cur = 0;
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++)
         if (1 + cur + lines[lineNumber].length > pos)
-            return { line: lines[lineNumber], lineNumber, lineOffset: pos - cur };
+            return { line: lines[lineNumber], lineNumber: lineNumber + 1, lineOffset: pos - cur };
         else
             cur += 1 + lines[lineNumber].length;
     return null;

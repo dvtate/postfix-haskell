@@ -20,6 +20,7 @@ const rl = readline.createInterface ({
 // For each line
 rl.on('line', line => {
 
+    // TODO imports
     if (line.startsWith("#!load:")) {
         const fname = line.split(':')[1];
         const src = fs.readFileSync(fname).toString();
