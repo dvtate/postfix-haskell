@@ -16,8 +16,8 @@
         $guess =
         $x =
 
-        # Is the value accurate to 3 decimals?
-        { guess guess * x - abs 0.001 < } $good_enough =
+        # Is guess sqrt(0.1%) of right solution?
+        { guess guess * x - abs x / 0.001 < } $good_enough =
 
         # We can improve the value by averaging with quotient
         { x x guess / guess avg iter } $improve =

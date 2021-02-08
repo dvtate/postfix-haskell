@@ -1,14 +1,14 @@
 (module
-  (func $fb (param $0 i32) (result i32)
-    block $topmost (result i32)
+  (func (;0;) (param i32) (result i32)
+    block $branch (result i32)
       block  ;; label = @2
         block  ;; label = @3
           block  ;; label = @4
             block  ;; label = @5
-              block $topmost (result i32)
+              block $branch (result i32)
                 block  ;; label = @7
                   block  ;; label = @8
-                    block $topmost (result i32)
+                    block $branch (result i32)
                       block  ;; label = @10
                         block  ;; label = @11
                           local.get 0
@@ -77,3 +77,4 @@
     end)
   (export "fb" (func 0))
   (type (;0;) (func (param i32) (result i32))))
+

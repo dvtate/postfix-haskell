@@ -1,12 +1,10 @@
 
-# pop operator
-{ $_ = } $; =
-
 {
     $n =
-    { 1 } { $n = n * n 1 - iter } $iter fun
-    { 1 == } { ; } $iter fun
-    1 n iter
-} $fac =
+    { 1 } { n 1 + f } $ff fun
+    { n 10 == } { n } $ff fun
+    ff
+} $f =
 
-{ I32 } { fac } $fac target
+
+{ I32 } { f } $fac target
