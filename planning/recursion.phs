@@ -1,10 +1,9 @@
 
-{
+{ # Count down to zero using tail recursion
     $n =
-    { 1 } { n 1 + f } $ff fun
-    { n 10 == } { n } $ff fun
-    ff
-} $f =
+    { 1 } { 0 } $branch fun
+    { n } { n 1 - cd } $branch fun
+    branch
+} $cd =
 
-
-{ I32 } { f } $fac target
+{ I32 } { cd } $cd target
