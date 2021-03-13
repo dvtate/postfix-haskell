@@ -6,4 +6,13 @@
     branch
 } $cd =
 
+{
+    $count = $ret =
+    { 1 } { ret } $branch fun
+    { count 0 == } { ret 2 * count 1 - dbl } $branch fun
+    branch
+} $dbl =
+
 { I32 } { cd } $cd target
+
+#{ I32 I32 } {dbl} $dbl target
