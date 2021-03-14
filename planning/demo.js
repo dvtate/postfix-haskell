@@ -13,7 +13,7 @@ const fs = require('fs');
     // Compile program
     const ctx = parse(lex(src, fname));
     if (ctx instanceof error.SyntaxError)
-        console.log(utils.formatErrorPos([ctx]));
+        console.log(util.formatErrorPos([ctx]));
     if (!(ctx instanceof Context))
         throw ctx;
 
@@ -27,10 +27,6 @@ const fs = require('fs');
     const mod = await WebAssembly.instantiate(wasm.buffer, {});
 
     // Invoke WASM Functions
-    console.log(mod.instance.exports.lshift(1, 0));
-    console.log(mod.instance.exports.lshift(1, 1));
-    console.log(mod.instance.exports.lshift(1, 2));
-    console.log(mod.instance.exports.lshift(1, 3));
-    console.log(mod.instance.exports.lshift(1, 4));
-    console.log(mod.instance.exports.lshift(1, 5));
+    for (let i = 0; i < 6; i++)
+        console.log(mod.instance.exports.lshift(1, i));
 })();

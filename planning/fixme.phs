@@ -1,0 +1,5 @@
+
+# This is bad! Fix ResultExpr when out of order/drop
+{ 1 } { 1 + 2 } $test fun
+{ } { 2 } $test fun
+{ I32 } { test pop * } $test target

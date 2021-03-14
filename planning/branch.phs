@@ -11,6 +11,8 @@
 { 1 }    { pop 0 } $! global fun	# Always returns false
 { 0 == } { pop 1 } $! global fun	# Unless given value is false
 
+#{ I32 } {!} $not target
+
 # And operator
 { 1 } {	# One of the conditions is false
 	pop pop 0	# And result must be false
@@ -28,10 +30,3 @@ fizz buzz + $fizzbuzz =
 { 5 % 0 == } { pop buzz } $fb fun
 { $n = n 3 % 0 == n 5 % 0 == && } { pop fizzbuzz } $fb fun
 { I32 } { fb } $fb target
-
-#{ I32 } {!} $not target
-
-# This is bad! Fix ResultExpr when out of order/drop
-{ 1 } { 1 + 2 } $test fun
-{ } { 2 } $test fun
-#{ I32 } { test pop * } $test target

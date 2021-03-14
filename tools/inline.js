@@ -2,13 +2,14 @@ const lex = require('../lib/scan');
 const parse = require('../lib/parse');
 const error = require('../lib/error');
 const Context = require('../lib/context');
-const wabt = require('wabt');
+const wabtProm = require('wabt')();
 
 /**
  *
  * @param {string} src
  * @param {*} importObject
  * @param {*} options
+ * @returns {WebAssembly.Instance}
  */
 async function compile(src, importObject = {}, options = {}) {
     // TODO bindings
@@ -44,4 +45,39 @@ const m = await phs`
 `;
 */
 
-module.exports = { compile, phs };
+/**
+ * @param {string} src - webasseembly text form source
+ * @param {*} importObject
+ * @returns {WebAssembly.Instance}
+ */
+async function compileWat(src, importObject = {}) {
+    const wabt = await wabtProm;
+    const mod = wabt.parseWat("inline", src, {
+        exceptions: true,
+        mutable_globals: true,
+        sat_float_to_int: true,
+        sign_extension: true,
+        simd: true,
+        threads: true,
+        multi_value: true,
+        tail_call: true,
+        bulk_memory: true,
+        reference_types: true,
+        annotations: true,
+        gc: true,
+    });
+
+    // Validate
+    const invalid = mod.validate();
+    if (invalid)
+        return console.error(invalid);
+
+    const bin = mod.toBinary({log: true});
+    const valid = WebAssembly.validate(bin.buffer);
+    if (!valid)
+        return console.error("wasm invalid!", valid);
+
+    return await WebAssembly.instantiate(bin.buffer, importObject);
+}
+
+module.exports = { compile, phs, compileWat };
