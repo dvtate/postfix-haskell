@@ -19,18 +19,18 @@ const { phs } = require('../tools/inline');
     { 0 == } { pop 1 } $! global fun	# Unless given value is false
 
     # And operator
+    { 1 } {	# One of the conditions is true
+        pop		# And result will be the other condition
+    } $&& global fun
     { 0 == } {	# One of the conditions is false
         pop pop 0	# And result must be false
-    } $&& global fun
-    { 0 == ! } {	# One of the conditions is true
-        pop		# And result will be the other condition
     } $&& global fun
 
     -1 $fizz =
     -2 $buzz =
     fizz buzz + $fizzbuzz =
 
-    { } { } $fb fun
+    { 1 } { } $fb fun
     { 3 % 0 == } { pop fizz } $fb fun
     { 5 % 0 == } { pop buzz } $fb fun
     { $n = n 3 % 0 == n 5 % 0 == && } { pop fizzbuzz } $fb fun
