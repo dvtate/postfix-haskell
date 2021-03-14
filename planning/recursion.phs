@@ -1,19 +1,9 @@
-
-{ # Count down to zero using tail recursion
-    $n =
-    { 1 } { 0 } $branch fun
-    { n } { n 1 - cd } $branch fun
-    branch
-} $cd =
-
 # Intentionally bad implementation of left-shift
 {
     $count = $ret =
     { 1 } { ret } $branch fun
-    { count 0 == } { ret 2 * count 1 - lshift } $branch fun
+    { count 0 > } { ret 2 * count 1 - lshift } $branch fun
     branch
 } $lshift =
-
-#{ I32 } { cd } $cd target
 
 { I32 I32 } {lshift} $lshift target

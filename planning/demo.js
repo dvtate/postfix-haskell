@@ -27,7 +27,10 @@ const fs = require('fs');
     const mod = await WebAssembly.instantiate(wasm.buffer, {});
 
     // Invoke WASM Functions
-    // console.log(mod.instance.exports.lshift(1, 1));
+    console.log(mod.instance.exports.lshift(1, 0));
+    console.log(mod.instance.exports.lshift(1, 1));
     console.log(mod.instance.exports.lshift(1, 2));
-    console.log(mod.instance.exports.lshift(6, 6));
+    console.log(mod.instance.exports.lshift(1, 3));
+    console.log(mod.instance.exports.lshift(1, 4));
+    console.log(mod.instance.exports.lshift(1, 5));
 })();
