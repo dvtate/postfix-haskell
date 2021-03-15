@@ -1,9 +1,10 @@
+const fs = require('fs');
+
 const lex = require('../lib/scan');
 const parse = require('../lib/parse');
 const error = require('../lib/error');
 const util = require('../tools/util');
 const Context = require('../lib/context');
-const fs = require('fs');
 
 (async () => {
     // Read program source
@@ -27,7 +28,7 @@ const fs = require('fs');
     const mod = await WebAssembly.instantiate(wasm.buffer, {});
 
     // Invoke WASM Functions
-    const {sqrt} = mod.instance.exports;
+    const { sqrt } = mod.instance.exports;
     console.log(sqrt(1));
     console.log(sqrt(2));
     console.log(sqrt(3));
@@ -38,5 +39,4 @@ const fs = require('fs');
     console.log(sqrt(8));
     console.log(sqrt(9));
     console.log(sqrt(10));
-
 })();
