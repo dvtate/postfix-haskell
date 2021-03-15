@@ -1,15 +1,9 @@
-# Increment function
-# { I32 } { 1 + } $succ target
-
-# { I32 I32 } { + 2 / } $average target
-
-
 # Average
-{ + 2 / } $avg =
+{ + 2.0 / } $avg =
 
 # Absolute value
 { true } {} $abs fun
-{ 0 < } { -1 * } $abs fun
+{ 0.0 < } { -1.0 * } $abs fun
 
 { # Square route via newton's method
 	{ # Tail-recursive helper
@@ -29,8 +23,21 @@
 	} $iter =
 
     # Start calculating with first guess being 1
-    1 iter
+    1.0 iter
 } $sqrt =
 
+{ F64 } {sqrt} $sqrt target
 
-2 sqrt :data
+"
+{ 1 } { } $abs fun
+{ 0.0 < } { -1.0 * } $abs fun
+
+{ F64 } {
+    { $guess = $x =
+        { true } { x x guess / guess + 2.0 / iter } $cond fun
+        { guess guess * x - abs x / 0.001 < } { guess } $cond fun
+        cond
+    } $iter =
+    1.0 iter
+} $sqrt target
+"

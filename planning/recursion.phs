@@ -1,8 +1,8 @@
 # Intentionally bad implementation of left-shift
 {
-    $count = $ret =
+    $ret = $count =
     { 1 } { ret } $branch fun
-    { count 0 > } { ret 2 * count 1 - lshift } $branch fun
+    { count 0 > } { count 1 - ret 2 * lshift } $branch fun
     branch
 } $lshift =
 

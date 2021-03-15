@@ -27,6 +27,16 @@ const fs = require('fs');
     const mod = await WebAssembly.instantiate(wasm.buffer, {});
 
     // Invoke WASM Functions
-    for (let i = 0; i < 6; i++)
-        console.log(mod.instance.exports.lshift(1, i));
+    const {sqrt} = mod.instance.exports;
+    console.log(sqrt(1));
+    console.log(sqrt(2));
+    console.log(sqrt(3));
+    console.log(sqrt(4));
+    console.log(sqrt(5));
+    console.log(sqrt(6));
+    console.log(sqrt(7));
+    console.log(sqrt(8));
+    console.log(sqrt(9));
+    console.log(sqrt(10));
+
 })();
