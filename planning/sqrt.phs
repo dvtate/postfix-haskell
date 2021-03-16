@@ -10,7 +10,7 @@
         $guess =
         $x =
 
-        # Are we less than 0.1% off?
+        # Do we have an acceptable margin of error?
         { guess guess * x - abs x / 1.0e-15 < } $good_enough =
 
         # We can improve the value by averaging with quotient
