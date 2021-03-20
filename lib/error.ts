@@ -3,12 +3,15 @@
  * Here are some reasons to stop the user from compiling Probably more will come as more things are added
  */
 
+import { Context } from "vm";
+import { LexerToken } from "./scan";
+
 // Base Class for parse-time errors
-class ParseError extends Error {
+export class ParseError extends Error {
     /**
-     * @param {String} message - Reason
+     * @param message - Reason
      */
-    constructor(message) {
+    constructor(message: string) {
         super(message);
     }
 
@@ -16,13 +19,16 @@ class ParseError extends Error {
 };
 
 // Reference specific section(s) of code
-class SyntaxError extends ParseError {
+export class SyntaxError extends ParseError {
+    tokens: LexerToken[];
+    ctx?: Context;
+
     /**
-     * @param {String} message - Reason
-     * @param {Token[] | Token} tokens - Location
-     * @param {Context} ctx - parser context
+     * @param message - Reason
+     * @param tokens - Location
+     * @param ctx - parser context
      */
-    constructor(message, tokens, ctx) {
+    constructor(message, tokens: LexerToken | LexerToken[], ctx?: Context) {
         super(message);
         this.tokens = tokens instanceof Array ? tokens : [tokens];
         this.ctx = ctx;
@@ -43,14 +49,3 @@ class DataTypeError extends SyntaxError {};
 
 // Unexpected
 class DataValueError extends SyntaxError {};
-
-//
-module.exports = {
-    ParseError,
-    SyntaxError,
-    // ValueError,
-    // DataError,
-    // ValueTypeError,
-    // DataTypeError,
-    // DataValueError,
-};

@@ -1,16 +1,25 @@
-const Macro = require('./macro');
-const value = require('./value');
-const error = require('./error');
+import Macro from "./macro";
+import * as value from "./value";
+import * as error from "./error";
+import { Context } from "vm";
+import { LexerToken } from "./scan";
 
-/**
+/*
  * These are useful for interactive shell and maybe for compile-time debugging
  *
  * They will not be included in compiled output
  */
 
 
-// This can be improved a lot...
-async function logWithToken(name, ctx, token, fn) {
+/**
+ * log output of macro
+ * @param name
+ * @param ctx
+ * @param token
+ * @param fn
+ */
+async function logWithToken(name: string, ctx: Context, token: LexerToken, fn: CallableFunction) {
+    // This can be improved a lot...
     console.log(`${name} - `, await fn(ctx, token));
 }
 
@@ -25,8 +34,8 @@ const debugOperators = {
 
         // Return debug object with relevant info
         const v = ctx.pop();
-        const ret = { syntaxType: syntaxTypes[v.type] };
-        if (v.type === value.ValueType.Data)
+        const ret: any = { syntaxType: syntaxTypes[v.type] };
+        if (v instanceof value.DataValue)
             ret.datatype = v.datatype;
         return ret;
     },
@@ -71,12 +80,10 @@ const debugOperators = {
 };
 
 // Export Macros because user shouldn't override
-module.exports = Object.entries(debugOperators).reduce((acc, [k, v]) => ({
+export default Object.entries(debugOperators).reduce((acc, [k, v]) => ({
     ...acc,
     [k] : new value.Value(
-        {},
+        undefined,
         value.ValueType.Macro,
-        new Macro((ctx, token) => {
-            logWithToken(k, ctx, token, v);
-        })),
+        new Macro((ctx, token) => logWithToken(k, ctx, token, v))),
 }), {});

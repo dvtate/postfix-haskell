@@ -1,10 +1,9 @@
-const readline = require('readline');
+import readline = require('readline');
 
-const lex = require('../lib/scan');
-const parse = require('../lib/parse');
-const Context = require('../lib/context');
-const fs = require('fs');
-const ctx = new Context();
+import lex from '../lib/scan';
+import parse from '../lib/parse';
+import Context from '../lib/context';
+import fs = require('fs');
 
 const flags = process.argv
     .filter(arg => arg.startsWith('--'))
@@ -17,6 +16,10 @@ const rl = readline.createInterface ({
     prompt: "> "
 });
 
+// Preserve context
+const ctx = new Context();
+
+
 // For each line
 rl.on('line', line => {
 
@@ -25,29 +28,29 @@ rl.on('line', line => {
         const fname = line.split(':')[1];
         const src = fs.readFileSync(fname).toString();
         console.log(src);
-        const ev = parse(lex.parse(src, fname), ctx);
+        const ev = parse(lex(src, fname), ctx);
         if (!(ev instanceof Context))
             console.log(ev);
         return;
     }
 
     // Tokenize the line
-    const toks = lex.parse(line, 'stdin');
+    const toks = lex(line, 'stdin');
     if (flags.includes('lex'))
         console.log(toks);
 
     // Parse
     if (!flags.includes('lex')) {
+        const e = parse(toks, ctx);
         if (flags.includes('verbose'))
-            console.log(parse(toks, ctx));
-        else {
-            const e = parse(toks, ctx);
-            if (e instanceof Context) {
-                if (ctx.stack.length)
-                    console.log(ctx.stack);
-            } else {
-                console.log(e);
-            }
+            return console.log(e);
+
+        if (e instanceof Context) {
+            if (e.stack.length)
+                console.log(e.stack);
+            return;
         }
+
+        console.log(e);
     }
 });

@@ -1,27 +1,78 @@
+import WasmNumber from "./numbers";
 
-// This handles Context-free grammars
+// This handles Context-free grammar
 
 // TODO optimize, use regex, etc.
 // TODO chars
 
-const { WasmNumber } = require("./numbers");
 
 // Enums
-const TokenType = {
-    String: 0,
-    Number: 1,
-    ContainerOpen: 2,
-    ContainerClose: 3,
-    Identifier: 4,
-    Block: 5,
+export enum TokenType {
+    String = 0,
+    Number = 1,
+    ContainerOpen = 2,
+    ContainerClose = 3,
+    Identifier = 4,
+    Block = 5,
 };
 
 // Internal
-const ContainerType = {
-    Curly: 0,
-    Bracket: 1,
-    Paren: 2,
+export enum ContainerType {
+    Curly = 0,
+    Bracket = 1,
+    Paren = 2,
 };
+
+// Generic token
+export class LexerToken {
+    token: string;
+    type: TokenType;
+    position?: number;
+    file?: string;
+
+    static Type = TokenType;
+
+    constructor(token, type, position, file) {
+        this.token = token;
+        this.type = type;
+        this.position = position;
+        this.file = file;
+    }
+
+    // TODO toString()
+};
+
+// Number literal
+export class NumberToken extends LexerToken {
+    value: WasmNumber;
+
+    constructor(token, position, file) {
+        super(token, TokenType.Number, position, file);
+        this.value = new WasmNumber().fromString(token);
+    }
+};
+
+/**
+ * The Token is initialized as a container open/close token
+ * later it's converted to a block and the body is assgined
+ */
+export class BlockToken extends LexerToken {
+    subtype: ContainerType;
+    body!: Array<LexerToken>;
+
+    constructor(token, position, file) {
+        const type = '[{('.includes(token) ? TokenType.ContainerOpen : TokenType.ContainerClose;
+        super(token, type, position, file);
+        this.subtype = [
+            ContainerType.Curly, ContainerType.Curly,
+            ContainerType.Bracket, ContainerType.Bracket,
+            ContainerType.Paren, ContainerType.Paren,
+        ]['{}[]()'.indexOf(token)];
+    }
+};
+
+
+
 
 /**
  * Describes tokenized string
@@ -31,7 +82,7 @@ const ContainerType = {
  *
  * @returns {LexerToken}
  */
-function toToken(token, options) {
+function toToken(token: string, position: number, file: string): LexerToken|null {
     // Trim whitespace
     token = token.trim();
 
@@ -40,44 +91,19 @@ function toToken(token, options) {
         return null;
 
     // String
-    if (token[0] === '"') {
-        return {
-            token,
-            type: TokenType.String,
-            ...options,
-        };
+    if (token[0] === '"')
+        return new LexerToken(token, TokenType.String, position, file);
 
     // Number (note this makes NaN an identifier)
-    } else if (!isNaN(parseFloat(token))) {
-        return {
-            token,
-            type: TokenType.Number,
-            value: new WasmNumber().fromString(token),
-            ...options,
-        };
+    if (!isNaN(parseFloat(token)))
+        return new NumberToken(token, position, file);
 
     // Separators
-    } else if ('{}[]()'.includes(token)) {
-        return {
-            token,
-            type: '[{('.includes(token) ? TokenType.ContainerOpen : TokenType.ContainerClose,
-            subtype: [
-                ContainerType.Curly, ContainerType.Curly,
-                ContainerType.Bracket, ContainerType.Bracket,
-                ContainerType.Paren, ContainerType.Paren,
-            ]['{}[]()'.indexOf(token)],
-            ...options,
-        }
+    if ('{}[]()'.includes(token))
+        return new BlockToken(token, position, file);
 
     // Identifier
-    } else {
-        // Break namespaces
-        return {
-            token,
-            type: TokenType.Identifier,
-            ...options,
-        };
-    }
+    return new LexerToken(token, TokenType.Identifier, position, file);
 }
 
 /**
@@ -87,17 +113,18 @@ function toToken(token, options) {
  * @param {string} file - file name/path
  * @returns {LexerToken[]} - List of tokens
  */
-function lex(src, file) {
-    let i = 0, prev = 0;
-    const ret = [];
+export function lex(src: string, file: string): LexerToken[] {
+    let i: number = 0,
+        prev: number = 0;
+    const ret: LexerToken[] = [];
 
     // Add token to return
-    const addToken = s => ret.push(toToken(s, { position: i, file }));
+    const addToken = (s: string) => ret.push(toToken(s, i, file));
 
     // Find end of string
     const endStr = () => {
         // Determine if quote is escaped
-        function isEscaped(s, i) {
+        function isEscaped(s: string, i: number) {
             let e = false;
             while (s[--i] === '\\')
                 e = !e;
@@ -150,10 +177,8 @@ function lex(src, file) {
         addToken(src.substring(prev, i));
 
     // Return list of token objects
-    return ret.filter(s => s);
+    return ret.filter(Boolean);
 }
-
-
 
 /**
  * Throw syntax error
@@ -162,12 +187,13 @@ function lex(src, file) {
  * @param {LexerToken[]} tokens - problematic tokens
  * @param {string} file - file name/path
  */
-function throwParseError(message, tokens, file) {
+function throwParseError(message: string, tokens: LexerToken[], file?: string) {
     throw {
         type: 'SyntaxError',
         message,
         tokens,
         stack: new Error(),
+        file,
     };
 }
 
@@ -176,10 +202,9 @@ function throwParseError(message, tokens, file) {
  * Really only benefit here is that this collapses containers
  *
  * @param {string} code - code to scan
- * @param {strng} file - file name/path
- * @returns {ParseTree}
+ * @param {string} file - file name/path
  */
-function parse(code, file) {
+export default function parse(code: string, file: string): LexerToken[] {
 
     const tokens = lex(code, file);
     let ret = [];
@@ -191,7 +216,7 @@ function parse(code, file) {
             case TokenType.ContainerClose:
                 // Index of most recent container
                 // TODO use .reverse+findIndex?
-                let ind;
+                let ind: number;
                 for (ind = ret.length - 1; ind >= 0; ind--)
                     if (ret[ind].type === TokenType.ContainerOpen)
                         break;
@@ -201,6 +226,7 @@ function parse(code, file) {
                     throwParseError('Unexpected symbol ' + tok.token, [tok]);
 
                 // Not matching
+                // @ts-ignore
                 if (ret[ind].subtype !== tok.subtype)
                     throwParseError(`Container mismatch ${ret[ind].token} vs. ${tok.token}`, [ret[ind], tok]);
 
@@ -218,11 +244,3 @@ function parse(code, file) {
     });
     return ret;
 }
-
-// Exports
-module.exports = parse;
-module.exports.parse = parse; // TODO update api
-module.exports.TokenType = TokenType;
-
-// only used for testing
-module.exports.lex = lex;

@@ -1,31 +1,27 @@
-const binaryen = require("binaryen");
-const wabtProm = require("wabt")();
+import binaryen = require("binaryen");
+import wabtMod = require("wabt");
 
-const value = require('./value');
-const types = require('./datatypes');
-const error = require('./error');
-const expr = require('./expr');
+import * as value from './value';
+import * as types from './datatypes';
+import * as error from './error';
+import * as expr from './expr';
+import { LexerToken } from "./scan";
 
+import debugMacros from './debug_macros';
+import globalOps from './globals';
 
-Map.prototype.clone = function clone(ret = new Map()) {
-    for (const k in this.keys())
-        ret.set(k, this.get(k));
-    return ret;
-};
-
+const wabtProm = wabtMod();
 
 // Should probably make a ContextProxy class to help with tracing
 // Or maybe just a clone method would be ok (but less efficient)
 
 // Return Types for Context.traceIO() method
-class TraceResults {
-    /**
-     *
-     * @param {Value[]} takes
-     * @param {Value[]} gives
-     * @param {number} delta
-     */
-    constructor(takes, gives, delta, recursive = null) {
+export class TraceResults {
+    takes: value.Value[];
+    gives: value.Value[];
+    delta: number;
+
+    constructor(takes: value.Value[], gives: value.Value[], delta: number) {
         this.takes = takes;
         this.gives = gives;
         this.delta = delta;
@@ -37,54 +33,54 @@ class TraceResults {
  *
  * TODO remove public API's
  */
-class Context {
+export default class Context {
+    // Place to push/pop arugments & exprs
+    stack: value.Value[] = [];
+
+    // Exports
+    module: any = {};
+
+    // Identifier map
+    scopes: Array<{ [k: string] : value.Value }> = [{}];
+
+    // Invoke stack
+    trace: value.Value[] = [];
+
+    // Tracking for traceIO and recursion stuff
+    traceResults: Array<{
+        token: LexerToken,
+        value: value.Value,
+        result?: TraceResults,
+        body?: expr.RecursiveBodyExpr,
+    }> = [];
+    globals: { [k: string] : value.Value };
+
+    // Stack tracing cunters
+    initialStackSize: number = 0;
+    minStackSize: number = 0;
+
+    // Warnings
+    warnings: Array<{ token: LexerToken, msg: string }> = [];
+
+    // Exports
+    exports: Array<expr.FunExportExpr> = [];
+
+    recursiveMacros: Set<value.Value> = new Set();
+
     // Link external class
     static TraceResults = TraceResults;
 
     // Default constructor
     constructor() {
-        // Place to push/pop arugments
-        this.stack = [];
-
-        // Exports
-        this.module = {};
-
-        // Identifier map
-        this.scopes = [{}];
-
-        // Invoke stack
-        this.trace = [];
-
-        this.traceResults = [
-            /*
-            {
-                value: Value,
-                result: null |
-            }
-            */
-        ]
-
         // Initialize globals
         this.globals = {
-            ...require('./globals'),    // Operators
-            ...require('./debug_macros'), // Debug operators
+            ...globalOps,    // Operators
+            ...debugMacros, // Debug operators
         };
         Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
             this.globals[typeName] = new value.Value(null, value.ValueType.Type, type)
         );
         this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.Type());
-
-        // Stack tracing cunters
-        this.initialStackSize = 0;
-        this.minStackSize = 0;
-
-        // Warnings
-        this.warnings = [];
-
-        // Exports
-        this.exports = [];
-
-        this.recursiveMacros = new Set();
     }
 
     /**
@@ -152,7 +148,7 @@ class Context {
      * @param {Array<Object<String, Value>>} [scopes] - scopes to check in
      * @returns {[value, scope] | undefined} - returns value if found
      */
-    getId(id, scopes) {
+    getId(id, scopes?) {
         // Use provided scope
         scopes = scopes || this.scopes;
 
@@ -250,7 +246,7 @@ class Context {
         for (let i = this.traceResults.length - 1; i >= 0; i--)
             if (this.traceResults[i].value === v)
                 return this.traceResults[i];
-        return false;
+        return null;
     }
 
     /**
@@ -273,7 +269,7 @@ class Context {
         const recursiveInv = this.trace.includes(v.value);
 
         // Check trace status
-        const tResults = this._getTraceResults(v, token);
+        const tResults = this._getTraceResults(v);
 
         // console.log("invoke:", (token && token.token),
         //     'recursive:', recursiveInv,
@@ -307,7 +303,7 @@ class Context {
         }
 
         // It's recursive and we didn't see it yet
-        if (recursiveInv && tResults.result !== null && !this.recursiveMacros.has(v.value))
+        if (recursiveInv && tResults && tResults.result !== null && !this.recursiveMacros.has(v.value))
             throw v;
 
         // if (!recursiveInv)
@@ -315,14 +311,16 @@ class Context {
 
         // This is complicated because of recursion :(
         // TODO copy explanation from tg channel
-        if (tResults === false) { // Not currently tracing
+        if (tResults === null) { // Not currently tracing
             // Trace results not found, Handle recursive call
             // TODO if all inputs are constexprs => inline/invoke simple
 
             // Replace stack with expression wrappers so that they can be replaced with locals later
             const stack = this.stack.slice();
             this.stack = this.stack.map((v, i) =>
-                new expr.RecursiveTakesExpr(v.token, v.datatype, this.stack.length - i, v));
+                v instanceof expr.DataExpr || v instanceof value.DataValue
+                ? new expr.RecursiveTakesExpr(v.token, v.datatype, this.stack.length - i, v)
+                : v);
 
             // Identify value as recursive
             this.recursiveMacros.add(v.value);
@@ -340,14 +338,14 @@ class Context {
             // Generate input locals
             if (!ios.takes)
                 console.log(ios);
-            body.takes = ios.takes;
+            body.takes = ios.takes as expr.DataExpr[];
             body.takeExprs = body.takes.map(e =>
-                e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : e);
+                e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : null);
 
             // Generate results
-            body.gives = ios.gives;
+            body.gives = ios.gives as expr.DataExpr[];
             body.giveExprs = body.gives.map(e =>
-                e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : e);
+                e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : null);
 
             // Trace again, this time substituting non-recursive trace results with recursive calls
             this.stack = body.takeExprs.slice();
@@ -360,7 +358,7 @@ class Context {
             this.recursiveMacros.delete(v.value);
 
             // Update body
-            body.gives = ios2.gives;
+            body.gives = ios2.gives as expr.DataExpr[];
             // body.takes = ios2.takes;
 
             // Update stack
@@ -459,7 +457,7 @@ class Context {
      * @param {string} msg - what's wrong
      * @returns {void}
      */
-    warn(token, msg) {
+    warn(token: LexerToken, msg: string) {
         console.warn("WARNING: ", msg, token);
         this.warnings.push({ token, msg });
     }
@@ -467,12 +465,12 @@ class Context {
     /**
      * Compiles program to WASM Text form
      * @param {Object} options - settings
-     * @returns {string} - WAST source code
+     * @returns {Promise<string>} - WAST source code
      */
     async outWast({ fast = false, folding = false, optimize = false, validate = false }) {
         // Create module from generated WAST
         const src = `(module \n${
-            this.exports.map(e => e.out(this)).join('\n')
+            this.exports.map(e => e.out()).join('\n')
         })`;
         if (fast)
             return src;
@@ -564,14 +562,8 @@ class Context {
 
         // Validate
         const invalid = mod.validate();
-        if (invalid) {
-            console.error(invalid);
-        }
 
         return mod.toBinary({log: true});
     }
 
 };
-
-// Exports
-module.exports = Context;

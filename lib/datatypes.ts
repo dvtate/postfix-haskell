@@ -1,10 +1,13 @@
+import { LexerToken } from './scan';
 
 // Abstract Base class
-class Type {
+export class Type {
+    token: LexerToken;
+
     /**
-     * @param {Token} [token] -
+     * @param {LexerToken} [token] -
      */
-    constructor(token) {
+    constructor(token: LexerToken = undefined) {
         this.token = token;
     }
 
@@ -13,50 +16,48 @@ class Type {
      * @returns {Type} - Underlying datatype
      * @virtual
      */
-    getBaseType() { return this; }
+    getBaseType(): Type { return this; }
 
     /**
      * Gives the wasm typename for given type
      * @returns {sting} - typename
      * @virtual
      */
-    getWasmTypeName() { return ''; }
+    getWasmTypeName(): string { return ''; }
 
     /**
      * Do Typecheck
      * @param {Type} type - type to check against
      * @virtual
      */
-    check() {
+    check(_ : Type): boolean {
         // Default behavior is to act as a wildcard
         return true;
     }
 };
 
 // More specific than types, used for applying methods and stuff
-class ClassType extends Type {
+export class ClassType extends Type {
+    type: Type;
+    id: number;
+
+    // Unique ids
     static _uid = 0;
+
     /**
      * @param {LexerToken} token - code where
      * @param {Type} type - Underlying Data type
      */
-    constructor(token, type, id = null) {
+    constructor(token: LexerToken, type: Type, id: number = ClassType._uid++) {
         super(token);
         this.type = type;
-        this.id = id === null ? ClassType._uid++ : id;
-    }
-
-    /**
-     * @returns {ClassType} - Cloned class type
-     */
-    clone() {
-        return new ClassType(this.token, this.type, this.id);
+        this.id = id;
     }
 
     /**
      * @override
      */
-    check(type) {
+    check(type: Type):boolean {
         // Check class
         if (type instanceof ClassType) {
             // Check compatible class
@@ -96,7 +97,7 @@ class ClassType extends Type {
     /**
      * @returns {Number[]} - list of class ids for this type
      */
-    getClassIds() {
+    getClassIds(): Number[] {
         const ret = [this.id];
         let type = this.type;
         while (type instanceof ClassType) {
@@ -109,26 +110,18 @@ class ClassType extends Type {
 
 // When need to be able to handle more than one type
 //  Used for types resulting from `|` operator
-class UnionType extends Type {
-    /**
-     * @param {Type[]} types
-     */
-    constructor(token = undefined, types = []) {
+export class UnionType extends Type {
+    types: Type[];
+
+    constructor(token: LexerToken = undefined, types = []) {
         super(token);
         this.types = types;
     }
 
     /**
-     * @returns {UnionType} - Cloned UnionType instance
-     */
-    clone() {
-        return new UnionType(this.token, this.types);
-    }
-
-    /**
      * @override
      */
-    check(type) {
+    check(type): boolean {
         // Don't care about classes
         if (type instanceof ClassType) {
             type = type.getBaseType();
@@ -148,28 +141,19 @@ class UnionType extends Type {
      * @override
      */
     getWasmTypeName() {
-        throw new Error('cannot get wasm type for a union');
+        return 'invalid union type';
     }
 };
 
 // When need to store more than one piece of data in a single value
 //  Used for types resulting from `pack` operator
-class TupleType extends Type {
-    /**
-     * @param {Type[]} types
-     */
-    constructor(token = undefined, types = []) {
+export class TupleType extends Type {
+    types: Type[];
+
+    constructor(token: LexerToken = undefined, types: Type[] = []) {
         super(token);
         this.types = types;
     }
-
-    /**
-     * @returns {TupleType} - Cloned TupleType instance
-     */
-    clone() {
-        return new TupleType(this.token, this.types);
-    }
-
 
     /**
      * @override
@@ -181,7 +165,7 @@ class TupleType extends Type {
     /**
      * @override
      */
-    check(type) {
+    check(type): boolean {
         // Don't care about classes
         if (type instanceof ClassType) {
             type = type.getBaseType();
@@ -206,7 +190,9 @@ class TupleType extends Type {
 };
 
 // Type that's a component of compilation target
-class PrimitiveType extends Type {
+export class PrimitiveType extends Type {
+    name: string;
+
     // Map of WASM primitive types
     static Types = {
         I32: new PrimitiveType('i32'),
@@ -218,16 +204,9 @@ class PrimitiveType extends Type {
     /**
      * @param {String} name - formal name for type in target spec
      */
-    constructor(name) {
+    constructor(name: string) {
         super();
         this.name = name;
-    }
-
-    /**
-     * @returns {PrimitiveType} - Cloned PrimitiveType instance
-     */
-    clone(){
-        return new PrimitiveType(this.name);
     }
 
     /**
@@ -240,7 +219,7 @@ class PrimitiveType extends Type {
     /**
      * @override
      */
-    check(type) {
+    check(type: Type): boolean {
         // Don't care about classes
         if (type instanceof ClassType) {
             type = type.getBaseType();
@@ -252,5 +231,3 @@ class PrimitiveType extends Type {
         return this == type;
     }
 };
-
-module.exports = { Type, ClassType, UnionType, TupleType, PrimitiveType };

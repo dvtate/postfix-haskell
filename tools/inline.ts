@@ -1,8 +1,12 @@
-const lex = require('../lib/scan');
-const parse = require('../lib/parse');
-const error = require('../lib/error');
-const Context = require('../lib/context');
-const wabtProm = require('wabt')();
+
+import * as error from '../lib/error';
+import lex from '../lib/scan';
+import parse from '../lib/parse';
+import Context from '../lib/context';
+
+// Import wabt promise
+import wabtMod = require('wabt');
+const wabtProm = wabtMod();
 
 /**
  *
@@ -13,10 +17,10 @@ const wabtProm = require('wabt')();
  */
 async function compile(src, importObject = {}, options = {}) {
     // TODO bindings
-    const ctx = parse(lex.parse(src, "inline"));
+    const ctx = parse(lex(src, "inline"));
     if (!(ctx instanceof Context))
         throw ctx;
-    const wasm = await ctx.outWasm({});
+    const wasm = await ctx.outWasm();
     const valid = WebAssembly.validate(wasm.buffer);
     if (!valid)
         throw new Error("WebAssembly.validate() failed");
@@ -68,9 +72,7 @@ async function compileWat(src, importObject = {}) {
     });
 
     // Validate
-    const invalid = mod.validate();
-    if (invalid)
-        return console.error(invalid);
+    mod.validate();
 
     const bin = mod.toBinary({log: true});
     const valid = WebAssembly.validate(bin.buffer);

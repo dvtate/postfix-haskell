@@ -1,10 +1,12 @@
-const Macro = require('./macro');
-const value = require('./value');
-const types = require('./datatypes');
-const error = require('./error');
-const expr = require('./expr');
-const { WasmNumber } = require('./numbers');
-const { TraceResults } = require('./context');
+import Macro from './macro';
+import * as value from './value';
+import * as types from './datatypes';
+import * as error from './error';
+import * as expr from './expr';
+import WasmNumber from './numbers';
+import { TraceResults } from './context';
+import { LexerToken } from './scan';
+
 
 // TODO there need to be a lot of special errors for this so that user knows what to fix
 
@@ -16,15 +18,19 @@ const { TraceResults } = require('./context');
  *
  * Functions are the only way to make branching code
  */
-module.exports = class Fun {
+export default class Fun {
+    tokens: LexerToken[] = [];
+    conditions: value.Value[] = []
+    actions: value.Value[] = [];
+
     /**
-     * @param {Token} [token] - token for first def
-     * @param {Value<Macro>} [condition] - condition macro for first def
-     * @param {Value<Macro>} [action] - action macro for first def
+     * @param [token] - token for first def
+     * @param [condition] - condition macro for first def
+     * @param [action] - action macro for first def
      */
     constructor(token, condition, action) {
         // Macros corresponding to checks and outputs
-        this.tokens = token !== undefined ? [token] : [];
+        this.tokens = token ? [token] : [];
         this.conditions = condition ? [condition] : [];
         this.actions = action ? [action] : [];
     }
@@ -109,7 +115,7 @@ module.exports = class Fun {
             .map((ret, i) =>
                 !(ret instanceof Array || ret instanceof error.SyntaxError)
                 && (ret.type === value.ValueType.Expr
-                    || (ret.type === value.ValueType.Data && ret.value.value != 0n))
+                    || (ret.type === value.ValueType.Data && ret.value.value != BigInt(0)))
                 && [ret, this.actions[i]])
             .filter(b => !!b);
 
@@ -126,7 +132,7 @@ module.exports = class Fun {
         let i = branches.length - 1;
         for (; i >= 0; i--) {
             // Constexpr-truthy branch, this makes an else clause, even if there were others after it
-            if (branches[i][0].type === value.ValueType.Data && branches[i][0].value.value != 0n)
+            if (branches[i][0].type === value.ValueType.Data && branches[i][0].value.value != BigInt(0))
                 break;
 
             // Non-constexpr, keep going in case we can eliminate some paths w/ const-exprs

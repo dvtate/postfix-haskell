@@ -1,4 +1,8 @@
-const Context = require("./context");
+import Context from "./context";
+import { BlockToken, LexerToken } from "./scan";
+import parse from "./parse";
+import * as error from './error';
+
 
 /* TODO
  * Break this into OOP approach
@@ -10,24 +14,27 @@ const Context = require("./context");
 /**
  * Macros are similar to blocks of code, or executable arrays in postscript
  */
-module.exports = class Macro {
+export default class Macro {
+    action: (ctx: Context, token: LexerToken) => Context | Array<string> | undefined | SyntaxError;
+    body?: LexerToken[];
+
     /**
-     * @param {(Context, Token) => Any} action - body of the macro
-     * @param {LexerToken[]|null} [body] - optional body
+     * @param action - body of the macro
+     * @param body - optional body source
      */
-    constructor(action, body = null) {
+    constructor(action, body?) {
         this.action = action;
         this.body = body;
     }
 
     /**
      * Construct Macro object from literal token
-     * @param {Context} ctx - context for literal
-     * @param {LexerToken} token - token for literal
-     * @param {Function} parse - function for parser
-     * @returns {Macro} - New Macro object for literal
+     * @param ctx - context for literal
+     * @param token - token for literal
+     * @param parse - function for parser
+     * @returns - New Macro instance for literal
      */
-    static fromLiteral(ctx, token, parse) {
+    static fromLiteral(ctx: Context, token: BlockToken, parse: (toks: LexerToken[], ctx: Context) => Context | error.SyntaxError): Macro {
         // Copy lexical scopes
         const scopesCp = ctx.scopes.slice();
 
