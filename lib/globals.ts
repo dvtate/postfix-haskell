@@ -1,10 +1,10 @@
-const value = require('./value');
-const types = require('./datatypes');
-const Macro = require('./macro');
-const Context = require('./context');
-const { WasmNumber } = require('./numbers');
-const Fun = require('./function');
-const expr = require('./expr');
+import * as value from './value'
+import * as types from './datatypes'
+import * as expr from './expr'
+import Macro from './macro'
+import Context from './context'
+import WasmNumber from './numbers'
+import Fun from './function'
 
 /*
 These are globally defined operators some may eventually be moved to standard library
@@ -179,7 +179,7 @@ const operators = {
 
             // Branch
             if (v.type === value.ValueType.Type) {
-                if (!(v instanceof types.TupleType))
+                if (!(v.value instanceof types.TupleType))
                     return ['expected a tuple to unpack'];
 
                 // Push types onto the stack
@@ -331,7 +331,7 @@ const operators = {
             const ovs = ev1.gives;
             if (ovs.some(v => ![value.ValueType.Data, value.ValueType.Expr].includes(v.type)))
                 return ['wasm exports can only return data values'];
-            out.outputs = ovs;
+            out.outputs = ovs as expr.DataExpr[]; // TODO more safety checks
 
             ctx.exports.push(out);
         },
@@ -587,7 +587,7 @@ const funs = {
             switch (a.type) {
                 // Typechecking
                 case value.ValueType.Type:
-                    ctx.push(toBool(b.value.check(a.value)));
+                    ctx.push(toBool(b.value.check(a.value), token));
                     break;
 
                 // Value comparison
@@ -608,7 +608,7 @@ const funs = {
 
                     // Runtime check
                     if (b.type === value.ValueType.Expr) {
-                        if (a.value.value === 0n) {
+                        if (a.value.value === BigInt(0)) {
                             ctx.push(new expr.InstrExpr(
                                 token,
                                 types.PrimitiveType.Types.I32,
@@ -633,7 +633,7 @@ const funs = {
                     if (!b.datatype.check(a.datatype))
                         return ['incompatible types'];
 
-                    if (a.type === value.ValueType.Data && a.value.value === 0n) {
+                    if (a.type === value.ValueType.Data && a.value.value === BigInt(0)) {
                         ctx.push(new expr.InstrExpr(
                             token,
                             types.PrimitiveType.Types.I32,
@@ -712,17 +712,17 @@ const funs = {
 };
 
 // Export map of macros
-module.exports = Object.entries(operators).reduce((ret, [k, v]) =>
+const exportsObj = Object.entries(operators).reduce((ret, [k, v]) =>
     ({
         ...ret,
         [k] : new value.Value(
-            {},
+            null,
             value.ValueType.Macro,
             new Macro(v.action)),
     }), {});
 
 // Add some other values as well
-module.exports = {
-    ...module.exports,
+export default {
+    ...exportsObj,
     ...funs,
 };

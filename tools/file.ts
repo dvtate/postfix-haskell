@@ -1,13 +1,15 @@
 #!/usr/bin/node
 
 // External
-const fs = require('fs');
+import fs = require('fs');
 
 // Internal
-const lex = require('../lib/scan');
-const parse = require('../lib/parse');
-const error = require('../lib/error');
-const utils = require('./util');
+import lex, { NumberToken } from "../lib/scan";
+import parse from '../lib/parse';
+import * as error from '../lib/error';
+import Context from '../lib/context';
+
+import * as util from './util';
 
 // Read file
 const fname = process.argv[process.argv.length - 1];
@@ -23,7 +25,7 @@ const performance = {
 
 // Lex
 let start = performance.now();
-const ptree = lex.parse(src, fname);
+const ptree = lex(src, fname);
 if (process.env.TRACK_TIME)
     console.log('lex:', performance.now() - start);
 
@@ -32,7 +34,7 @@ start = performance.now();
 const ctx = parse(ptree);
 if (ctx instanceof error.SyntaxError) {
     // console.log(ctx.tokens);
-    console.log(utils.formatErrorPos([ctx]));
+    console.log(util.formatErrorPos([ctx]));
 }
 if (process.env.TRACK_TIME)
     console.log('parse:', performance.now() - start);
@@ -41,10 +43,10 @@ if (process.env.TRACK_TIME)
 // Output assembly
 (async function() {
     start = performance.now();
-    const wast = await ctx.outWast({
+    const wast = await (ctx as Context).outWast({
         folding: !!Number(process.env.FOLDING),
-        beautify: true,
-        optimize: Number(process.env.OPTIMIZE),
+        fast: false,
+        optimize: Boolean(Number(process.env.OPTIMIZE)),
     });
     console.log(wast);
     if (process.env.TRACK_TIME)

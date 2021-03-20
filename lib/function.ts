@@ -1,10 +1,12 @@
-const Macro = require('./macro');
-const value = require('./value');
-const types = require('./datatypes');
-const error = require('./error');
-const expr = require('./expr');
-const { WasmNumber } = require('./numbers');
-const { TraceResults } = require('./context');
+import Macro from './macro';
+import * as value from './value';
+import * as types from './datatypes';
+import * as error from './error';
+import * as expr from './expr';
+import WasmNumber from './numbers';
+import Context, { TraceResults } from './context';
+import { LexerToken } from './scan';
+
 
 // TODO there need to be a lot of special errors for this so that user knows what to fix
 
@@ -16,15 +18,19 @@ const { TraceResults } = require('./context');
  *
  * Functions are the only way to make branching code
  */
-module.exports = class Fun {
+export default class Fun {
+    tokens: LexerToken[] = [];
+    conditions: value.Value[] = []
+    actions: value.Value[] = [];
+
     /**
-     * @param {Token} [token] - token for first def
-     * @param {Value<Macro>} [condition] - condition macro for first def
-     * @param {Value<Macro>} [action] - action macro for first def
+     * @param [token] - token for first def
+     * @param [condition] - condition macro for first def
+     * @param [action] - action macro for first def
      */
     constructor(token, condition, action) {
         // Macros corresponding to checks and outputs
-        this.tokens = token !== undefined ? [token] : [];
+        this.tokens = token ? [token] : [];
         this.conditions = condition ? [condition] : [];
         this.actions = action ? [action] : [];
     }
@@ -51,14 +57,13 @@ module.exports = class Fun {
     }
 
     /**
-     * @param {Context} ctx - parser context
-     * @param {Token} token - token of invocation
      * @returns {SyntaxError|Context} - same as return value of Macro.action()
      */
-    action(ctx, token) {
+    action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
         ctx.stack = ctx.stack.map(v =>
-            v.type === value.ValueType.Expr && v.constructor.expensive
+            // @ts-ignore
+            v instanceof expr.DataExpr && v.constructor.expensive
                 ? new expr.TeeExpr(v.token, v)
                 : v);
 
@@ -85,8 +90,9 @@ module.exports = class Fun {
 
         // Check types
         const typeErr = conds.find(rv =>
-            ![value.ValueType.Data, value.ValueType.Expr].includes(rv.type)
-            || !types.PrimitiveType.Types.I32.check(rv.datatype) && rv);
+            (rv instanceof value.DataValue || rv instanceof expr.DataExpr)
+            && (![value.ValueType.Data, value.ValueType.Expr].includes(rv.type)
+                || !types.PrimitiveType.Types.I32.check(rv.datatype) && rv));
         if (typeErr) {
             console.log("typerror: ", typeErr);
             return ['function conditions must put an I32 on top of stack'];
@@ -99,7 +105,7 @@ module.exports = class Fun {
         if (errs.length) {
             console.log('[warning] fn errs: ', errs);
             // TODO we need to make an error datatype that combines these into a single error
-            ctx.warn.push(...errs);
+            // ctx.warn(...errs);
         }
 
         // Create a list of pairs containing possibly truthy branch conditions
@@ -109,7 +115,7 @@ module.exports = class Fun {
             .map((ret, i) =>
                 !(ret instanceof Array || ret instanceof error.SyntaxError)
                 && (ret.type === value.ValueType.Expr
-                    || (ret.type === value.ValueType.Data && ret.value.value != 0n))
+                    || (ret.type === value.ValueType.Data && ret.value.value != BigInt(0)))
                 && [ret, this.actions[i]])
             .filter(b => !!b);
 
@@ -126,7 +132,7 @@ module.exports = class Fun {
         let i = branches.length - 1;
         for (; i >= 0; i--) {
             // Constexpr-truthy branch, this makes an else clause, even if there were others after it
-            if (branches[i][0].type === value.ValueType.Data && branches[i][0].value.value != 0n)
+            if (branches[i][0].type === value.ValueType.Data && branches[i][0].value.value != BigInt(0))
                 break;
 
             // Non-constexpr, keep going in case we can eliminate some paths w/ const-exprs
@@ -144,14 +150,17 @@ module.exports = class Fun {
         // Unfortunately we have to trace in order to construct the branch expression
 
         // Trace ios, filter recursive branches
-        const ios = branches
+        const traceResults = branches
             .slice(i)
             .map(b => ctx.traceIO(b[1], b[1].token || token))
             .filter(io => io !== null);
 
-        const err = ios.find(t => !(t instanceof TraceResults));
+        // Look for an error
+        const err = traceResults.find(t => !(t instanceof TraceResults)) as error.SyntaxError;
         if (err)
             return err;
+
+        const ios = traceResults as TraceResults[];
 
         // Verify consistent # i/o's
         if (ios.some(t => t.delta !== ios[0].delta)) {
@@ -175,8 +184,8 @@ module.exports = class Fun {
         });
 
         // Verify all have same return types
-        const first = ios[0].gives;
-        if (ios.some(t => t.gives.some((v, i) => v.datatype !== first[i].datatype)))
+        const first = ios[0].gives as expr.DataExpr[];
+        if (ios.some(t => t.gives.some((v, i) => (v instanceof value.DataValue || v instanceof expr.DataExpr) && v.datatype !== first[i].datatype)))
             return ['function must have consistent return types'];
 
         // Drop inputs from stack

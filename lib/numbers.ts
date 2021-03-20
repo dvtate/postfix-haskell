@@ -14,22 +14,24 @@
 // TODO: DON'T USE GET/SET METHODS!
 
 // WASM Data Types
-const NumberType = {
-    I32: 1,
-    I64: 2,
+export enum NumberType {
+    I32 = 1,
+    I64 = 2,
 
     // Note Unsigned int types not fully supported
-    U32: 3,
-    U64: 4,
+    U32 = 3,
+    U64 = 4,
 
-    F32: 5,
-    F64: 6,
+    F32 = 5,
+    F64 = 6,
 };
 
 // Emulate WASM number types
-class WasmNumber {
+export default class WasmNumber {
     // type : NumberType,
     // _repr : Float*Array | Bigint
+    _type: NumberType;
+    _repr: Float32Array | Float64Array | bigint;
 
     /**
      * Make a wasm number wrapper
@@ -37,14 +39,9 @@ class WasmNumber {
      * @param {NumberType} type - enum
      * @param {Number} n
      */
-    constructor(type, n = 0) {
-        if (type !== undefined) {
-            this._type = type;
-            this.value = n;
-        } else {
-            this._type = NumberType.F64;
-            this._repr = 0;
-        }
+    constructor(type: NumberType = NumberType.F64, n: number | bigint = 0) {
+        this._type = type;
+        this.value = n;
     }
 
     // Type enum
@@ -53,9 +50,9 @@ class WasmNumber {
     /**
      * Current numerical type
      *
-     * @returns {WasmNumber.Type
+     * @returns {WasmNumber.Type}
      */
-    get type() {
+    get type(): NumberType {
         return this._type;
     }
 
@@ -64,10 +61,10 @@ class WasmNumber {
     /**
      * Change type, also updates internal representation
      */
-    set type(type) {
-        const n = this.get();
+    set type(type: NumberType) {
+        const v = this.value;
         this._type = type;
-        this.set(n);
+        this.value = v;
     }
 
     /**
@@ -75,7 +72,7 @@ class WasmNumber {
      *
      * @returns {Number}
      */
-    get value() {
+    get value(): number | bigint {
         switch(this.type) {
             // Float arrays
             case NumberType.F32:
@@ -87,7 +84,7 @@ class WasmNumber {
             case NumberType.I64:
             case NumberType.U32:
             case NumberType.U64:
-                return this._repr;
+                return this._repr as bigint;
         }
     }
 
@@ -96,13 +93,13 @@ class WasmNumber {
      *
      * @param {Number} n - value to set
      */
-    set value(n) {
+    set value(n : number | bigint) {
         switch(this.type) {
             case NumberType.F32:
-                this._repr = new Float32Array([n]);
+                this._repr = new Float32Array([Number(n)]);
                 break;
             case NumberType.F64:
-                this._repr = new Float64Array([n]);
+                this._repr = new Float64Array([Number(n)]);
                 break;
 
             case NumberType.U32:
@@ -117,23 +114,23 @@ class WasmNumber {
     /**
      * @returns {string} - relevant WASM instruction name
      */
-    typeName() {
+    typeName(): string {
         return ['invalid', 'i32.const', 'i64.const', 'i32.const', 'i64.const', 'f32.const', 'f64.const'][this.type];
     }
 
     /**
      * @returns {string} - WAST representation
      */
-    toWAST() {
+    toWAST(): string {
         return `(${this.typeName()} ${Number(this.value)})`;
     }
 
     /**
      *
-     * @param {string} s - string
-     * @returns {WasmNumber} - this
+     * @param s - string
+     * @returns - this
      */
-    fromString(s) {
+    fromString(s: string): this {
         // Get size
         let isLong = false;
         if ('Ll'.includes(s[s.length - 1])) {
@@ -156,7 +153,7 @@ class WasmNumber {
 
         // Get type
         let isInt = true;
-        let n;
+        let n : bigint | number;
         try {
             n = BigInt(s);
         } catch (_) {
@@ -179,35 +176,37 @@ class WasmNumber {
      * Deserialize
      * @param {Number|Object} n - input
      */
-    fromJSON(n) {
+    fromJSON(n : number | bigint | string | any) {
         if (typeof n === 'object') {
             this.type = n.type || NumberType.F64;
             n = n.value;
         }
-        if (typeof n === 'number') {
+        if (typeof n === 'number' || typeof n === 'bigint') {
             this.value = n;
             return;
         }
         if (typeof n === 'string') {
             // TODO accept serialized string since bigint can't be json'd
-            throw "todo";
+            this.value = BigInt(n);
+            return;
         }
     }
 
     /**
      * Serialize
      */
-    toJSON() {
+    toJSON(): { type: NumberType, value: string | number }
+    {
         return {
             type: this.type,
-            value: this.value, // TODO this doesn't support bigint,,
+            value: this.value[0] || this.value.toString(), // TODO this doesn't support bigint,,
         };
     }
 
     /**
-     *
+     * Clone self
      */
-    clone() {
+    clone(): WasmNumber {
         return new WasmNumber(this.type, this.value);
     }
 
@@ -216,22 +215,22 @@ class WasmNumber {
      * @param {WasmNumber} other - Number to compare against
      * @returns {boolean}
      */
-    equals(other) {
+    equals(other : WasmNumber): boolean {
         return this.type === other.type
             && (this._repr[0] || this._repr)
             === (other._repr[0] || other._repr);
     }
 
     /**
-     * Coerce number to correct size
+     * Coerce number to correct width
      */
     wrap() {
         switch (this.type) {
             // Wrap bits
             case NumberType.I32: case NumberType.U32:
-                return BigInt.asIntN(32, this._repr);
+                return BigInt.asIntN(32, this._repr as bigint);
             case NumberType.I64: case NumberType.U64:
-                return BigInt.asIntN(64, this._repr);
+                return BigInt.asIntN(64, this._repr as bigint);
 
             // Assume f32/64 numbers already reduced correctly
             case NumberType.F64:
@@ -248,8 +247,9 @@ class WasmNumber {
      *
      * @param {WasmNumber} b
      */
-    add(b) {
+    add(b: WasmNumber): this {
         // TODO switch on types
+        // @ts-ignore
         this.value += b.value;
         this.wrap();
         return this;
@@ -260,8 +260,9 @@ class WasmNumber {
      *
      * @param {WasmNumber} b
      */
-    mul(b) {
+    mul(b: WasmNumber): this {
         // TODO switch on types
+        // @ts-ignore
         this.value *= b.value;
         this.wrap();
         return this;
@@ -272,8 +273,9 @@ class WasmNumber {
      *
      * @param {WasmNumber} b
      */
-    mod(b) {
+    mod(b: WasmNumber): this {
         // TODO switch on types
+        // @ts-ignore
         this.value %= b.value;
         this.wrap();
         return this;
@@ -284,8 +286,9 @@ class WasmNumber {
      *
      * @param {WasmNumber} b
      */
-    div(b) {
+    div(b: WasmNumber): this {
         // TODO switch on types
+        // @ts-ignore
         this.value /= b.value;
         this.wrap();
         return this;
@@ -296,8 +299,9 @@ class WasmNumber {
      *
      * @param {WasmNumber} b
      */
-    sub(b) {
+    sub(b: WasmNumber): this {
         // TODO switch on types
+        // @ts-ignore
         this.value -= b.value;
         this.wrap();
         return this;
@@ -309,7 +313,7 @@ class WasmNumber {
      * @param {WasmNumber} b - other
      * @returns {boolean}
      */
-    lt(b) {
+    lt(b: WasmNumber): boolean {
         return this.value < b.value;
     }
 
@@ -319,11 +323,9 @@ class WasmNumber {
      * @param {WasmNumber} b - other
      * @returns {boolean}
      */
-    gt(b) {
+    gt(b: WasmNumber): boolean {
         return this.value > b.value;
     }
 
     // TODO more
 };
-
-module.exports = { WasmNumber, NumberType };

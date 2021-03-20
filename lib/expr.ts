@@ -1,13 +1,13 @@
-const value = require('./value');
-const types = require('./datatypes');
-const error = require('./error');
+import * as value from './value';
+import * as types from './datatypes';
+import * as error from './error';
+import { LexerToken } from './scan';
 
-/**
+/*
  * This file contains datatypes related to a graph IR used to output webassembly
  *
  * All errors should be presented to the user before this point
  */
-
 
 // TODO pass contextual expressions to children as array so that they can manage locals and such
 // IDEA make a type for WAST code that makes debugging easier as we can determine where each part came from
@@ -21,24 +21,25 @@ const error = require('./error');
  * @abstract
  * @class
  */
-class Expr extends value.Value {
-    /**
-     * @param {Token} token
-     */
-    constructor(token) {
-        super(token, value.ValueType.Expr, null);
+export class Expr extends value.Value {
+    // State variable to prevent duplicated compilation
+    _isCompiled: boolean = false;
 
-        // State variable for if expr shouldn't be duplicated
-        this._isCompiled = false;
+    /**
+     * @constructor
+     * @param token - Source location
+     */
+    constructor(token: LexerToken) {
+        super(token, value.ValueType.Expr, undefined);
     }
 
     /**
      * Compilation action
      * @virtual
-     * @param {FunExportExpr} fun - function export context
-     * @returns {string} - wasm translation
+     * @param fun - function export context
+     * @returns - wasm translation
      */
-    out(fun) {
+    out(fun: FunExportExpr): string {
         return '';
     }
 
@@ -52,10 +53,12 @@ class Expr extends value.Value {
  * @abstract
  * @class
  */
-class DataExpr extends Expr {
+export class DataExpr extends Expr {
+    datatype: types.Type;
+
     /**
-     * @param {Token} token - location in code
-     * @param {Type} datatype - Datatype for value
+     * @param token - location in code
+     * @param datatype - Datatype for value
      */
     constructor(token, datatype) {
         super(token);
@@ -70,11 +73,23 @@ class DataExpr extends Expr {
  *
  * this should only get used when it cannot be determined which branch to take at compile time
  */
-class BranchExpr extends Expr {
+export class BranchExpr extends Expr {
+    // Locations in source
+    tokens: LexerToken[];
+
+    // Condtions for brances
+    conditions: DataExpr[];
+
+    // Actions for branches
+    actions: DataExpr[][];
+
+    // Where results are delivered
+    results: DependentLocalExpr[];
+
     /**
-     * @param {Token} token - location in code
-     * @param {Expr[]} conditions - conditions for branches
-     * @param {Expr[]} actions - actions for brances
+     * @param token - location in code
+     * @param conditions - conditions for branches
+     * @param actions - actions for brances
      */
     constructor(tokens, conditions, actions) {
         super(tokens[0]);
@@ -88,7 +103,6 @@ class BranchExpr extends Expr {
      * @override
      */
     out(fun) {
-        // TODO convert to use if-else because it's less retarded
         // Prevent multiple compilations
         this._isCompiled = true;
 
@@ -146,10 +160,10 @@ class BranchExpr extends Expr {
 /**
  * Constant value that we're treating as an Expr
  */
-class NumberExpr extends DataExpr {
+export class NumberExpr extends DataExpr {
     /**
-     * @param {Token} token - Location in code
-     * @param {DataValue} value - Value to wrap
+     * @param token - Location in code
+     * @param value - Value to wrap
      */
     constructor(token, value) {
         super(token, value.datatype);
@@ -170,7 +184,13 @@ class NumberExpr extends DataExpr {
 /**
  * Passes stack arguments to desired WASM instruction
  */
-class InstrExpr extends DataExpr {
+export class InstrExpr extends DataExpr {
+    // WASM instruction mnemonic
+    instr: string;
+
+    // Arguments passed
+    args: DataExpr[];
+
     constructor(token, datatype, instr, args) {
         super(token, datatype);
         this.instr = instr;
@@ -190,12 +210,18 @@ class InstrExpr extends DataExpr {
 /**
  * Function parameters expression
  */
-class ParamExpr extends DataExpr {
+export class ParamExpr extends DataExpr {
+    // Origina FuncExportExpr
+    source: DataExpr;
+
+    // Parameter Index
+    position: number;
+
     /**
-     * @param {Token} token - Locaation in code
-     * @param {Type} datatype - Datatype for expr
-     * @param {Expr} source - Origin expression
-     * @param {number} position - Stack index (0 == left)
+     * @param token - Locaation in code
+     * @param datatype - Datatype for expr
+     * @param source - Origin expression
+     * @param position - Stack index (0 == left)
      */
     constructor(token, datatype, source, position) {
         super(token, datatype);
@@ -213,12 +239,18 @@ class ParamExpr extends DataExpr {
  *
  * If the result is used we should use
  */
-class UnusedResultExpr extends DataExpr {
+export class UnusedResultExpr extends DataExpr {
+    // Orign expression
+    source: Expr;
+
+    // Stack index
+    position: number;
+
     /**
-     * @param {Token} token - Locaation in code
-     * @param {Type} datatype - Datatype for expr
-     * @param {Expr} source - Origin expression
-     * @param {number} position - Stack index (0 == left)
+     * @param token - Locaation in code
+     * @param datatype - Datatype for expr
+     * @param source - Origin expression
+     * @param position - Stack index (0 == left)
      */
     constructor(token, datatype, source, position) {
         super(token, datatype);
@@ -234,28 +266,37 @@ class UnusedResultExpr extends DataExpr {
 /**
  * Function Export expression
  */
-class FunExportExpr extends Expr {
+export class FunExportExpr extends Expr {
+    // Exported symbol
+    name: string;
+
+    // Parameter types
+    inputTypes: types.PrimitiveType[];
+
+    // Output expressions
+    outputs: Array<DataExpr | value.NumberValue> = [];
+
+    // Locals
+    _locals: Array<null|types.PrimitiveType>;
+
     /**
-     * @param {Token} token - Source location
-     * @param {string} name - Export label
-     * @param {PrimitiveType[]} inputTypes - Types for input values
-     * @param {Expr[]} outputs - Generated exprs for return values
+     * @param token - Source location
+     * @param name - Export label
+     * @param inputTypes - Types for input values
+     * @param outputs - Generated exprs for return values
      */
-    constructor(token, name, inputTypes, outputs) {
+    constructor(token, name, inputTypes) {
         super(token);
         this.name = name;
         this.inputTypes = inputTypes;
-        this.outputs = outputs;
         this._locals = inputTypes.map(t => null);
     }
 
     /**
-     * @param {types.PrimitiveType} type - storage type for local
-     * @returns {number} - local index
+     * @param type - storage type for local
+     * @returns - local index
      */
-    addLocal(type) {
-        if (!(type instanceof types.PrimitiveType))
-            throw new Error("todo non-primmitive types..");
+    addLocal(type: types.PrimitiveType): number {
         return this._locals.push(type) - 1;
     }
 
@@ -263,8 +304,10 @@ class FunExportExpr extends Expr {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(this));
         return `(func (export "${this.name}") ${
-            this.inputTypes.map((t, i) => `(param ${t.getBaseType().name})`).join(' ')
-        } (result ${this.outputs.map(o => o.datatype.getBaseType().name).join(' ')})\n\t\t${
+            this.inputTypes.map((t, i) => `(param ${(t.getBaseType() as types.PrimitiveType).name})`).join(' ')
+        } (result ${
+            this.outputs.map(o => (o.datatype.getBaseType() as types.PrimitiveType).name).join(' ')
+        })\n\t\t${
             this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
         }\n\t${
             outs.join('\n\t')
@@ -278,16 +321,16 @@ class FunExportExpr extends Expr {
  * First time it's compiled it stores value in a new local
  * After that it just does local.get
  */
-class TeeExpr extends DataExpr {
+export class TeeExpr extends DataExpr {
+    local: null | number = null;
+
     /**
-     * @param {Token} token - origin in source code
-     * @param {Expr} expr - value to store in a local so that we can copy it
+     * @param token - origin in source code
+     * @param expr - value to store in a local so that we can copy it
      */
-    constructor(token, expr) {
+    constructor(token, expr: DataExpr) {
         super(token, expr.datatype);
         this.value = expr;
-        this.datatype = expr.datatype;
-        this.local = null;
     }
 
     /**
@@ -301,7 +344,7 @@ class TeeExpr extends DataExpr {
         return `(local.get ${this.local})`;
     }
 
-    // Does using this value
+    // Prevent this from getting re-tee'd
     static expensive = false;
 };
 
@@ -310,15 +353,17 @@ class TeeExpr extends DataExpr {
  * they can later be used to determine the bindings for parameters in
  * recursive calls within the body
  */
-class RecursiveTakesExpr extends DataExpr {
+export class RecursiveTakesExpr extends DataExpr {
+    negIndex: number;
+
     /**
      * @constructor
-     * @param {*} token
-     * @param {*} datatype
-     * @param {*} negIndex
-     * @param {*} value
+     * @param token
+     * @param datatype
+     * @param negIndex
+     * @param value
      */
-    constructor(token, datatype, negIndex, value) {
+    constructor(token, datatype, negIndex: number, value) {
         super(token, datatype);
         this.negIndex = negIndex;
         this.value = value;
@@ -333,24 +378,25 @@ class RecursiveTakesExpr extends DataExpr {
  * The body of the inlined, TCO'd recursive function
  * (replaces call that initiates the recursion)
  */
-class RecursiveBodyExpr extends Expr {
+export class RecursiveBodyExpr extends Expr {
+    // Input expressions
+    takes: Array<DataExpr> = null;
+    // Input Locals
+    takeExprs: DependentLocalExpr[] = null;
+    // Output expressions
+    gives: Array<DataExpr> = null;
+    // Output locals
+    giveExprs: DependentLocalExpr[] = null;
+
+    // Unique labels
+    id: number;
+    label: string;
+
     // Used to make unique label
     static _uid = 0;
 
     constructor(token) {
         super(token);
-
-        // Input exprs
-        this.takes = null;
-
-        // Input locals
-        this.takeExprs = null;
-
-        // Output exprs
-        this.gives = null;
-
-        // Output locals
-        this.giveExprs = null;
 
         // Unique labels
         this.id = RecursiveBodyExpr._uid++;
@@ -386,7 +432,11 @@ class RecursiveBodyExpr extends Expr {
 /**
  * Recursive calls within function body
  */
-class RecursiveCallExpr extends Expr {
+export class RecursiveCallExpr extends Expr {
+    takeExprs: DependentLocalExpr[];
+    body: RecursiveBodyExpr;
+    giveExprs: UnusedResultExpr[];
+
     constructor(token, body, takeExprs) {
         super(token);
         this.takeExprs = takeExprs;
@@ -417,7 +467,9 @@ class RecursiveCallExpr extends Expr {
 /**
  * For when the output of an expression is stored in a local variable
  */
-class DependentLocalExpr extends DataExpr {
+export class DependentLocalExpr extends DataExpr {
+    source: Expr;
+    index: number;
     constructor(token, datatype, source) {
         super(token, datatype);
         this.source = source;
@@ -429,20 +481,4 @@ class DependentLocalExpr extends DataExpr {
         return `${!this.source._isCompiled ? this.source.out(fun) : ''
             }(local.get ${this.index})`;
     }
-};
-
-module.exports = {
-    Expr,
-    DataExpr,
-    BranchExpr,
-    NumberExpr,
-    InstrExpr,
-    FunExportExpr,
-    ParamExpr,
-    UnusedResultExpr,
-    RecursiveCallExpr,
-    RecursiveBodyExpr,
-    RecursiveTakesExpr,
-    DependentLocalExpr,
-    TeeExpr,
 };

@@ -1,12 +1,19 @@
-const { countReset } = require('console');
-const fs = require('fs');
+import fs = require('fs');
+
+import * as lex from '../lib/scan';
+
+interface FileSnapshot {
+    line: string;
+    lineNumber: number;
+    lineOffset: number;
+};
 
 /**
  * Get a snapshot of a token
  * @param {string} file - file name/path
  * @param {number} pos - character index in file
  */
-function fileLocate(file, pos) {
+export function fileLocate(file: string, pos: number): FileSnapshot {
     const lines = fs.readFileSync(file).toString().split('\n');
     let cur = 0;
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++)
@@ -17,12 +24,18 @@ function fileLocate(file, pos) {
     return null;
 }
 
+
+interface CompileError extends Error {
+    message: string;
+    tokens: Array<lex.LexerToken>;
+};
+
 /**
  * Make a pretty error string
  * @param {string} file - file name/path
  * @param {number} pos - character index in file
  */
-function formatErrorPos(errors) {
+export function formatErrorPos(errors: CompileError[]): string {
     return errors.map(e =>
         `\x1B[1mError: ${e.message}:\x1b[0m\n${
             e.tokens.map(t => {
@@ -34,5 +47,3 @@ function formatErrorPos(errors) {
             }).join('\n')
         }`).join('\n\n');
 }
-
-module.exports = { fileLocate, formatErrorPos };
