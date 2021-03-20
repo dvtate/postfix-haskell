@@ -325,8 +325,8 @@ export class TeeExpr extends DataExpr {
     local: null | number = null;
 
     /**
-     * @param {Token} token - origin in source code
-     * @param {Expr} expr - value to store in a local so that we can copy it
+     * @param token - origin in source code
+     * @param expr - value to store in a local so that we can copy it
      */
     constructor(token, expr: DataExpr) {
         super(token, expr.datatype);
@@ -358,10 +358,10 @@ export class RecursiveTakesExpr extends DataExpr {
 
     /**
      * @constructor
-     * @param {*} token
-     * @param {*} datatype
-     * @param {*} negIndex
-     * @param {*} value
+     * @param token
+     * @param datatype
+     * @param negIndex
+     * @param value
      */
     constructor(token, datatype, negIndex: number, value) {
         super(token, datatype);

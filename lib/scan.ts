@@ -77,8 +77,8 @@ export class BlockToken extends LexerToken {
 /**
  * Describes tokenized string
  *
- * @param {string} token - lexical token string
- * @param {Object} options - override/extend defaults
+ * @param token - lexical token string
+ * @param options - override/extend defaults
  *
  * @returns {LexerToken}
  */
@@ -109,9 +109,9 @@ function toToken(token: string, position: number, file: string): LexerToken|null
 /**
  * Generates a list of tokens from given program source
  *
- * @param {string} src - program source code
- * @param {string} file - file name/path
- * @returns {LexerToken[]} - List of tokens
+ * @param src - program source code
+ * @param file - file name/path
+ * @returns - List of tokens
  */
 export function lex(src: string, file: string): LexerToken[] {
     let i: number = 0,
@@ -183,9 +183,9 @@ export function lex(src: string, file: string): LexerToken[] {
 /**
  * Throw syntax error
  *
- * @param {string} message - reason for error
- * @param {LexerToken[]} tokens - problematic tokens
- * @param {string} file - file name/path
+ * @param message - reason for error
+ * @param tokens - problematic tokens
+ * @param file - file name/path
  */
 function throwParseError(message: string, tokens: LexerToken[], file?: string) {
     throw {
@@ -201,8 +201,8 @@ function throwParseError(message: string, tokens: LexerToken[], file?: string) {
  * Generates a parse tree from list of tokens
  * Really only benefit here is that this collapses containers
  *
- * @param {string} code - code to scan
- * @param {string} file - file name/path
+ * @param code - code to scan
+ * @param file - file name/path
  */
 export default function parse(code: string, file: string): LexerToken[] {
 

@@ -9,6 +9,7 @@ import { LexerToken } from "./scan";
 
 import debugMacros from './debug_macros';
 import globalOps from './globals';
+import { promises } from "fs";
 
 const wabtProm = wabtMod();
 
@@ -253,11 +254,12 @@ export default class Context {
 
     /**
      * Invoke macro or function
-     * @param {value.Value} value
-     * @param {Token} token
-     * @returns {Context|error.SyntaxError} - success or failure
+     * @param v - value to invoke
+     * @param token - location in source
+     * @param isTrace - is this a trace invoke? or normal?
+     * @returns - null if recursive trace, error.SyntaxError on error, this on success
      */
-    invoke(v, token, isTrace = false) {
+    invoke(v : value.Value, token: LexerToken, isTrace : boolean = false): Context | error.SyntaxError | null {
         // TODO this algorithm is extrememly complicated and confusing and inefficient
         //  there must be a simpler way... time spent to create: ~1 month
 
@@ -279,7 +281,7 @@ export default class Context {
 
         // Try to invoke normally
         // TODO handle constexprs specially
-        if (!recursiveInv || isTrace) { // Route A - try to invoke normally
+        if (!recursiveInv || isTrace) {
             const stack = this.stack.slice();
             const mss = this.minStackSize;
             try  {
@@ -393,11 +395,10 @@ export default class Context {
 
     /**
      * Handles some unclean macro return values
-     * @param {*} v - value to convert to error
-     * @param {Token} token - location in code
-     * @returns {error.SyntaxError | Context}
+     * @param v - value to convert to error
+     * @param token - location in code
      */
-    _toError(v, token) {
+    _toError(v, token: LexerToken): error.SyntaxError | Context | null {
         // Success
         if (v === undefined)
             return this;
@@ -418,7 +419,7 @@ export default class Context {
      * Push value onto stack
      * @param {Value[]} v  - push something on to the stack
      */
-    push(...v) {
+    push(...v : value.Value[]) {
         this.stack.push(...v);
     }
 
@@ -426,7 +427,7 @@ export default class Context {
      * Pull value from stack
      * @returns {Value|undefined} - last value from stack
      */
-    pop() {
+    pop(): value.Value {
         // Pop value
         const v = this.stack.pop() || undefined;
 
@@ -440,7 +441,7 @@ export default class Context {
      * Pull multiple values from stack
      * @retuns {Value[]} - list of values from stack
      */
-    popn(n) {
+    popn(n: number): value.Value[] {
         // Pull values
         const ret = [];
         for (let i = 0; i < n; i++)
@@ -455,9 +456,8 @@ export default class Context {
     /**
      * Warn the user when something seems weird
      *
-     * @param {Token} token - location in code
-     * @param {string} msg - what's wrong
-     * @returns {void}
+     * @param token - location in code
+     * @param msg - what's wrong
      */
     warn(token: LexerToken, msg: string) {
         console.warn("WARNING: ", msg, token);
@@ -466,10 +466,10 @@ export default class Context {
 
     /**
      * Compiles program to WASM Text form
-     * @param {Object} options - settings
-     * @returns {Promise<string>} - WAST source code
+     * @param options - settings
+     * @returns - WAST source code
      */
-    async outWast({ fast = false, folding = false, optimize = false, validate = false }) {
+    async outWast({ fast = false, folding = false, optimize = false, validate = false }): Promise<string> {
         // Create module from generated WAST
         const src = `(module \n${
             this.exports.map(e => e.out()).join('\n')
@@ -542,7 +542,7 @@ export default class Context {
 
     /**
      * Use Compiles program to WebAssembly Text and then uses WABT to convert to binary
-     * @returns {*} - Wasm binary buffer
+     * @returns - Wasm binary buffer
      */
     async outWasm() {
         const src = await this.outWast({ fast: true });

@@ -4,7 +4,7 @@ import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
 import WasmNumber from './numbers';
-import { TraceResults } from './context';
+import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
 
 
@@ -57,14 +57,13 @@ export default class Fun {
     }
 
     /**
-     * @param {Context} ctx - parser context
-     * @param {Token} token - token of invocation
      * @returns {SyntaxError|Context} - same as return value of Macro.action()
      */
-    action(ctx, token) {
+    action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
         ctx.stack = ctx.stack.map(v =>
-            v.type === value.ValueType.Expr && v.constructor.expensive
+            // @ts-ignore
+            v instanceof expr.DataExpr && v.constructor.expensive
                 ? new expr.TeeExpr(v.token, v)
                 : v);
 
@@ -91,8 +90,9 @@ export default class Fun {
 
         // Check types
         const typeErr = conds.find(rv =>
-            ![value.ValueType.Data, value.ValueType.Expr].includes(rv.type)
-            || !types.PrimitiveType.Types.I32.check(rv.datatype) && rv);
+            (rv instanceof value.DataValue || rv instanceof expr.DataExpr)
+            && (![value.ValueType.Data, value.ValueType.Expr].includes(rv.type)
+                || !types.PrimitiveType.Types.I32.check(rv.datatype) && rv));
         if (typeErr) {
             console.log("typerror: ", typeErr);
             return ['function conditions must put an I32 on top of stack'];
@@ -105,7 +105,7 @@ export default class Fun {
         if (errs.length) {
             console.log('[warning] fn errs: ', errs);
             // TODO we need to make an error datatype that combines these into a single error
-            ctx.warn.push(...errs);
+            // ctx.warn(...errs);
         }
 
         // Create a list of pairs containing possibly truthy branch conditions
@@ -150,14 +150,17 @@ export default class Fun {
         // Unfortunately we have to trace in order to construct the branch expression
 
         // Trace ios, filter recursive branches
-        const ios = branches
+        const traceResults = branches
             .slice(i)
             .map(b => ctx.traceIO(b[1], b[1].token || token))
             .filter(io => io !== null);
 
-        const err = ios.find(t => !(t instanceof TraceResults));
+        // Look for an error
+        const err = traceResults.find(t => !(t instanceof TraceResults)) as error.SyntaxError;
         if (err)
             return err;
+
+        const ios = traceResults as TraceResults[];
 
         // Verify consistent # i/o's
         if (ios.some(t => t.delta !== ios[0].delta)) {
@@ -181,8 +184,8 @@ export default class Fun {
         });
 
         // Verify all have same return types
-        const first = ios[0].gives;
-        if (ios.some(t => t.gives.some((v, i) => v.datatype !== first[i].datatype)))
+        const first = ios[0].gives as expr.DataExpr[];
+        if (ios.some(t => t.gives.some((v, i) => (v instanceof value.DataValue || v instanceof expr.DataExpr) && v.datatype !== first[i].datatype)))
             return ['function must have consistent return types'];
 
         // Drop inputs from stack
