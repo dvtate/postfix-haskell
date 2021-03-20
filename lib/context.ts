@@ -28,6 +28,13 @@ export class TraceResults {
     }
 };
 
+interface TraceResultTracker {
+    token: LexerToken,
+    value: value.Value,
+    result?: TraceResults,
+    body?: expr.RecursiveBodyExpr,
+}
+
 /**
  * This class stores state assocated with the parser
  *
@@ -47,12 +54,7 @@ export default class Context {
     trace: value.Value[] = [];
 
     // Tracking for traceIO and recursion stuff
-    traceResults: Array<{
-        token: LexerToken,
-        value: value.Value,
-        result?: TraceResults,
-        body?: expr.RecursiveBodyExpr,
-    }> = [];
+    traceResults: Array<TraceResultTracker | any> = [];
     globals: { [k: string] : value.Value };
 
     // Stack tracing cunters
@@ -241,7 +243,7 @@ export default class Context {
      * @param {*} v
      * @returns {false|Object}
      */
-    _getTraceResults(v) {
+    _getTraceResults(v): TraceResultTracker {
         // TODO also check takes datatypes and constexprs against stack
         for (let i = this.traceResults.length - 1; i >= 0; i--)
             if (this.traceResults[i].value === v)
@@ -273,7 +275,7 @@ export default class Context {
 
         // console.log("invoke:", (token && token.token),
         //     'recursive:', recursiveInv,
-        //     'results:', tResults && (tResults.result && typeof tResults.result));
+        //     'results:', tResults ? (tResults.result && typeof tResults.result) : 'false');
 
         // Try to invoke normally
         // TODO handle constexprs specially
@@ -303,7 +305,7 @@ export default class Context {
         }
 
         // It's recursive and we didn't see it yet
-        if (recursiveInv && tResults && tResults.result !== null && !this.recursiveMacros.has(v.value))
+        if (recursiveInv && (!tResults || tResults.result !== null) && !this.recursiveMacros.has(v.value))
             throw v;
 
         // if (!recursiveInv)
