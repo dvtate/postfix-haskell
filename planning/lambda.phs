@@ -1,0 +1,14 @@
+
+# Good
+{ a b + } { $a  $b } lambda $add =
+
+# Bad - and will only complain when you try to call it
+{+} {} lambda $add =
+
+# Arguments passed same way, important alternative to currying
+1 2 add
+
+# Can use lambdas in fun/branches
+{ 1 } {+} $branch fun                   # with macros
+{ b 0 <} { $a $b } lam                # with lambdas
+{ a b -} { $a $b } lam $branch fun

@@ -1,6 +1,4 @@
-
-
-const { phs } = require('../tools/inline');
+import { phs } from '../tools/inline';
 
 (async function main(){
 
@@ -39,5 +37,6 @@ const { phs } = require('../tools/inline');
 
     const { not, fb } = program.instance.exports;
     for (let i = 1; i < 100; i++)
+        // @ts-ignore
         console.log(['fizz', 'buzz', 'fizzbuzz'][-fb(i) - 1] || i);
 })();

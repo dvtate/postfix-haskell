@@ -12,6 +12,7 @@
  */
 
 // TODO: DON'T USE GET/SET METHODS!
+// TODO: Use Int32Array instead of bigint for better backwards compatibility
 
 // WASM Data Types
 export enum NumberType {

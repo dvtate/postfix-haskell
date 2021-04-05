@@ -2,6 +2,7 @@ import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import { LexerToken } from './scan';
+import CompileContext from './compile';
 
 /*
  * This file contains datatypes related to a graph IR used to output webassembly
@@ -39,7 +40,7 @@ export class Expr extends value.Value {
      * @param fun - function export context
      * @returns - wasm translation
      */
-    out(fun: FunExportExpr): string {
+    out(ctx: CompileContext, fun?: FunExportExpr): string {
         return '';
     }
 
@@ -102,12 +103,12 @@ export class BranchExpr extends Expr {
     /**
      * @override
      */
-    out(fun) {
+    out(ctx, fun) {
         // Prevent multiple compilations
         this._isCompiled = true;
 
-        const conds = this.conditions.map(c => c.out(fun)).reverse();
-        const acts = this.actions.map(a => a.map(v => v.out(fun)).join(' ')).reverse();
+        const conds = this.conditions.map(c => c.out(ctx, fun)).reverse();
+        const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
         const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
 
         // Add result datatypes
@@ -173,7 +174,7 @@ export class NumberExpr extends DataExpr {
     /**
      * @override
      */
-    out(fun) {
+    out(ctx, fun) {
         const outValue = v => v instanceof value.TupleValue
             ? this.value.map(outValue).join()
             : this.value.toWAST();
@@ -200,8 +201,8 @@ export class InstrExpr extends DataExpr {
     /**
      * @override
      */
-    out(fun) {
-        return `(${this.instr} ${this.args.map(a => a.out(fun)).join(' ')})`;
+    out(ctx, fun) {
+        return `(${this.instr} ${this.args.map(a => a.out(ctx, fun)).join(' ')})`;
     }
 
     static expensive = true;
@@ -229,7 +230,7 @@ export class ParamExpr extends DataExpr {
         this.position = position;
     }
 
-    out(fun) {
+    out(ctx, fun) {
         return `(local.get ${this.position})`;
     }
 };
@@ -258,8 +259,8 @@ export class UnusedResultExpr extends DataExpr {
         this.position = position;
     }
 
-    out(fun) {
-        return !this.source._isCompiled ? this.source.out(fun) : "";
+    out(ctx, fun) {
+        return !this.source._isCompiled ? this.source.out(ctx, fun) : "";
     }
 };
 
@@ -300,9 +301,11 @@ export class FunExportExpr extends Expr {
         return this._locals.push(type) - 1;
     }
 
-    out() {
+    // TODO should make apis to help lift nested functions/closures
+
+    out(ctx) {
         // TODO tuples
-        const outs = this.outputs.map(o => o.out(this));
+        const outs = this.outputs.map(o => o.out(ctx, this));
         return `(func (export "${this.name}") ${
             this.inputTypes.map((t, i) => `(param ${(t.getBaseType() as types.PrimitiveType).name})`).join(' ')
         } (result ${
@@ -336,10 +339,10 @@ export class TeeExpr extends DataExpr {
     /**
      * @override
      */
-    out(fun) {
+    out(ctx, fun) {
         if (this.local === null) {
             this.local = fun.addLocal(this.datatype);
-            return `${this.value.out(fun)}\n\t(local.tee ${this.local})`;
+            return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.local})`;
         }
         return `(local.get ${this.local})`;
     }
@@ -369,8 +372,8 @@ export class RecursiveTakesExpr extends DataExpr {
         this.value = value;
     }
 
-    out(fun) {
-        return this.value.out(fun);
+    out(ctx, fun) {
+        return this.value.out(ctx, fun);
     }
 };
 
@@ -403,7 +406,7 @@ export class RecursiveBodyExpr extends Expr {
         this.label = `$rec_${this.id}`;
     }
 
-    out(fun) {
+    out(ctx, fun) {
         // Prevent multiple compilations
         this._isCompiled = true;
 
@@ -412,7 +415,7 @@ export class RecursiveBodyExpr extends Expr {
             e.index = fun.addLocal(e.datatype);
         });
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${this.takes[i].out(fun)}\n\t(local.set ${e.index})`
+            `${this.takes[i].out(ctx, fun)}\n\t(local.set ${e.index})`
         ).join('\n\t')}\n\t`;
 
         // Create place to store outputs
@@ -421,7 +424,7 @@ export class RecursiveBodyExpr extends Expr {
         // Body
         const retType = this.gives.map(e => e.datatype.getWasmTypeName()).join(' ');
         ret += `(loop ${this.label} (result ${retType})\n\t`;
-        ret += this.gives.map(e => e.out(fun)).join('\n\t');
+        ret += this.gives.map(e => e.out(ctx, fun)).join('\n\t');
         ret += `)\n\t${this.giveExprs.map(e => `(local.set ${e.index})`).join(' ')}\n\t`;
 
         // console.log('RecursiveBodyExpr', ret);
@@ -448,10 +451,10 @@ export class RecursiveCallExpr extends Expr {
             new UnusedResultExpr(token, e.datatype, this, i));
     }
 
-    out(fun) {
+    out(ctx, fun) {
         // Set arg locals
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${e.out(fun)}\n\t(local.set ${this.body.takeExprs[i].index})`
+            `${e.out(ctx, fun)}\n\t(local.set ${this.body.takeExprs[i].index})`
         ).join('\n\t')}\n\t`;
 
         // Invoke function
@@ -476,9 +479,9 @@ export class DependentLocalExpr extends DataExpr {
         this.index = -1;
     }
 
-    out(fun) {
+    out(ctx, fun) {
         // source.out() will update our index to be valid
-        return `${!this.source._isCompiled ? this.source.out(fun) : ''
+        return `${!this.source._isCompiled ? this.source.out(ctx, fun) : ''
             }(local.get ${this.index})`;
     }
 };

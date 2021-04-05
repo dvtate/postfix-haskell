@@ -1,3 +1,5 @@
+import Context from './context';
+import Macro from './macro';
 import { LexerToken } from './scan';
 
 // Abstract Base class
@@ -229,5 +231,22 @@ export class PrimitiveType extends Type {
 
         // All instances of PrimitiveType will be in the static Types map
         return this == type;
+    }
+};
+
+// Datatype to describe function/macros
+export class FunctorType extends Type {
+    constructor(token, public inputTypes: Type[], public outputTypes: Type[]) {
+        super(token);
+    }
+
+    /**
+     * @override
+     */
+    check(type: Type): boolean {
+        if (!(type instanceof FunctorType))
+            return false;
+        return !(this.inputTypes.some((t, i) => t.check(type.inputTypes[i]))
+            || this.outputTypes.some((t, i) => t.check(type.outputTypes[i])));
     }
 };

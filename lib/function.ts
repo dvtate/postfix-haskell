@@ -41,7 +41,7 @@ export default class Fun {
      * @param {Macro} condition -
      * @param {Macro} action -
      */
-    overload(token, condition, action) {
+    overload(token : LexerToken, condition : value.Value, action : value.Value) {
         // Prevent multiple overloads... (is this ok?)
         const idx = this.tokens.indexOf(token);
         // console.log('overload', this.tokens[0].token, this.tokens.includes(token));

@@ -1,3 +1,4 @@
+import { getAlwaysInlineMaxSize } from "binaryen";
 import WasmNumber from "./numbers";
 
 // This handles Context-free grammar
@@ -71,16 +72,11 @@ export class BlockToken extends LexerToken {
     }
 };
 
-
-
-
 /**
  * Describes tokenized string
  *
  * @param token - lexical token string
  * @param options - override/extend defaults
- *
- * @returns {LexerToken}
  */
 function toToken(token: string, position: number, file: string): LexerToken|null {
     // Trim whitespace
@@ -92,7 +88,7 @@ function toToken(token: string, position: number, file: string): LexerToken|null
 
     // String
     if (token[0] === '"')
-        return new LexerToken(token, TokenType.String, position, file);
+        return new LexerToken(token.substr(1, token.length - 2), TokenType.String, position, file);
 
     // Number (note this makes NaN an identifier)
     if (!isNaN(parseFloat(token)))
@@ -178,7 +174,7 @@ export function lex(src: string, file: string): LexerToken[] {
 
     // Return list of token objects
     return ret.filter(Boolean);
-}
+};
 
 /**
  * Throw syntax error
@@ -243,4 +239,4 @@ export default function parse(code: string, file: string): LexerToken[] {
         }
     });
     return ret;
-}
+};

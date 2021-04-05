@@ -15,7 +15,7 @@ const wabtProm = wabtMod();
  * @param {*} options
  * @returns {WebAssembly.Instance}
  */
-async function compile(src, importObject = {}, options = {}) {
+export async function compile(src, importObject = {}, options = {}) {
     // TODO bindings
     const ctx = parse(lex(src, "inline"));
     if (!(ctx instanceof Context))
@@ -25,7 +25,7 @@ async function compile(src, importObject = {}, options = {}) {
     if (!valid)
         throw new Error("WebAssembly.validate() failed");
     return await WebAssembly.instantiate(wasm.buffer, importObject);
-}
+};
 
 
 // Tagged template string literal
@@ -34,12 +34,12 @@ async function compile(src, importObject = {}, options = {}) {
  * @param {string[]} src - phs source code
  * @param {Array} bindings - js entities to be included in the module
  */
-async function phs(src, ...bindings) {
+export async function phs(src, ...bindings) {
     return await compile(
         src.reduce((acc, part, i) => `${acc} "phs_js_bind ${i}" ${part}`),
         bindings.reduce((acc, v, i) => ({ ...acc, [`phs_js_bind ${i}`]: v }), {}),
     );
-}
+};
 
 /*
 Bindings: in this example it prompts user at compile time for this
@@ -54,7 +54,7 @@ const m = await phs`
  * @param {*} importObject
  * @returns {WebAssembly.Instance}
  */
-async function compileWat(src, importObject = {}) {
+export async function compileWat(src, importObject = {}) {
     const wabt = await wabtProm;
     const mod = wabt.parseWat("inline", src, {
         exceptions: true,
@@ -80,6 +80,4 @@ async function compileWat(src, importObject = {}) {
         return console.error("wasm invalid!", valid);
 
     return await WebAssembly.instantiate(bin.buffer, importObject);
-}
-
-module.exports = { compile, phs, compileWat };
+};

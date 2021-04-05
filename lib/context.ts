@@ -6,10 +6,11 @@ import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
 import { LexerToken } from "./scan";
+import CompileContext from "./compile";
 
 import debugMacros from './debug_macros';
 import globalOps from './globals';
-import { promises } from "fs";
+
 
 const wabtProm = wabtMod();
 
@@ -470,10 +471,8 @@ export default class Context {
      * @returns - WAST source code
      */
     async outWast({ fast = false, folding = false, optimize = false, validate = false }): Promise<string> {
-        // Create module from generated WAST
-        const src = `(module \n${
-            this.exports.map(e => e.out()).join('\n')
-        })`;
+        // Generate webassembly text
+        const src = new CompileContext(this.exports).out();
         if (fast)
             return src;
 

@@ -22,9 +22,11 @@ export class WATCode {
     }
 };
 
-type TaggedTemplateLiteral = (strs: string[], ...bindings: WATCode[]) => WATCode;
-
-export default function wat(e: expr.Expr): TaggedTemplateLiteral {
+/**
+ * this is a parametric template string literal
+ * @param e - expression source
+ */
+export default function wat(e: expr.Expr) {
     return (strs: string[], ...bindings: WATCode[]): WATCode =>
         strs.reduce((a, s, i) => {
             a.add(s, e);
@@ -32,4 +34,4 @@ export default function wat(e: expr.Expr): TaggedTemplateLiteral {
                 a.concat(bindings[i - 1]);
             return a;
         }, new WATCode());
-}
+};

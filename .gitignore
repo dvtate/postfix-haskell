@@ -105,3 +105,6 @@ dist
 
 # VSCode
 *.code-workspace
+
+# Webassembly binaries
+*.wasm
