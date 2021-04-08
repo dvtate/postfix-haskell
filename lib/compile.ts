@@ -30,24 +30,29 @@ export default class CompileContext {
          * @returns - string of form \00 where 00 is replaced by hex equiv
          */
         function byteToHexEsc(b : number) {
-            const hexChrs = '0123456789abcdef';
-            return '\\' + hexChrs[b & (((1 << 4) - 1) << 4)] + hexChrs[b & ((1 << 4) - 1)];
+            const hexChrs = '0123456789ABCDEF';
+            return '\\'
+                + hexChrs[b & (((1 << 4) - 1) << 4)]
+                + hexChrs[b & ((1 << 4) - 1)];
         }
 
         return `(module\n
-            (memory ${Math.floor(this.staticData.length / 64000 + 3)})
-            (export "mem" (memory 0))
             ${
                 this.module.join('\n\n')
             }
-            (data (i32.const 0) "${ // Static data
+            (memory (export "memory") ${
+                // Start out with enough pages for static data + 1
+                Math.floor(this.staticData.length / 64000 + 1)
+            })
+            (data (i32.const 0) "${
+                // Static data as a hex string
                 this.staticData.map(byteToHexEsc).join('')
             }"))`;
     }
 
     /**
-     *
-     * @param s - static string literal
+     * Store static data
+     * @param d - data to save statically
      * @returns - memory address
      */
     addStaticData(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {

@@ -1,4 +1,3 @@
-import { getAlwaysInlineMaxSize } from "binaryen";
 import WasmNumber from "./numbers";
 
 // This handles Context-free grammar
@@ -6,39 +5,33 @@ import WasmNumber from "./numbers";
 // TODO optimize, use regex, etc.
 // TODO chars
 
-
 // Enums
 export enum TokenType {
-    String = 0,
-    Number = 1,
-    ContainerOpen = 2,
-    ContainerClose = 3,
-    Identifier = 4,
-    Block = 5,
+    String = 0,         // String literal
+    Number = 1,         // Number literal
+    ContainerOpen = 2,  // Container open (temp)
+    ContainerClose = 3, // Container close (temp)
+    Identifier = 4,     // Identifier
+    Block = 5,          // Macro
 };
 
 // Internal
 export enum ContainerType {
-    Curly = 0,
-    Bracket = 1,
-    Paren = 2,
+    Curly = 0,      // {}
+    Bracket = 1,    // []
+    Paren = 2,      // ()
 };
 
 // Generic token
 export class LexerToken {
-    token: string;
-    type: TokenType;
-    position?: number;
-    file?: string;
-
     static Type = TokenType;
 
-    constructor(token, type, position, file) {
-        this.token = token;
-        this.type = type;
-        this.position = position;
-        this.file = file;
-    }
+    constructor(
+        public token : string,
+        public type? : TokenType,
+        public position? : number,
+        public file? : string,
+    ) { }
 
     // TODO toString()
 };

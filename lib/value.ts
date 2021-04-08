@@ -1,7 +1,6 @@
 import * as types from './datatypes';
 import WasmNumber from './numbers';
 import { LexerToken } from './scan';
-import * as value from './value';
 import Context from './context';
 
 /*
@@ -20,8 +19,8 @@ export enum ValueType {
     Id     = 3, // Escaped identifier
     Expr   = 4, // Data that's only known at runtime
     Fxn    = 5, // Function/Branch
+    Str    = 6, // String literal, (note not directly usable)
 };
-
 
 /**
  * Generic value base class

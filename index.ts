@@ -1,0 +1,1 @@
+// TODO user-friendly shell command using yargs or sth
