@@ -108,3 +108,11 @@ export class TupleValue extends DataValue {
 
 // Note that there is no need for a UnionValue class because there are no instances of unions
 // unions will only be needed as types for opaque?-expressions
+
+
+// String literal, not data
+export class StrValue extends Value {
+    constructor(token: LexerToken) {
+        super(token, ValueType.Str, token.token.substr(1, token.token.length - 2));
+    }
+};

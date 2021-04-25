@@ -316,10 +316,11 @@ const operators = {
                 return ['expected a macro of types'];
             const inTypes = inputs.map(t => t.value);
 
-            // Put opaque param exprs onto stack
+            // Put param exprs onto stack
             const out = new expr.FunExportExpr(token, sym.value.slice(1), inTypes);
             const pes = inTypes.map((t, i) => new expr.ParamExpr(token, t, out, i)).reverse();
             ctx.push(...pes);
+
 
 
             // Invoke macro to determine structure of fxn
@@ -334,6 +335,9 @@ const operators = {
             out.outputs = ovs as expr.DataExpr[]; // TODO more safety checks
 
             ctx.exports.push(out);
+
+            for (let i = 0; i < pes.length; i++)
+                ctx.pop();
         },
     },
 };

@@ -236,7 +236,10 @@ export class PrimitiveType extends Type {
 
 // Datatype to describe function/macros
 export class FunctorType extends Type {
-    constructor(token, public inputTypes: Type[], public outputTypes: Type[]) {
+    constructor(token,
+        public inputTypes: Type[],
+        public outputTypes: Type[])
+    {
         super(token);
     }
 

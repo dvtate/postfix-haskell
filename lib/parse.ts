@@ -34,6 +34,10 @@ export default function parse(tokens: LexerToken[], ctx = new Context()): Contex
                 ctx.push(new value.Value(t, value.ValueType.Macro, Macro.fromLiteral(ctx, t as BlockToken, parse)));
                 break;
 
+            case LexerToken.Type.String:
+                ctx.push(new value.StrValue(t));
+                break;
+
             // Identifiers: also need to bind scope
             case LexerToken.Type.Identifier:
                 // Handle subtypes

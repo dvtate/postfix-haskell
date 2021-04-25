@@ -18,9 +18,14 @@ import { LexerToken } from "./scan";
  * @param token
  * @param fn
  */
-async function logWithToken(name: string, ctx: Context, token: LexerToken, fn: CallableFunction) {
+function logWithToken(name: string, ctx: Context, token: LexerToken, fn: (ctx: Context, token: LexerToken) => any) {
     // This can be improved a lot...
-    console.log(`${name} - `, await fn(ctx, token));
+    const repr = fn(ctx, token);
+    if (repr instanceof Promise)
+        repr.then(v => console.log(name, '-', v)).catch(console.error);
+    else
+        console.log(name, '-', repr);
+
 }
 
 // Get type name map
@@ -73,10 +78,10 @@ const debugOperators = {
     },
 
     ':targets' : ctx => ctx.exports,
-    ':compile' : ctx => ctx.outWast({}),
+    ':compile' : async ctx => await ctx.outWast({}),
 
-    ':wast' : ctx => ctx.outWast({ folding: true }),
-    ':wat' : ctx => ctx.outWast({ folding: false }),
+    ':wast' : async ctx => await ctx.outWast({ folding: true }),
+    ':wat' : async ctx => await ctx.outWast({ folding: false }),
 };
 
 // Export Macros because user shouldn't override
