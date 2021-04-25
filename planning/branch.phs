@@ -8,8 +8,7 @@
 { $b = $a = b a } $swap =	# swap values
 
 # Not operator
-{ 1 }    { pop 0 } $! global fun	# Always returns false
-{ 0 == } { pop 1 } $! global fun	# Unless given value is false
+{ 1 } { 0 == } $! global fun
 
 #{ I32 } {!} $not target
 
@@ -25,8 +24,10 @@
 -2 $buzz =
 fizz buzz + $fizzbuzz =
 
+# TODO fix the && operator
+
 { 1 } { } $fb fun
 { 3 % 0 == } { pop fizz } $fb fun
 { 5 % 0 == } { pop buzz } $fb fun
-{ $n = n 3 % 0 == n 5 % 0 == && } { pop fizzbuzz } $fb fun
+{ $n = n 3 % 0 == n 5 % 0 == * } { pop fizzbuzz } $fb fun
 { I32 } { fb } $fb target

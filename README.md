@@ -1,13 +1,63 @@
 # postfix-haskell
 A very low-level functional programming language designed to compile to WebAssembly in the browser.
 
-# Quick intro to language
+## How to use
 The all examples can be run in an interactive shell like below. Note that this is unfinished and possibly out of date. For better examples check out the recently edited files in the `planning/*` folder.
 ```
 $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell
-$ node tools/shell.js
+$ tsc
+$ node dist/tools/shell.js
+1 2 + :data
+:data - 3n
 ```
+
+## Utilities
+The `tools/*` directory offers some different ways to use the language.
+### Shell
+Run short bits of code and test expected compiler behavior. It's recommended to stick to this tool unless you have a solid grasp of the language & compiler. In addition to being able to use normal code, you can also use the macros in `lib/debug_macros.ts` for example:
+```
+[postfix-haskell]$ node dist/tools/shell.js
+1 2 + :data
+:data - 3n
+
+1 2 + :type
+:type - {
+  syntaxType: 'Data',
+  datatype: PrimitiveType { token: undefined, name: 'i32' }
+}
+
+{ I32 } { 1 + } $incr target :compile
+:compile - (module
+  (func (;0;) (param i32) (result i32)
+    local.get 0
+    i32.const 1
+    i32.add)
+  (export "incr" (func 0))
+  (memory (;0;) 1)
+  (export "memory" (memory 0))
+  (data (;0;) (i32.const 0) "")
+  (type (;0;) (func (param i32) (result i32))))
+```
+
+### File
+For compiling a file to WASM Text format with expectation of errors. Note that it's recommended to use `tools/optimized.sh` if you know it will compile.
+```
+[postfix-haskell]$ node dist/tools/file.js ./planning/sqrt.phs
+(module ... )
+```
+
+### Optimized.sh
+Compile given file using `tools/file.ts` and then pass it's output through `wasm-opt` from binaryen. Flags passed at the end are passed to `wasm-opt`, defaulting to `-O`
+```
+[postfix-haskell]$ ./tools/optimized.sh ./planning/sqrt.phs -Oz
+(module ... )
+```
+
+### Inline
+You can embed the language in JavaScript. See a demo in `planning/inline.ts`.
+
+# Quick intro to language
 - functional: immutable variables defined via `=` operator
 - postfix: operators follow the operands they act on (ie - `1 2 +`)
     + the stack (place where expressions are put) is a compile-time abstraction, and values stored on it often aren't included in the compiled code
