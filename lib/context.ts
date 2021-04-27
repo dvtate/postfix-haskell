@@ -264,6 +264,10 @@ export default class Context {
         // TODO this algorithm is extrememly complicated and confusing and inefficient
         //  there must be a simpler way... time spent to create: ~1 month
 
+        if (v.type == value.ValueType.Str) {
+            // TODO length and pointer into something
+        }
+
         // If not invokable just put it on the stack
         if (![value.ValueType.Fxn, value.ValueType.Macro].includes(v.type)) {
             this.push(v);

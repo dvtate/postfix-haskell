@@ -235,7 +235,7 @@ export class PrimitiveType extends Type {
 };
 
 // Datatype to describe function/macros
-export class FunctorType extends Type {
+export class ArrowType extends Type {
     constructor(token,
         public inputTypes: Type[],
         public outputTypes: Type[])
@@ -247,7 +247,7 @@ export class FunctorType extends Type {
      * @override
      */
     check(type: Type): boolean {
-        if (!(type instanceof FunctorType))
+        if (!(type instanceof ArrowType))
             return false;
         return !(this.inputTypes.some((t, i) => t.check(type.inputTypes[i]))
             || this.outputTypes.some((t, i) => t.check(type.outputTypes[i])));

@@ -8,7 +8,7 @@ import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
 
 
-// TODO there need to be a lot of special errors for this so that user knows what to fix
+// TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
 
 /**
  * In this language 'functions' are more like overloadable operators.
@@ -22,17 +22,19 @@ export default class Fun {
     tokens: LexerToken[] = [];
     conditions: value.Value[] = []
     actions: value.Value[] = [];
+    datatype?: types.Type;
 
     /**
      * @param [token] - token for first def
      * @param [condition] - condition macro for first def
      * @param [action] - action macro for first def
      */
-    constructor(token, condition, action) {
+    constructor(token, condition, action, datatype?: types.Type) {
         // Macros corresponding to checks and outputs
         this.tokens = token ? [token] : [];
         this.conditions = condition ? [condition] : [];
         this.actions = action ? [action] : [];
+        this.datatype = datatype;
     }
 
     /**

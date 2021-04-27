@@ -1,10 +1,12 @@
 import * as value from './value'
 import * as types from './datatypes'
 import * as expr from './expr'
+import * as error from './error'
 import Macro from './macro'
-import Context from './context'
+import Context, { TraceResults } from './context'
 import WasmNumber from './numbers'
 import Fun from './function'
+import { LexerToken } from './scan'
 
 /*
 These are globally defined operators some may eventually be moved to standard library
@@ -33,26 +35,50 @@ const operators = {
 
     // Everything above here should probably be moved to standard library
 
-    // Bind identifier to expression
+    // Bind identifier(s) to expression(s)
     '=' : {
-        action: (ctx, token) => {
+        action: (ctx: Context, token) => {
             // Get identifier
             if (ctx.stack.length < 2)
                 return ['expected an expression and a binding identifier'];
+
+            // Get symbols to bind
             const sym = ctx.pop();
-            if (sym.type !== value.ValueType.Id) {
+            let syms : value.IdValue[];
+            if (sym.type === value.ValueType.Macro) {
+                // List of identifiers to pull from stack in reverse order
+                const tr = ctx.traceIO(sym, token);
+                if (tr instanceof error.SyntaxError)
+                    return tr;
+
+                // Take IdValue[]
+                if (tr.gives.some(sym => !(sym instanceof value.IdValue)))
+                    return ["macro produced invalid results"];
+                syms = (tr.gives as value.IdValue[]).reverse().map(s => {
+                    // Apply to current scope
+                    s.scopes = ctx.scopes.slice();
+                    return s;
+                });
+            } else if (sym instanceof value.IdValue) {
+                // Single identifier to pull from stack
+                syms = [sym];
+            } else {
+                // Syntax error
                 ctx.pop();
-                return ["missing symbol to bind"];
+                return ["missing symbol(s) to bind"];
             }
 
-            // Verify no reassign
-            let id = sym.value.slice(1);
-            const [scope] = sym.scopes.slice(-1);
-            if (scope[id])
-                ctx.warn(token, `${id} is already defined in current scope`);
+            // Bind idenfiers
+            syms.forEach(sym => {
+                // Verify no reassign
+                let id = sym.value.slice(1);
+                const [scope] = sym.scopes.slice(-1);
+                if (scope[id])
+                    ctx.warn(token, `${id} is already defined in current scope`);
 
-            // Bind identifier
-            scope[id] = ctx.pop();
+                // Bind identifier
+                scope[id] = ctx.pop();
+            });
         },
     },
 
@@ -208,6 +234,7 @@ const operators = {
 
     // Assign classes to value, instantate class
     // TODO Exprs
+    // TODO make this a function
     'make' : {
         action: (ctx, token) => {
             // TODO Check base type compatible ?
@@ -231,26 +258,25 @@ const operators = {
     },
 
     // Get the datatype of a value
-    // TODO exprs
     'type' : {
-        action: (ctx, token) => {
+        action: (ctx: Context, token: LexerToken) => {
             if (ctx.stack.length === 0)
                 return ['expected an expression to get type from'];
             const v = ctx.pop();
-            if (![value.ValueType.Data, value.ValueType.Expr].includes(v.type))
-                return ['expected data'];
-            ctx.push(new value.Value(token, value.ValueType.Type, v.datatype));
+            ctx.push(v.datatype
+                ? new value.Value(token, value.ValueType.Type, v.datatype)
+                : new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, 0n)));
         },
     },
 
     // Make variable reference global
     'global' : {
-        action: (ctx, token) => {
+        action: (ctx: Context, token: LexerToken) => {
             // Change reference at back of stack to use global scope
             if (ctx.stack.length === 0)
                 return ['expected a reference to globalize'];
             const v = ctx.pop();
-            if (v.type !== value.ValueType.Id)
+            if (!(v instanceof value.IdValue))
                 return ['expected identifier'];
             v.scopes = [ctx.globals];
             ctx.push(v);
@@ -259,12 +285,12 @@ const operators = {
 
     // Function operator
     'fun' : {
-        action: (ctx, token) => {
+        action: (ctx: Context, token: LexerToken) => {
             // Get operands
             if (ctx.stack.length < 3)
                 return ['expected a condtion action and symbol'];
             const sym = ctx.pop();
-            if (sym.type !== value.ValueType.Id)
+            if (!(sym instanceof value.IdValue))
                 return ['expected a symbol'];
             const action = ctx.pop();
             if (action.type !== value.ValueType.Macro)
@@ -294,7 +320,7 @@ const operators = {
     // Export a function as wasm
     // {I32 I32} { + } $add target
     'target' : {
-        action: (ctx, token) => {
+        action: (ctx: Context, token: LexerToken) => {
             // Get operands
             const sym = ctx.pop();
             if (sym.type !== value.ValueType.Id)
@@ -305,7 +331,6 @@ const operators = {
             const args = ctx.pop();
             if (args.type !== value.ValueType.Macro)
                 return ['expected macro'];
-
 
             // Get input types
             const ev = ctx.traceIO(args, token);
@@ -320,8 +345,6 @@ const operators = {
             const out = new expr.FunExportExpr(token, sym.value.slice(1), inTypes);
             const pes = inTypes.map((t, i) => new expr.ParamExpr(token, t, out, i)).reverse();
             ctx.push(...pes);
-
-
 
             // Invoke macro to determine structure of fxn
             // Get output values
@@ -339,6 +362,37 @@ const operators = {
             for (let i = 0; i < pes.length; i++)
                 ctx.pop();
         },
+    },
+
+    // Functor type
+    'arrow' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get operands
+            const outputsMacro = ctx.pop();
+            const inputsMacro = ctx.pop();
+            if (outputsMacro.type !== value.ValueType.Macro || inputsMacro.type !== value.ValueType.Macro)
+                return ['expected two macros for input and output types'];
+
+            // Get input types
+            const ev = ctx.traceIO(inputsMacro, token);
+            if (!(ev instanceof Context.TraceResults))
+                return ev;
+            if (ev.gives.some(v => v.type !== value.ValueType.Type))
+                return ['expected all input types to be types'];
+            const inputs : types.Type[] = ev.gives.map(t => t.value);
+
+            // Get output types
+            const ev2 = ctx.traceIO(outputsMacro, token);
+            if (!(ev2 instanceof Context.TraceResults))
+                return ev2;
+            if (ev2.gives.some(v => v.type !== value.ValueType.Type))
+                return ['expected all output types to be types'];
+            const outputs : types.Type[] = ev2.gives.map(t => t.value);
+
+            // Push Type onto the stack
+            const type = new types.ArrowType(token, inputs, outputs);
+            ctx.push(new value.Value(token, value.ValueType.Type, type));
+        }
     },
 };
 
@@ -713,6 +767,39 @@ const funs = {
     // TODO comparisons: < >
     // TODO type-casting
     // TODO import, import from js/env
+
+
+    // TODO maybe use make instead?
+    'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
+        null,
+        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+            // macro + any datatype
+            const type = ctx.pop();
+            const v = ctx.pop();
+            if (type.type !== value.ValueType.Type)
+                return ctx.push(toBool(false, token));
+            else if (v.type !== value.ValueType.Macro)
+                return ['as operator currently can only apply types to macros'];
+            else
+                return ctx.push(toBool(true, token));
+        })),
+        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+            // Get args
+            const type = ctx.pop();
+            const value = ctx.pop();
+
+            // Assume it's arrow type, if not, convert it to one
+            // Do typecheck:
+                // Copy stack and put input types onto it
+                // Invoke macro
+                // Verify results are correct
+                // TODO probably should have something dedicated to this in Context/Macro
+
+            // TODO this is placeholder
+            value.datatype = type.value;
+            ctx.push(value);
+        })),
+    ))
 };
 
 // Export map of macros

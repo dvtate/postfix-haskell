@@ -29,11 +29,13 @@ export class Value {
     token: LexerToken;
     type: ValueType;
     value: any;
+    datatype?: types.Type;
 
-    constructor(token: LexerToken, type: ValueType, value) {
+    constructor(token: LexerToken, type: ValueType, value, datatype?: types.Type) {
         this.token = token;
         this.type = type;
         this.value = value;
+        this.datatype = datatype;
     }
 
     /**
@@ -49,10 +51,8 @@ export class Value {
  */
 export class DataValue extends Value {
     datatype: types.Type;
-
     constructor(token, type: types.Type, value) {
-        super(token, ValueType.Data, value);
-        this.datatype = type;
+        super(token, ValueType.Data, value, type);
     }
 };
 
@@ -116,3 +116,7 @@ export class StrValue extends Value {
         super(token, ValueType.Str, token.token.substr(1, token.token.length - 2));
     }
 };
+
+export class PtrValue extends NumberValue {
+
+}

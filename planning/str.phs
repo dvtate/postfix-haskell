@@ -1,0 +1,25 @@
+
+# new builtin: `data`
+# input: string/number literal?
+# output:
+
+{
+    $lit =
+    lit type {} {I32 I32} arrow == :assert
+    { lit @ } pack
+} class $Str =
+
+{ type Str == } { unpack pop } $len fun
+{ type Str == } { unpack swap pop } $addr fun
+{ { $a  $b } =
+    a type Str ==
+    b type Str == &&
+}
+
+
+# Basics
+{ $_ = } $pop =
+{ $b = $a = b a } $swap =
+{ * } $&& =
+{ + } $|| =
+{ 0 == } $! =

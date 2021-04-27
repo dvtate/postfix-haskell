@@ -2,6 +2,7 @@ import Context from "./context";
 import { BlockToken, LexerToken } from "./scan";
 import parse from "./parse";
 import * as error from './error';
+import { Type } from "./datatypes";
 
 
 /* TODO
