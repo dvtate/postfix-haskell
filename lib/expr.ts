@@ -48,7 +48,6 @@ export class Expr extends value.Value {
     static expensive = true;
 };
 
-// TODO is this used?
 /**
  * Data Expressions
  * @abstract

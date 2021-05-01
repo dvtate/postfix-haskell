@@ -8,5 +8,4 @@ maybe a lookup table for gc
 - stack on heap using address translations?
 
 TODO read assemblyscript malloc and gc impls
-
 TODO linear memory diagram
