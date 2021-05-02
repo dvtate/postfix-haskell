@@ -44,7 +44,10 @@ export class Expr extends value.Value {
         return '';
     }
 
-    // Would it be better to store the value in a local or inline it multiple times?
+    /**
+     * Would it be better to store the value in a local or inline it multiple times?
+     * @virtual
+     */
     static expensive = true;
 };
 

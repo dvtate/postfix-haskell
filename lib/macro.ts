@@ -12,6 +12,10 @@ import { Type } from "./datatypes";
  * - InternalMacro - macro that executes javascript
  */
 
+// TODO add arrow type
+// TOOD make it extend Value
+// TODO make a child class for StringLiterals
+
 /**
  * Macros are similar to blocks of code, or executable arrays in postscript
  */

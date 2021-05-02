@@ -31,7 +31,7 @@ export default function parse(tokens: LexerToken[], ctx = new Context()): Contex
 
             // Blocks: Need to form a closure with current scope
             case LexerToken.Type.Block:
-                ctx.push(new value.Value(t, value.ValueType.Macro, Macro.fromLiteral(ctx, t as BlockToken, parse)));
+                ctx.push(new value.MacroValue(t, Macro.fromLiteral(ctx, t as BlockToken, parse)));
                 break;
 
             case LexerToken.Type.String:

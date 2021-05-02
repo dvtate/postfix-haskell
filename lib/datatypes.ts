@@ -32,9 +32,9 @@ export class Type {
      * @param {Type} type - type to check against
      * @virtual
      */
-    check(_ : Type): boolean {
+    check(type : Type): boolean {
         // Default behavior is to act as a wildcard
-        return true;
+        return type != null;
     }
 };
 
@@ -60,6 +60,9 @@ export class ClassType extends Type {
      * @override
      */
     check(type: Type):boolean {
+        if (type === null)
+            return false;
+
         // Check class
         if (type instanceof ClassType) {
             // Check compatible class
@@ -124,6 +127,9 @@ export class UnionType extends Type {
      * @override
      */
     check(type): boolean {
+        if (type === null)
+            return false;
+
         // Don't care about classes
         if (type instanceof ClassType) {
             type = type.getBaseType();
@@ -168,6 +174,9 @@ export class TupleType extends Type {
      * @override
      */
     check(type): boolean {
+        if (type == null)
+            return false;
+
         // Don't care about classes
         if (type instanceof ClassType) {
             type = type.getBaseType();
@@ -222,6 +231,9 @@ export class PrimitiveType extends Type {
      * @override
      */
     check(type: Type): boolean {
+        if (type == null)
+            return false;
+
         // Don't care about classes
         if (type instanceof ClassType) {
             type = type.getBaseType();

@@ -10,6 +10,8 @@ import CompileContext from "./compile";
 
 import debugMacros from './debug_macros';
 import globalOps from './globals';
+import WasmNumber from "./numbers";
+import { throws } from "assert";
 
 
 const wabtProm = wabtMod();
@@ -71,11 +73,19 @@ export default class Context {
 
     recursiveMacros: Set<value.Value> = new Set();
 
+    // Some optimizations can be slow with larger projects
+    optLevel: number;
+
+    // Static data section of linear memory
+    staticData: number[] = [];
+
     // Link external class
     static TraceResults = TraceResults;
 
     // Default constructor
-    constructor() {
+    constructor(optLevel: number = 1) {
+        this.optLevel = optLevel;
+
         // Initialize globals
         this.globals = {
             ...globalOps,    // Operators
@@ -243,7 +253,7 @@ export default class Context {
     /**
      *
      * @param {*} v
-     * @returns {false|Object}
+     * @returns TraceResultTracker or null
      */
     _getTraceResults(v): TraceResultTracker {
         // TODO also check takes datatypes and constexprs against stack
@@ -264,8 +274,10 @@ export default class Context {
         // TODO this algorithm is extrememly complicated and confusing and inefficient
         //  there must be a simpler way... time spent to create: ~1 month
 
-        if (v.type == value.ValueType.Str) {
-            // TODO length and pointer into something
+        if (v instanceof value.StrValue) {
+            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, v.value.length)));
+            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, this.addStaticData(v.value))));
+            return this;
         }
 
         // If not invokable just put it on the stack
@@ -459,6 +471,58 @@ export default class Context {
     }
 
     /**
+     * Store static data
+     * @param d - data to save statically
+     * @returns - memory address
+     */
+     addStaticData(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {
+        let bytes : Uint8Array;
+
+        // Convert into array of bytes
+        // TODO fix bithmaths lol
+        if (d instanceof Uint32Array)
+            bytes = new Uint8Array(d.reduce((a, c) => [
+                ...a,
+                c & ((1 << 8) - 1),
+                c & ((1 << 16) - 1),
+                c & ((1 << 24) - 1),
+                (c >> 24) & ((1 << 8) - 1), // Downshift to avoid i32 overflow
+            ], []));
+        else if (d instanceof Uint16Array)
+            bytes = new Uint8Array(d.reduce((a, c) => [
+                ...a,
+                c & ((1 << 8) - 1),
+                c & ((1 << 16) - 1),
+            ], []));
+        else if (typeof d === 'string')
+            bytes = new TextEncoder().encode(d); // u8array
+        else if (d instanceof Uint8Array)
+            bytes = d;
+        else if (d instanceof Array)
+            bytes = new Uint8Array(d);
+
+        // TODO maybe handle bigints?
+
+        // Check to see if same value already exists
+        if (this.optLevel > 1)
+            for (let i = 0; i < this.staticData.length; i++) {
+                let j : number;
+                for (j = 0; j < bytes.length; j++)
+                    if (this.staticData[i + j] !== bytes[j])
+                        break;
+
+                // The data already exists
+                if (j == bytes.length)
+                    return i;
+            }
+
+        // Append to static data
+        const ret = this.staticData.length;
+        this.staticData.push(...bytes);
+        return ret;
+    }
+
+    /**
      * Warn the user when something seems weird
      *
      * @param token - location in code
@@ -476,7 +540,7 @@ export default class Context {
      */
     async outWast({ fast = false, folding = false, optimize = false, validate = false }): Promise<string> {
         // Generate webassembly text
-        const src = new CompileContext(this.exports).out();
+        const src = new CompileContext(this.exports, this.staticData).out();
         if (fast)
             return src;
 

@@ -2,6 +2,7 @@ import * as types from './datatypes';
 import WasmNumber from './numbers';
 import { LexerToken } from './scan';
 import Context from './context';
+import Macro from './macro';
 
 /*
  * In this context, Values are like nodes on an AST
@@ -56,6 +57,14 @@ export class DataValue extends Value {
     }
 };
 
+export class MacroValue extends DataValue {
+    value: Macro;
+    constructor(token, value: Macro, type: types.Type = new types.Type()) {
+        super(token, type, value);
+        this.type = ValueType.Macro;
+    }
+};
+
 /**
  * Primitive data, native wasm types
  */
@@ -85,6 +94,7 @@ export class NumberValue extends DataValue {
  */
 export class IdValue extends Value {
     scopes: Array<{ [id: string]: Value }>;
+    value: string;
     constructor(token: LexerToken, id: string, scopes) {
         super(token, ValueType.Id, id);
         this.scopes = scopes;
@@ -94,14 +104,15 @@ export class IdValue extends Value {
      * Convert Id's to values
      */
     deref(ctx: Context) {
-        return ctx.getId(this.value.id, this.scopes || ctx.scopes);
+        return ctx.getId(this.value, this.scopes || ctx.scopes);
     }
 };
 
 // Packed values
 export class TupleValue extends DataValue {
-    constructor(token: LexerToken, values: DataValue[] = []) {
-        const type = new types.TupleType(token, values.map(v => v.datatype));
+    value: Value[];
+    constructor(token: LexerToken, values: Value[] = []) {
+        const type = new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
     }
 };
@@ -112,11 +123,8 @@ export class TupleValue extends DataValue {
 
 // String literal, not data
 export class StrValue extends Value {
+    value: string;
     constructor(token: LexerToken) {
-        super(token, ValueType.Str, token.token.substr(1, token.token.length - 2));
+        super(token, ValueType.Str, token.token);
     }
 };
-
-export class PtrValue extends NumberValue {
-
-}

@@ -19,18 +19,28 @@ These are globally defined operators some may eventually be moved to standard li
 // Util to convert to boolean value
 const toBool = (b, token) => new value.NumberValue(token, new WasmNumber().fromString(b ? '1' : '0'));
 
+
+type MacroOperatorsSpec = {
+    [k : string] : {
+        action: (ctx: Context, token: LexerToken) => any;
+        type?: types.ArrowType;
+    };
+};
+
 // Operators that the user shouldn't overload
-const operators = {
+const operators :  MacroOperatorsSpec = {
     // Boolean literals
     'false' : {
         action: (ctx, token) => {
             ctx.push(toBool(false, token));
         },
+        type: new types.ArrowType(null, [], [types.PrimitiveType.Types.I32]),
     },
     'true' : {
         action: (ctx, token) => {
             ctx.push(toBool(true, token));
         },
+        type: new types.ArrowType(null, [], [types.PrimitiveType.Types.I32]),
     },
 
     // Everything above here should probably be moved to standard library
@@ -83,6 +93,7 @@ const operators = {
     },
 
     // Union type operator
+    // TODO override for bitwise or
     '|' : {
         action: (ctx, token) => {
             // Get input
@@ -95,13 +106,14 @@ const operators = {
             if (a.type !== value.ValueType.Type)
                 return ['left value should be a type'];
 
-            a = a.value;
-            b = b.value;
+            // Extract types from values
+            const aType = a.value as types.Type;
+            const bType = b.value as types.Type;
 
             // Create type union
             const ret = new types.UnionType(token, []);
-            ret.types = (a instanceof types.UnionType ? a.types : [a])
-                    .concat(b instanceof types.UnionType ? b.types : [b]);
+            ret.types = (a instanceof types.UnionType ? a.types : [aType])
+                    .concat(b instanceof types.UnionType ? b.types : [bType]);
             ctx.push(new value.Value(token, value.ValueType.Type, ret));
         },
     },
@@ -140,7 +152,7 @@ const operators = {
             // Make tuple
             const ret = t0 === value.ValueType.Type
                 ? new value.Value(token, value.ValueType.Type,
-                    new types.TupleType(token, rvs.map(v => v.value)))
+                    new types.TupleType(token, rvs.map(v => v.value as types.Type)))
                 : new value.TupleValue(token, rvs);
             ctx.push(ret);
         },
@@ -806,10 +818,11 @@ const funs = {
 const exportsObj = Object.entries(operators).reduce((ret, [k, v]) =>
     ({
         ...ret,
-        [k] : new value.Value(
+        [k] : new value.MacroValue(
             null,
-            value.ValueType.Macro,
-            new Macro(v.action)),
+            new Macro(v.action),
+            v.type || undefined,
+        ),
     }), {});
 
 // Add some other values as well
