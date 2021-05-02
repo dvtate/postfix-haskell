@@ -187,8 +187,12 @@ export default class Fun {
 
         // Verify all have same return types
         const first = ios[0].gives as expr.DataExpr[];
-        if (ios.some(t => t.gives.some((v, i) => (v instanceof value.DataValue || v instanceof expr.DataExpr) && v.datatype !== first[i].datatype)))
+        if (ios.some(t => t.gives.some((v, i) => (v instanceof value.DataValue || v instanceof expr.DataExpr)
+            && !v.datatype.getBaseType().check(first[i].datatype))))
+        {
+            console.log(ios);
             return ['function must have consistent return types'];
+        }
 
         // Drop inputs from stack
         ctx.popn(maxTakes.length);

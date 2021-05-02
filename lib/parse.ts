@@ -51,6 +51,7 @@ export default function parse(tokens: LexerToken[], ctx = new Context()): Contex
                         return new error.SyntaxError(`${t.token} is undefined`, t, ctx);
                     // console.log('invoke', t.token, v);
                     const ret = ctx.invoke(v, t);
+                    // TODO this returns null sometimes
                     if (!(ret instanceof Context))
                         return ret;
                 }

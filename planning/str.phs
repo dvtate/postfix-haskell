@@ -5,24 +5,36 @@
 
 {
     $lit =
-    lit type {} {I32 I32} arrow == :assert
-    { lit @ } pack
+    # $lit ~ type {} {I32 I32} arrow == :assert
+    { lit } pack
 } class $Str =
-
-{ type Str == } { unpack pop } $len fun
-{ type Str == } { unpack swap pop } $addr fun
-{ { $a  $b } =
-    a type Str ==
-    b type Str == &&
-}
 
 
 # Basics
 { $_ = } $pop =
-{ $b = $a = b a } $swap =
+{ { $a $b = } b a } $swap =
 { * } $&& =
 { + } $|| =
 { 0 == } $! =
 { == ! } $!= =
 { > ! } $<= =
 { < ! } $>= =
+
+# String TypeClass
+{ I32 I32 } pack class $Str =
+{ type Str == } { unpack pop } $.len fun
+{ type Str == } { unpack swap pop } $.addr fun
+{ $lit = { lit } pack Str make } $to_Str = # todo: overload make
+
+# Some strings
+"fizz" to_Str $fizz =
+"buzz" to_Str $buzz =
+"fizzbuzz" to_Str $fizzbuzz =
+{ 0 0 } to_Str $null_str =
+
+# fizzbuzz demo
+{ true } { pop null_str } $fb fun
+{ 3 % 0 == } { pop fizz } $fb fun
+{ 5 % 0 == } { pop buzz } $fb fun
+{ $n = n 3 % 0 == n 5 % 0 == * } { pop fizzbuzz } $fb fun
+{ I32 } { fb } $fb_export target

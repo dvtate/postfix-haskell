@@ -17,12 +17,10 @@ const rl = readline.createInterface ({
 });
 
 // Preserve context
-const ctx = new Context();
-
+const ctx = new Context(2);
 
 // For each line
 rl.on('line', line => {
-
     // TODO imports
     if (line.startsWith("#!load:")) {
         const fname = line.split(':')[1];

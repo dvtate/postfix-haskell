@@ -30,8 +30,9 @@ if (process.env.TRACK_TIME)
     console.log('lex:', performance.now() - start);
 
 // Parse (weird meaning here, more like "interpret phase")
+
 start = performance.now();
-const ctx = parse(ptree);
+const ctx = parse(ptree, new Context(process.env.FAST ? 1 : 2));
 if (ctx instanceof error.SyntaxError) {
     // console.log(ctx.tokens);
     console.log(util.formatErrorPos([ctx]));

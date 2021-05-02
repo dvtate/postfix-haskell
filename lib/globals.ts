@@ -94,6 +94,7 @@ const operators :  MacroOperatorsSpec = {
 
     // Union type operator
     // TODO override for bitwise or
+    // TODO convert to function
     '|' : {
         action: (ctx, token) => {
             // Get input
@@ -112,8 +113,8 @@ const operators :  MacroOperatorsSpec = {
 
             // Create type union
             const ret = new types.UnionType(token, []);
-            ret.types = (a instanceof types.UnionType ? a.types : [aType])
-                    .concat(b instanceof types.UnionType ? b.types : [bType]);
+            ret.types = (aType instanceof types.UnionType ? aType.types : [aType])
+                    .concat(bType instanceof types.UnionType ? bType.types : [bType]);
             ctx.push(new value.Value(token, value.ValueType.Type, ret));
         },
     },
@@ -262,8 +263,10 @@ const operators :  MacroOperatorsSpec = {
 
             // Apply class to data
             const compatible = t.value.getBaseType().check(v.datatype);
-            if (!compatible)
+            if (!compatible) {
+                // console.log('make: incompatible', t.value, t.value.getBaseType(), v.datatype);
                 ctx.warn(token, 'class applied to incompatible data');
+            }
             v.datatype = t.value;
             ctx.push(v);
         },

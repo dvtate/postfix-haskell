@@ -3,6 +3,8 @@ import WasmNumber from './numbers';
 import { LexerToken } from './scan';
 import Context from './context';
 import Macro from './macro';
+import CompileContext from './compile';
+import * as expr from './expr';
 
 /*
  * In this context, Values are like nodes on an AST
@@ -44,6 +46,10 @@ export class Value {
      */
     isConstExpr(): boolean {
         return this.type !== ValueType.Expr;
+    }
+
+    out(ctx: CompileContext, fun?: expr.FunExportExpr) {
+        throw new Error("this value cannot be compiled!");
     }
 };
 
@@ -114,6 +120,10 @@ export class TupleValue extends DataValue {
     constructor(token: LexerToken, values: Value[] = []) {
         const type = new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
+    }
+
+    out(ctx: CompileContext, fun?: expr.FunExportExpr) {
+        return this.value.map(v => v.out(ctx, fun)).join('');
     }
 };
 

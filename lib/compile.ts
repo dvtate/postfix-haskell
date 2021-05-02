@@ -29,7 +29,7 @@ export default class CompileContext {
          * @param b - byte
          * @returns - string of form \00 where 00 is replaced by hex equiv
          */
-        function byteToHexEsc(b : number) {
+        function byteToHexEsc(b : number): string {
             const hexChrs = '0123456789ABCDEF';
             return '\\'
                 + hexChrs[(b & (((1 << 4) - 1) << 4)) >> 4]
