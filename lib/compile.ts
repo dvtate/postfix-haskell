@@ -32,7 +32,7 @@ export default class CompileContext {
         function byteToHexEsc(b : number) {
             const hexChrs = '0123456789ABCDEF';
             return '\\'
-                + hexChrs[b & (((1 << 4) - 1) << 4) >> 4]
+                + hexChrs[(b & (((1 << 4) - 1) << 4)) >> 4]
                 + hexChrs[b & ((1 << 4) - 1)];
         }
 
