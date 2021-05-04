@@ -1,4 +1,6 @@
 import * as expr from './expr';
+import * as types from './datatypes';
+
 
 // Not sure if I'll actually end up using this long term...
 
@@ -35,3 +37,31 @@ export default function wat(e: expr.Expr) {
             return a;
         }, new WATCode());
 };
+
+/**
+ * Generate webassembly typename
+ * @param type - type to represent
+ */
+export function watTypename(type : types.Type, name: string = ''): string {
+    if (type instanceof types.ClassType)
+        type = type.getBaseType();
+
+    if (type instanceof types.PrimitiveType)
+        return type.name;
+
+    if (type instanceof types.ArrowType)
+        return `(func ${name} (param ${
+            type.inputTypes.map(t => watTypename(t)).join(' ')
+        }) (result ${
+            type.outputTypes.map(t => watTypename(t)).join(' ')
+        }))`;
+
+    if (type instanceof types.TupleType)
+        return type.types.map(t => watTypename(t)).join(' ');
+
+    if (type instanceof types.UnionType)
+        throw new Error("cannot make wat typename for union type");
+
+    // For unit type no typename
+    return '';
+}

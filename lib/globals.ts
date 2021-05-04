@@ -130,16 +130,11 @@ const operators :  MacroOperatorsSpec = {
                 return ['expected a macro of values to pack'];
 
             // Invoke executable array
-            const stackCpy = ctx.stack.slice();
-            const ev = execArr.value.action(ctx, token);
-            if (typeof ev === 'object' && !(ev instanceof Context))
-                return ev;
-
-            // Get return values
-            // TODO BUG 5 { $v = v v } pack GIVES 5 { 5 }
-            //  should probably remedy this by utilizing ctx.minStackSize or ctx.traceIO()
-            const rvs = ctx.stack.slice(ctx.cmpStack(stackCpy));
-            ctx.popn(rvs.length);
+            const ios = ctx.traceIO(execArr, token);
+            if (!(ios instanceof Context.TraceResults))
+                return ios;
+            const rvs = ios.gives;
+            ctx.popn(ios.takes.length);
 
             if (rvs.length === 0)
                 return ['pack expected at least one value to pack'];
@@ -372,7 +367,7 @@ const operators :  MacroOperatorsSpec = {
                 return ['wasm exports can only return data values'];
             out.outputs = ovs as expr.DataExpr[]; // TODO more safety checks
 
-            ctx.exports.push(out);
+            ctx.module.export(out);
 
             for (let i = 0; i < pes.length; i++)
                 ctx.pop();
@@ -380,7 +375,7 @@ const operators :  MacroOperatorsSpec = {
     },
 
     // Functor type
-    'arrow' : {
+    'Arrow' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
             const outputsMacro = ctx.pop();
@@ -407,6 +402,32 @@ const operators :  MacroOperatorsSpec = {
             // Push Type onto the stack
             const type = new types.ArrowType(token, inputs, outputs);
             ctx.push(new value.Value(token, value.ValueType.Type, type));
+        }
+    },
+
+    'import' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get operands
+            const scopes = ctx.pop();
+            const type = ctx.pop();
+            if (type.type !== value.ValueType.Type)
+                return ['expected a type for the input'];
+            if (!(type.value instanceof types.ArrowType))
+                return ['expected an arrow type for the import'];
+            if (scopes.type != value.ValueType.Macro)
+                return ['expected an executable array of scopes'];
+
+
+            // Get scopes
+            const traceResults = ctx.traceIO(scopes, token);
+            if (!(traceResults instanceof Context.TraceResults))
+                return traceResults;
+            if (traceResults.gives.some(s => !(s instanceof value.StrValue)))
+                return ['expected an executable array of string scopes'];
+            const scopeStrs = traceResults.gives.map(s => s.value) as string[];
+
+            // Add relevant import
+            ctx.module.addImport(scopeStrs, type.value);
         }
     },
 };
@@ -814,7 +835,7 @@ const funs = {
             value.datatype = type.value;
             ctx.push(value);
         })),
-    ))
+    )),
 };
 
 // Export map of macros

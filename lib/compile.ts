@@ -1,4 +1,5 @@
 import * as expr from "./expr";
+import ModuleManager from "./module_mgr";
 
 // Allows Exprs to add helper functions, literals, etc.
 
@@ -10,8 +11,8 @@ export default class CompileContext {
     // Static Data Exports
     staticData: number[];
 
-    constructor(targets : expr.Expr[], staticData: number[]) {
-        this.module = targets.map(e => e.out(this));
+    constructor(module : ModuleManager, staticData : number[]) {
+        module.compile(this); // Sets this.module
         this.staticData = staticData;
     }
 

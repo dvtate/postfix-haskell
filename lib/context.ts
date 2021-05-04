@@ -7,17 +7,18 @@ import * as error from './error';
 import * as expr from './expr';
 import { LexerToken } from "./scan";
 import CompileContext from "./compile";
+import WasmNumber from "./numbers";
 
 import debugMacros from './debug_macros';
 import globalOps from './globals';
-import WasmNumber from "./numbers";
-import { throws } from "assert";
+import ModuleManager from "./module_mgr";
 
 
+// Load wabt on next tick
 const wabtProm = wabtMod();
 
-// Should probably make a ContextProxy class to help with tracing
-// Or maybe just a clone method would be ok (but less efficient)
+// TODO this class is fucking massive and should be split into different components
+//  so that the amount of state it manages is more segregated clear
 
 // Return Types for Context.traceIO() method
 export class TraceResults {
@@ -37,7 +38,8 @@ interface TraceResultTracker {
     value: value.Value,
     result?: TraceResults,
     body?: expr.RecursiveBodyExpr,
-}
+};
+
 
 /**
  * This class stores state assocated with the parser
@@ -47,9 +49,6 @@ interface TraceResultTracker {
 export default class Context {
     // Place to push/pop arugments & exprs
     stack: value.Value[] = [];
-
-    // Exports
-    module: any = {};
 
     // Identifier map
     scopes: Array<{ [k: string] : value.Value }> = [{}];
@@ -68,8 +67,8 @@ export default class Context {
     // Warnings
     warnings: Array<{ token: LexerToken, msg: string }> = [];
 
-    // Exports
-    exports: Array<expr.FunExportExpr> = [];
+    // WebAssembly Module imports and exports
+    module: ModuleManager = new ModuleManager();
 
     recursiveMacros: Set<value.Value> = new Set();
 
@@ -105,13 +104,12 @@ export default class Context {
         // Copy data
         const ret = {
             stack: this.stack,
-            module: this.module,
             scopes: this.scopes,
             globals: this.globals,
             initialStackSize: this.initialStackSize,
             minStackSize: this.minStackSize,
             warnings: this.warnings,
-            exports: this.exports,
+            module: this.module,
 
             // Prob not needed...
             trace: this.trace,
@@ -121,13 +119,12 @@ export default class Context {
         // Make copies of all the state data
         this.restoreState({
             stack: [...this.stack],
-            module: {...this.module},
             scopes: [...this.scopes.map(s => ({...s}))],
             globals: {...this.globals},
             initialStackSize: this.initialStackSize,
             minStackSize: this.minStackSize,
             warnings: [...this.warnings],
-            exports: [...this.exports],
+            module: this.module.clone(),
 
             // Prob not needed...
             trace: [...this.trace],
@@ -144,15 +141,14 @@ export default class Context {
      */
     restoreState(obj) {
         this.stack = obj.stack;
-        this.module = obj.module;
         this.scopes = obj.scopes;
         this.globals = obj.globals;
         this.initialStackSize = obj.initialStackSize;
         this.minStackSize = obj.minStackSize;
         this.warnings = obj.warnings;
-        this.exports = obj.exports;
         this.trace = obj.trace;
         this.traceResults = obj.traceResults;
+        this.module = obj.module;
     }
 
     /**
@@ -479,20 +475,19 @@ export default class Context {
         let bytes : Uint8Array;
 
         // Convert into array of bytes
-        // TODO fix bithmaths lol
         if (d instanceof Uint32Array)
             bytes = new Uint8Array(d.reduce((a, c) => [
                 ...a,
-                c & ((1 << 8) - 1),
-                c & ((1 << 16) - 1),
-                c & ((1 << 24) - 1),
-                (c >> 24) & ((1 << 8) - 1), // Downshift to avoid i32 overflow
+                c & 0b11111111,
+                (c & 0b11111111_00000000) >> 8,
+                (c & 0b11111111_00000000_00000000) >> 16,
+                (c >> 24) & 0b11111111, // Note: Downshift to avoid i32 overflow
             ], []));
         else if (d instanceof Uint16Array)
             bytes = new Uint8Array(d.reduce((a, c) => [
                 ...a,
-                c & ((1 << 8) - 1),
-                c & ((1 << 16) - 1),
+                c & 0b11111111,
+                c >> 8,
             ], []));
         else if (typeof d === 'string')
             bytes = new TextEncoder().encode(d); // u8array
@@ -506,8 +501,8 @@ export default class Context {
         // Check to see if same value already exists
         if (this.optLevel > 1)
             for (let i = 0; i < this.staticData.length; i++) {
-                let j : number;
-                for (j = 0; j < bytes.length; j++)
+                let j = 0;
+                for (; j < bytes.length; j++)
                     if (this.staticData[i + j] !== bytes[j])
                         break;
 
@@ -540,7 +535,7 @@ export default class Context {
      */
     async outWast({ fast = false, folding = false, optimize = false, validate = false }): Promise<string> {
         // Generate webassembly text
-        const src = new CompileContext(this.exports, this.staticData).out();
+        const src = new CompileContext(this.module, this.staticData).out();
         if (fast)
             return src;
 
