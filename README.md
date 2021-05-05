@@ -27,7 +27,7 @@ Run short bits of code and test expected compiler behavior. It's recommended to 
   datatype: PrimitiveType { token: undefined, name: 'i32' }
 }
 
-{ I32 } { 1 + } $incr target :compile
+{ I32 } { 1 + } $incr export :compile
 :compile - (module
   (func (;0;) (param i32) (result i32)
     local.get 0
