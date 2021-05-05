@@ -5,6 +5,8 @@
     ;; JS function import
     (import "js" "eval" (func $eval_js (param i32 i32)))
 
+    (import "js" "test" (func $test (param i32) (result i32 i32)))
+
     ;; String containing some JS code
     (data (i32.const 0) "console.log('eval')\00")
 

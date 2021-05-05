@@ -222,6 +222,7 @@ export default class Context {
         // console.log('trace:', (token && token.token), 'known:', (!!knownResults.result));
         const rv = this.invoke(v, token, true);
 
+        // console.log(this.stack, this.minStackSize);
         // Forward errors
         if (!(rv instanceof Context)) {
             this.restoreState(initialState);

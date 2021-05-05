@@ -37,4 +37,4 @@
 { 3 % 0 == } { pop fizz } $fb fun
 { 5 % 0 == } { pop buzz } $fb fun
 { $n = n 3 % 0 == n 5 % 0 == * } { pop fizzbuzz } $fb fun
-{ I32 } { fb } $fb_export target
+{ I32 } { fb } $fb_export export

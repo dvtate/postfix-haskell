@@ -55,12 +55,15 @@ export default class ModuleManager {
     addImport(scopes: string[], type: types.ArrowType): string {
         // const scopesKey = scopes.map(ModuleManager.escapeSpaces).join(' ');
         const scopesKey = scopes.join('\0');
-        if (!this.imports[scopesKey])
+
+        if (!this.imports[scopesKey]) {
+            // TODO verify that it doesn't actually have multiple returns (not allowed in imports yet)
             this.imports[scopesKey] = {
                 scopes,
                 type,
                 importId: `$import_${this.importId++}`,
             };
+        }
         return this.imports[scopesKey].importId;
     }
 

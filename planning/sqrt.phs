@@ -24,4 +24,4 @@
 
     # Start calculating with first guess being 1
     1.0 iter
-} $sqrt target
+} $sqrt export

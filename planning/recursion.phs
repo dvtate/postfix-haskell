@@ -6,4 +6,4 @@
     branch
 } $lshift =
 
-{ I32 I32 } {lshift} $lshift target
+{ I32 I32 } {lshift} $lshift export

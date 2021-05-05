@@ -7,4 +7,4 @@
     iter
 } $fac =
 
-{ I32 } { $n = 1 n fac } $fac target
+{ I32 } { $n = 1 n fac } $fac export

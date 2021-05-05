@@ -16,18 +16,20 @@ import { Type } from "./datatypes";
 // TOOD make it extend Value
 // TODO make a child class for StringLiterals
 
+type ActionType = (ctx: Context, token: LexerToken) => Context | Array<string> | undefined | SyntaxError | void;
+
 /**
  * Macros are similar to blocks of code, or executable arrays in postscript
  */
 export default class Macro {
-    action: (ctx: Context, token: LexerToken) => Context | Array<string> | undefined | SyntaxError;
+    action: ActionType;
     body?: LexerToken[];
 
     /**
      * @param action - body of the macro
      * @param body - optional body source
      */
-    constructor(action, body?) {
+    constructor(action: ActionType, body?) {
         this.action = action;
         this.body = body;
     }

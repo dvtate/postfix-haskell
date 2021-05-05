@@ -164,7 +164,7 @@ const operators :  MacroOperatorsSpec = {
             if (v.type === value.ValueType.Type) {
                 const v2 = v;
                 v = new value.Value(token, value.ValueType.Macro,
-                    new Macro((ctx, token) => ctx.push(v2), ctx));
+                    new Macro((ctx, token) => void ctx.push(v2), ctx));
             }
 
             // Assert macro type
@@ -328,8 +328,8 @@ const operators :  MacroOperatorsSpec = {
     },
 
     // Export a function as wasm
-    // {I32 I32} { + } $add target
-    'target' : {
+    // {I32 I32} { + } $add export
+    'export' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
             const sym = ctx.pop();
@@ -410,13 +410,12 @@ const operators :  MacroOperatorsSpec = {
             // Get operands
             const scopes = ctx.pop();
             const type = ctx.pop();
+            if (scopes.type != value.ValueType.Macro)
+                return ['expected an executable array of scopes'];
             if (type.type !== value.ValueType.Type)
                 return ['expected a type for the input'];
             if (!(type.value instanceof types.ArrowType))
                 return ['expected an arrow type for the import'];
-            if (scopes.type != value.ValueType.Macro)
-                return ['expected an executable array of scopes'];
-
 
             // Get scopes
             const traceResults = ctx.traceIO(scopes, token);
@@ -427,7 +426,24 @@ const operators :  MacroOperatorsSpec = {
             const scopeStrs = traceResults.gives.map(s => s.value) as string[];
 
             // Add relevant import
-            ctx.module.addImport(scopeStrs, type.value);
+            const importName = ctx.module.addImport(scopeStrs, type.value);
+            if (!importName)
+                return ["invalid import"];
+
+            // Wrap import call in a macro
+            ctx.push(new value.MacroValue(token, new Macro((ctx, token) => {
+                // Verify matching input types
+                const inputs: value.Value[] = [];
+                for (let i = type.value.inputTypes.length - 1; i >= 0; i--) {
+                    const v = ctx.pop();
+                    if (!v.datatype || !type.value.inputTypes[i].check(v.datatype))
+                        return ['incompatible value passed to imported function call: ', v] as string[];
+                    inputs.push(v);
+                }
+
+                // Make call
+                ctx.push(new expr.InstrExpr(token, type.value.outputTypes[0], `call ${importName} `, inputs));
+            }), type.value));
         }
     },
 };
@@ -466,25 +482,29 @@ const funs = {
             const b = ctx.pop();
             const a = ctx.pop();
 
+            const type = a.datatype.getBaseType();
+            if (!(type instanceof types.PrimitiveType))
+                return ['builtin plus only accepts primitives']
+
             const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
             if (!exprs.includes(true))
                 // Simplify constexprs
                 ctx.push(new value.NumberValue(token, a.value.clone().add(b.value)));
             else if (exprs[0] === exprs[1])
                 // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.add`, [a, b]));
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.add`, [a, b]));
             else if (!exprs[0])
                 // A is const, try to optimize
                 // adding zero is identity
                 ctx.push(a.value.value == 0
                     ? b
-                    : new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.add`, [a, b]));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, [a, b]));
             else // if (!exprs[1])
                 // B is const, try to optimize
                 // Adding zero is identity
                 ctx.push(b.value.value == 0
                     ? a
-                    : new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.add`, [a, b]));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, [a, b]));
         })),
     )),
     '*' : new value.Value(null, value.ValueType.Fxn, new Fun(
@@ -495,13 +515,16 @@ const funs = {
             const a = ctx.pop();
 
             const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
+            const type = a.datatype.getBaseType();
+            if (!(type instanceof types.PrimitiveType))
+                return ['builtin * only accepts primitives'];
+
             if (!exprs.includes(true))
                 // Simplify constexprs
                 ctx.push(new value.NumberValue(token, a.value.clone().mul(b.value)));
             else if (exprs[0] === exprs[1]) {
                 // Neither is a constexpr
-                const type = a.datatype.getBaseType().name;
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type}.mul`, [a, b]));
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, [a, b]));
             } else if (!exprs[0])
                 // A is const, try to optimize
                 // mul by 1 is identity
@@ -510,7 +533,7 @@ const funs = {
                     ? b
                     : a.value.value == 0
                         ? a
-                        : new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.mul`, [a, b]));
+                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, [a, b]));
             else // if (!exprs[1])
                 // B is const, try to optimize
                 // mul by 1 is identity
@@ -519,7 +542,7 @@ const funs = {
                     ? a
                     : b.value.value == 0
                         ? b
-                        : new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.mul`, [a, b]));
+                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, [a, b]));
         })),
     )),
     '%' : new value.Value(null, value.ValueType.Fxn, new Fun(
@@ -544,8 +567,8 @@ const funs = {
             } else {
                 // Neither is a constexpr
 
-                const type = a.datatype.getBaseType().name;
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type}.rem${type[0] === 'f' ? '' : '_s'}`, [a, b]));
+                const type = a.datatype.getBaseType() as types.PrimitiveType;
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.rem${type[0] === 'f' ? '' : '_s'}`, [a, b]));
             }
         })),
     )),
@@ -559,18 +582,19 @@ const funs = {
 
             // Check constexprs
             const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
+            const type = a.datatype.getBaseType() as types.PrimitiveType;
             if (!exprs.includes(true))
                 // Simplify constexprs
                 ctx.push(new value.NumberValue(token, a.value.clone().sub(b.value)));
             else if (exprs[1])
                 // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.sub`, [a, b]));
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, [a, b]));
             else // if (!exprs[1] && exprs[0])
                 // B is const, try to optimize
                 // Subtracting zero is identity
                 ctx.push(b.value.value == 0
                     ? a
-                    : new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.sub`, [a, b]));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, [a, b]));
         })),
     )),
     '/' : new value.Value(null, value.ValueType.Fxn, new Fun(
@@ -594,14 +618,15 @@ const funs = {
                 ctx.push(new value.NumberValue(token, a.value.clone().div(b.value)));
             } else if (exprs[1]) {
                 // Neither is a constexpr
-                const type = a.datatype.getBaseType().name;
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type}.div${type[0] === 'f' ? "" : "_s"}`, [a, b]));
+                const type = a.datatype.getBaseType() as types.PrimitiveType;
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.div${type.name[0] === 'f' ? "" : "_s"}`, [a, b]));
             } else { // if (!exprs[1] && exprs[0])
                 // B is const, try to optimize
                 // Divide by 1 is identity
+                const type = a.datatype.getBaseType() as types.PrimitiveType;
                 ctx.push(b.value.value == 1
                     ? a
-                    : new expr.InstrExpr(token, b.datatype, `${a.datatype.getBaseType().name}.div`, [a, b]));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.div`, [a, b]));
             }
         })),
     )),
@@ -627,10 +652,8 @@ const funs = {
         })),
         new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
             const sym = ctx.pop();
-            if (sym.type !== value.ValueType.Id) {
-                ctx.push(sym);
-                return;
-            }
+            if (!(sym instanceof value.IdValue))
+                return ['expected an escaped identifier to extract value from'];
             const v = ctx.getId(sym.value.slice(1), sym.scopes);
             if (!v)
                 return ['undefined'];
@@ -685,16 +708,20 @@ const funs = {
                     break;
 
                 // Value comparison
-                case value.ValueType.Data:
+                case value.ValueType.Data: {
                     // Cannot compare incompatible datatypes
                     if (!b.datatype.check(a.datatype))
                         return ['incompatible types'];
 
                     // Non-primitives
-                    if (!(a.datatype.getBaseType() instanceof types.PrimitiveType))
-                        return ['you have to overload the $== fun for this datatype'];
+                    const aType = a.datatype.getBaseType();
+                    const bType = b.datatype.getBaseType();
+                    if (!(aType instanceof types.PrimitiveType))
+                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                    if (!(bType instanceof types.PrimitiveType))
+                        return ['builtin == only accepts primitives (overload $== global fun)'];
 
-                    // Compile-time check
+                        // Compile-time check
                     if (b.type === value.ValueType.Data) {
                         ctx.push(toBool(a.value.equals(b.value), token));
                         return;
@@ -706,43 +733,53 @@ const funs = {
                             ctx.push(new expr.InstrExpr(
                                 token,
                                 types.PrimitiveType.Types.I32,
-                                `${b.datatype.getBaseType().name}.eqz`,
+                                `${bType.name}.eqz`,
                                 [b]
                             ));
                         } else {
                             ctx.push(new expr.InstrExpr(
                                 token,
                                 types.PrimitiveType.Types.I32,
-                                `${a.datatype.getBaseType().name}.eq`,
+                                `${aType.name}.eq`,
                                 [a, b]
                             ));
                         }
                         return;
                     }
                     throw "wtf?";
+                }
 
                 // TODO expr
-                case value.ValueType.Expr:
+                case value.ValueType.Expr: {
                     // Cannot compare incompatible datatypes
                     if (!b.datatype.check(a.datatype))
                         return ['incompatible types'];
 
-                    if (a.type === value.ValueType.Data && a.value.value === BigInt(0)) {
+                    // Non-primitives
+                    const aType = a.datatype.getBaseType();
+                    const bType = b.datatype.getBaseType();
+                    if (!(aType instanceof types.PrimitiveType))
+                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                    if (!(bType instanceof types.PrimitiveType))
+                        return ['builtin == only accepts primitives (overload $== global fun)'];
+
+                    if (b.type === value.ValueType.Data && a.value.value === BigInt(0)) {
                         ctx.push(new expr.InstrExpr(
                             token,
                             types.PrimitiveType.Types.I32,
-                            `${a.datatype.getBaseType().name}.eqz`,
+                            `${aType.name}.eqz`,
                             [a]
                         ));
                     } else {
                         ctx.push(new expr.InstrExpr(
                             token,
                             types.PrimitiveType.Types.I32,
-                            `${a.datatype.getBaseType().name}.eq`,
+                            `${aType.name}.eq`,
                             [a, b]
                         ));
                     }
                     return;
+                }
 
                 // Invalid syntax type passed
                 default:

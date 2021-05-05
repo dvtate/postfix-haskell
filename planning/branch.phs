@@ -10,7 +10,7 @@
 # Not operator
 { 1 } { 0 == } $! global fun
 
-#{ I32 } {!} $not target
+#{ I32 } {!} $not export
 
 # And operator
 { 1 } {	# One of the conditions is false
@@ -30,4 +30,4 @@ fizz buzz + $fizzbuzz =
 { 3 % 0 == } { pop fizz } $fb fun
 { 5 % 0 == } { pop buzz } $fb fun
 { $n = n 3 % 0 == n 5 % 0 == * } { pop fizzbuzz } $fb fun
-{ I32 } { fb } $fb target
+{ I32 } { fb } $fb export

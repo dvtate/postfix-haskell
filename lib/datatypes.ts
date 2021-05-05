@@ -1,6 +1,6 @@
-import Context from './context';
-import Macro from './macro';
 import { LexerToken } from './scan';
+
+// TODO depict function/method
 
 // Abstract Base class
 export class Type {
@@ -37,6 +37,27 @@ export class Type {
         return type != null;
     }
 };
+
+// Empty type
+export class UnitType extends Type {
+    constructor(token) {
+        super(token);
+    }
+
+    // getBaseType(): Type { return null; }
+
+    /**
+     * @override
+     */
+    getWasmTypeName(): string { return ''; }
+
+    /**
+     * @override
+     */
+    check(type: Type): boolean {
+        return type instanceof UnitType;
+    }
+}
 
 // More specific than types, used for applying methods and stuff
 export class ClassType extends Type {
@@ -265,3 +286,6 @@ export class ArrowType extends Type {
             || this.outputTypes.some((t, i) => t.check(type.outputTypes[i])));
     }
 };
+
+
+// TODO add ValueTypes as classes?

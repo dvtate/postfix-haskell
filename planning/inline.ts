@@ -22,7 +22,7 @@ import { phs } from '../tools/inline';
     { $n = n 3 % 0 == n 5 % 0 == && } { pop fizzbuzz } $fb fun
 
     # Export
-    { I32 } { fb } $fb target
+    { I32 } { fb } $fb export
     `;
 
     const { fb } = program.instance.exports;
