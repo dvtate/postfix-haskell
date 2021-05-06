@@ -1,0 +1,15 @@
+
+# inb4 monadic io
+
+
+{ $T = T } class $IO =
+
+{
+    $body =
+    {} pack Unit IO make
+    body
+} $do =
+
+{
+    { Unit IO I32 I32 } { Unit IO } Arrow {"js" "logStr"} import @
+} { Unit IO I32 I32 } { Unit IO } Arrow as $put_str =

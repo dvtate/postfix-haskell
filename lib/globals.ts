@@ -136,8 +136,12 @@ const operators :  MacroOperatorsSpec = {
             const rvs = ios.gives;
             ctx.popn(ios.takes.length);
 
-            if (rvs.length === 0)
-                return ['pack expected at least one value to pack'];
+            // Empty Tuple
+            if (rvs.length === 0) {
+                ctx.push(new value.TupleValue(token, []));
+                return ctx;
+            }
+
             const t0 = rvs[0].type;
             // TODO eventually this could be allowed
             // TODO handle escaped identifiers as wildcards
@@ -402,9 +406,17 @@ const operators :  MacroOperatorsSpec = {
             // Push Type onto the stack
             const type = new types.ArrowType(token, inputs, outputs);
             ctx.push(new value.Value(token, value.ValueType.Type, type));
-        }
+        },
     },
 
+    // Void datatype, stores no values, only accepts empty tuple
+    'Void' : {
+        action: (ctx, token) => {
+            ctx.push(new value.Value(token, value.ValueType.Type, new types.TupleType(token, [])));
+        },
+    },
+
+    // Import
     'import' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
@@ -444,7 +456,7 @@ const operators :  MacroOperatorsSpec = {
                 // Make call
                 ctx.push(new expr.InstrExpr(token, type.value.outputTypes[0], `call ${importName} `, inputs));
             }), type.value));
-        }
+        },
     },
 };
 

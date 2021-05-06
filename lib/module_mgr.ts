@@ -1,13 +1,11 @@
 import * as types from "./datatypes";
-import { watTypename } from "./wat";
 import * as expr from './expr';
-import CompileContext from "./compile";
 
 /**
  * Manges module imports & exports
  */
 export default class ModuleManager {
-    // Set of imports
+    /// Set of imports
     private imports: {
         [k : string] : {
             // ['js', 'eval']
@@ -21,13 +19,23 @@ export default class ModuleManager {
         }
     } = {};
 
-    // Unique identifier number for imports
+    /// Unique identifier number for imports
     private importId: number = 0;
 
-    // Functions to export
+    /// Functions to export
     private exports: Array<expr.FunExportExpr> = [];
 
-    constructor() {}
+    /// Static data section of linear memory
+    private staticData: number[];
+
+    /// Primarily function exports. Compiled functions and stuff that go in main body of module
+    definitions: string[];
+
+    /**
+     * @constructor
+     * @param optLevel - optimization level for the compilation
+     */
+    constructor(public optLevel: number = 1) {}
 
     /**
      *
@@ -79,16 +87,27 @@ export default class ModuleManager {
      * Generate import section of wasm
      * @returns -  webassembly text code
      */
-    compile(ctx : CompileContext) {
+    compile() {
+        // TODO imports
+        // TODO exports
+        // TODO globals/stack pointer
+
         // Compile imports
-        ctx.module.push(Object.values(this.imports)
+        this.definitions.push(Object.values(this.imports)
             .map(i => `(import ${
                 // TODO use String.prototype.replaceAll() in 2 years
                 i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
-            } ${watTypename(i.type, i.importId)})`).join('\n'));
+            } ${i.type.getWasmTypeName(i.importId)})`).join('\n'));
 
         // Compile exports
-        ctx.module.push(...this.exports.map(e => e.out(ctx)));
+        this.definitions.push(...this.exports.map(e => e.out(this)));
+
+        return `(module\n
+            ${this.definitions.join('\n\n')}
+            (memory (export "memory") ${this.initialPages()})
+            (data (i32.const 0) "${
+                this.staticDataToHexString()
+            }"))`;
     }
 
     /**
@@ -99,5 +118,86 @@ export default class ModuleManager {
         ret.imports = { ...this.imports };
         ret.importId = this.importId;
         return ret;
+    }
+
+    /**
+     * Store static data
+     * @param d - data to save statically
+     * @returns - memory address
+     */
+    addStaticData(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {
+        let bytes : Uint8Array;
+
+        // Convert into array of bytes
+        if (d instanceof Uint32Array)
+            bytes = new Uint8Array(d.reduce((a, c) => [
+                ...a,
+                c & 0b11111111,
+                (c & 0b11111111_00000000) >> 8,
+                (c & 0b11111111_00000000_00000000) >> 16,
+                (c >> 24) & 0b11111111, // Note: Downshift to avoid i32 overflow
+            ], []));
+        else if (d instanceof Uint16Array)
+            bytes = new Uint8Array(d.reduce((a, c) => [
+                ...a,
+                c & 0b11111111,
+                c >> 8,
+            ], []));
+        else if (typeof d === 'string')
+            bytes = new TextEncoder().encode(d); // u8array
+        else if (d instanceof Uint8Array)
+            bytes = d;
+        else if (d instanceof Array)
+            bytes = new Uint8Array(d);
+
+        // TODO maybe handle bigints?
+
+        // Check to see if same value already exists
+        if (this.optLevel > 1)
+            for (let i = 0; i < this.staticData.length; i++) {
+                let j = 0;
+                for (; j < bytes.length; j++)
+                    if (this.staticData[i + j] !== bytes[j])
+                        break;
+
+                // The data already exists
+                if (j == bytes.length)
+                    return i;
+            }
+
+        // Append to static data
+        const ret = this.staticData.length;
+        this.staticData.push(...bytes);
+        return ret;
+    }
+
+    /**
+     * Generates a hexstring that initializes the start of linear memory
+     * @returns
+     */
+    staticDataToHexString(): string {
+        /**
+         * Convert a byte into an escaped hex character
+         * @param b - byte
+         * @returns - string of form \XX where XX is replaced by character hex equiv
+         */
+         function byteToHexEsc(b : number): string {
+            const hexChrs = '0123456789ABCDEF';
+            return '\\'
+                + hexChrs[(b & (((1 << 4) - 1) << 4)) >> 4]
+                + hexChrs[b & ((1 << 4) - 1)];
+        }
+
+        // Static data as a hex string
+        return this.staticData.map(byteToHexEsc).join('');
+    }
+
+    /**
+     * Determine the amount of memory to use
+     * @returns - number of pages to start with
+     */
+    initialPages(): number {
+        // Start out with enough pages for static data + 1
+        return Math.floor(this.staticData.length / 64000 + 1);
     }
 };

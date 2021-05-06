@@ -3,11 +3,12 @@ import WasmNumber from './numbers';
 import { LexerToken } from './scan';
 import Context from './context';
 import Macro from './macro';
-import CompileContext from './compile';
+import ModuleManager from './module_mgr';
 import * as expr from './expr';
 
+
 /*
- * In this context, Values are like nodes on an AST
+ * In this context, Values are like nodes on an AST, but also used to simplify constexprs/partial evaluation
  */
 
 
@@ -23,15 +24,23 @@ export enum ValueType {
     Expr   = 4, // Data that's only known at runtime
     Fxn    = 5, // Function/Branch
     Str    = 6, // String literal, (note not directly usable)
+    // TODO make tuples a distinct ValueType
 };
 
 /**
  * Generic value base class
  */
 export class Value {
+    /// Source location in code
     token: LexerToken;
+
+    /// Node type
     type: ValueType;
+
+    /// Relevant Value
     value: any;
+
+    /// If there's a datatype
     datatype?: types.Type;
 
     constructor(token: LexerToken, type: ValueType, value, datatype?: types.Type) {
@@ -48,7 +57,7 @@ export class Value {
         return this.type !== ValueType.Expr;
     }
 
-    out(ctx: CompileContext, fun?: expr.FunExportExpr) {
+    out(ctx: ModuleManager, fun?: expr.FunExportExpr) {
         throw new Error("this value cannot be compiled!");
     }
 };
@@ -58,16 +67,18 @@ export class Value {
  */
 export class DataValue extends Value {
     datatype: types.Type;
+    type: ValueType.Data = ValueType.Data;
     constructor(token, type: types.Type, value) {
         super(token, ValueType.Data, value, type);
     }
 };
 
-export class MacroValue extends DataValue {
+export class MacroValue extends Value {
     value: Macro;
-    constructor(token, value: Macro, type: types.Type = new types.Type()) {
-        super(token, type, value);
-        this.type = ValueType.Macro;
+    datatype: types.ArrowType = null;
+    type: ValueType.Macro = ValueType.Macro;
+    constructor(token, value: Macro, type: types.ArrowType = null) {
+        super(token, ValueType.Macro, value, type);
     }
 };
 
@@ -101,6 +112,7 @@ export class NumberValue extends DataValue {
 export class IdValue extends Value {
     scopes: Array<{ [id: string]: Value }>;
     value: string;
+    type: ValueType.Id;
     constructor(token: LexerToken, id: string, scopes) {
         super(token, ValueType.Id, id);
         this.scopes = scopes;
@@ -117,12 +129,12 @@ export class IdValue extends Value {
 // Packed values
 export class TupleValue extends DataValue {
     value: Value[];
-    constructor(token: LexerToken, values: Value[] = []) {
+    constructor(token: LexerToken, values: Value[]) {
         const type = new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
     }
 
-    out(ctx: CompileContext, fun?: expr.FunExportExpr) {
+    out(ctx: ModuleManager, fun?: expr.FunExportExpr) {
         return this.value.map(v => v.out(ctx, fun)).join('');
     }
 };

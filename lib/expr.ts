@@ -2,7 +2,7 @@ import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import { LexerToken } from './scan';
-import CompileContext from './compile';
+import ModuleManager from './module_mgr';
 
 /*
  * This file contains datatypes related to a graph IR used to output webassembly
@@ -40,7 +40,7 @@ export class Expr extends value.Value {
      * @param fun - function export context
      * @returns - wasm translation
      */
-    out(ctx: CompileContext, fun?: FunExportExpr): string {
+    out(ctx: ModuleManager, fun?: FunExportExpr): string {
         return '';
     }
 

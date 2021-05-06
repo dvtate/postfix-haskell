@@ -25,7 +25,7 @@ export class Type {
      * @returns {sting} - typename
      * @virtual
      */
-    getWasmTypeName(): string { return ''; }
+    getWasmTypeName(name?: string): string { return ''; }
 
     /**
      * Do Typecheck
@@ -37,27 +37,6 @@ export class Type {
         return type != null;
     }
 };
-
-// Empty type
-export class UnitType extends Type {
-    constructor(token) {
-        super(token);
-    }
-
-    // getBaseType(): Type { return null; }
-
-    /**
-     * @override
-     */
-    getWasmTypeName(): string { return ''; }
-
-    /**
-     * @override
-     */
-    check(type: Type): boolean {
-        return type instanceof UnitType;
-    }
-}
 
 // More specific than types, used for applying methods and stuff
 export class ClassType extends Type {
@@ -116,8 +95,8 @@ export class ClassType extends Type {
     /**
      * @override
      */
-    getWasmTypeName() {
-        return this.getBaseType().getWasmTypeName();
+    getWasmTypeName(name?: string) {
+        return this.getBaseType().getWasmTypeName(name);
     }
 
     /**
@@ -169,7 +148,7 @@ export class UnionType extends Type {
     /**
      * @override
      */
-    getWasmTypeName() {
+    getWasmTypeName(name?: string) {
         return 'invalid union type';
     }
 };
@@ -187,8 +166,8 @@ export class TupleType extends Type {
     /**
      * @override
      */
-    getWasmTypeName() {
-        return this.types.map(t => t.getWasmTypeName()).join(' ');
+    getWasmTypeName(name?: string) {
+        return this.types.map(t => t.getWasmTypeName(name)).join(' ');
     }
 
     /**
@@ -244,7 +223,7 @@ export class PrimitiveType extends Type {
     /**
      * @override
      */
-    getWasmTypeName() {
+    getWasmTypeName(name?: string) {
         return this.name;
     }
 
@@ -274,6 +253,17 @@ export class ArrowType extends Type {
         public outputTypes: Type[])
     {
         super(token);
+    }
+
+    /**
+     * @override
+     */
+    getWasmTypeName(name: string) {
+        return `(func ${name} (param ${
+            this.inputTypes.map(t => t.getWasmTypeName()).join(' ')
+        }) (result ${
+            this.outputTypes.map(t => t.getWasmTypeName()).join(' ')
+        }))`;
     }
 
     /**

@@ -38,10 +38,8 @@ export default function wat(e: expr.Expr) {
         }, new WATCode());
 };
 
-/**
- * Generate webassembly typename
- * @param type - type to represent
- */
+
+/* Moved to Type.getWasmTypename
 export function watTypename(type : types.Type, name: string = ''): string {
     if (type instanceof types.ClassType)
         type = type.getBaseType();
@@ -65,3 +63,4 @@ export function watTypename(type : types.Type, name: string = ''): string {
     // For unit type no typename
     return '';
 }
+*/

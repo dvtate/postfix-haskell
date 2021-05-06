@@ -6,7 +6,6 @@ import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
 import { LexerToken } from "./scan";
-import CompileContext from "./compile";
 import WasmNumber from "./numbers";
 
 import debugMacros from './debug_macros';
@@ -68,22 +67,21 @@ export default class Context {
     warnings: Array<{ token: LexerToken, msg: string }> = [];
 
     // WebAssembly Module imports and exports
-    module: ModuleManager = new ModuleManager();
+    module: ModuleManager;
 
     recursiveMacros: Set<value.Value> = new Set();
 
     // Some optimizations can be slow with larger projects
     optLevel: number;
 
-    // Static data section of linear memory
-    staticData: number[] = [];
-
     // Link external class
     static TraceResults = TraceResults;
 
     // Default constructor
     constructor(optLevel: number = 1) {
+        // Initialize Module Manager
         this.optLevel = optLevel;
+        this.module = new ModuleManager(this.optLevel);
 
         // Initialize globals
         this.globals = {
@@ -273,7 +271,7 @@ export default class Context {
 
         if (v instanceof value.StrValue) {
             this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, v.value.length)));
-            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, this.addStaticData(v.value))));
+            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, this.module.addStaticData(v.value))));
             return this;
         }
 
@@ -468,57 +466,6 @@ export default class Context {
     }
 
     /**
-     * Store static data
-     * @param d - data to save statically
-     * @returns - memory address
-     */
-     addStaticData(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {
-        let bytes : Uint8Array;
-
-        // Convert into array of bytes
-        if (d instanceof Uint32Array)
-            bytes = new Uint8Array(d.reduce((a, c) => [
-                ...a,
-                c & 0b11111111,
-                (c & 0b11111111_00000000) >> 8,
-                (c & 0b11111111_00000000_00000000) >> 16,
-                (c >> 24) & 0b11111111, // Note: Downshift to avoid i32 overflow
-            ], []));
-        else if (d instanceof Uint16Array)
-            bytes = new Uint8Array(d.reduce((a, c) => [
-                ...a,
-                c & 0b11111111,
-                c >> 8,
-            ], []));
-        else if (typeof d === 'string')
-            bytes = new TextEncoder().encode(d); // u8array
-        else if (d instanceof Uint8Array)
-            bytes = d;
-        else if (d instanceof Array)
-            bytes = new Uint8Array(d);
-
-        // TODO maybe handle bigints?
-
-        // Check to see if same value already exists
-        if (this.optLevel > 1)
-            for (let i = 0; i < this.staticData.length; i++) {
-                let j = 0;
-                for (; j < bytes.length; j++)
-                    if (this.staticData[i + j] !== bytes[j])
-                        break;
-
-                // The data already exists
-                if (j == bytes.length)
-                    return i;
-            }
-
-        // Append to static data
-        const ret = this.staticData.length;
-        this.staticData.push(...bytes);
-        return ret;
-    }
-
-    /**
      * Warn the user when something seems weird
      *
      * @param token - location in code
@@ -536,7 +483,7 @@ export default class Context {
      */
     async outWast({ fast = false, folding = false, optimize = false, validate = false }): Promise<string> {
         // Generate webassembly text
-        const src = new CompileContext(this.module, this.staticData).out();
+        const src = this.module.compile();
         if (fast)
             return src;
 
