@@ -2,7 +2,7 @@ import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import { LexerToken } from './scan';
-import ModuleManager from './module_mgr';
+import ModuleManager from './module';
 
 /*
  * This file contains datatypes related to a graph IR used to output webassembly
@@ -204,7 +204,7 @@ export class InstrExpr extends DataExpr {
      * @override
      */
     out(ctx, fun) {
-        return `(${this.instr} ${this.args.map(a => a.out(ctx, fun)).join(' ')})`;
+        return `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
     }
 
     static expensive = true;
@@ -233,6 +233,8 @@ export class ParamExpr extends DataExpr {
     }
 
     out(ctx, fun) {
+        if (this.datatype.getBaseType().isVoid())
+            return '';
         return `(local.get ${this.position})`;
     }
 };
@@ -274,7 +276,7 @@ export class FunExportExpr extends Expr {
     name: string;
 
     // Parameter types
-    inputTypes: types.PrimitiveType[];
+    inputTypes: types.Type[];
 
     // Output expressions
     outputs: Array<DataExpr | value.NumberValue> = [];
@@ -288,10 +290,10 @@ export class FunExportExpr extends Expr {
      * @param inputTypes - Types for input values
      * @param outputs - Generated exprs for return values
      */
-    constructor(token, name, inputTypes) {
+    constructor(token, name, inputTypes: types.Type[]) {
         super(token);
         this.name = name;
-        this.inputTypes = inputTypes;
+        this.inputTypes = inputTypes.filter(t => !t.getBaseType().isVoid());
         this._locals = inputTypes.map(t => null);
     }
 
@@ -308,11 +310,14 @@ export class FunExportExpr extends Expr {
     out(ctx) {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
+        const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
+        const resultTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
+
         return `(func (export "${this.name}") ${
-            this.inputTypes.map((t, i) => `(param ${(t.getBaseType() as types.PrimitiveType).name})`).join(' ')
-        } (result ${
-            this.outputs.map(o => (o.datatype.getBaseType() as types.PrimitiveType).name).join(' ')
-        })\n\t\t${
+            paramTypes ? `(param ${paramTypes})` : ''
+        } ${
+            resultTypes ? `(param ${paramTypes})` : ''
+        }\n\t\t${
             this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
         }\n\t${
             outs.join('\n\t')
@@ -344,9 +349,11 @@ export class TeeExpr extends DataExpr {
     out(ctx, fun) {
         if (this.local === null) {
             this.local = fun.addLocal(this.datatype);
-            return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.local})`;
+            return `${this.value.out(ctx, fun)}\n\t${
+                this.datatype.getBaseType().isVoid() ? '' : `(local.tee ${this.local})`
+            }`;
         }
-        return `(local.get ${this.local})`;
+        return this.datatype.getBaseType().isVoid() ? '' : `(local.get ${this.local})`;
     }
 
     // Prevent this from getting re-tee'd

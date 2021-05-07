@@ -27,7 +27,6 @@ export async function compile(src, importObject = {}, options = {}) {
     return await WebAssembly.instantiate(wasm.buffer, importObject);
 };
 
-
 // Tagged template string literal
 /**
  *

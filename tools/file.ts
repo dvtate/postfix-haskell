@@ -36,6 +36,7 @@ const ctx = parse(ptree, new Context(process.env.FAST ? 1 : 2));
 if (ctx instanceof error.SyntaxError) {
     // console.log(ctx.tokens);
     console.log(util.formatErrorPos([ctx]));
+    process.exit(0);
 }
 if (process.env.TRACK_TIME)
     console.log('parse:', performance.now() - start);

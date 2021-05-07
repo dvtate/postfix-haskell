@@ -45,6 +45,8 @@ const debugOperators = {
         return ret;
     },
 
+    ':ctrace' : (ctx, token) => new Error('').stack,
+
     // Debug context
     ':module' : (ctx, token) => ctx.module,
     ':scopes' : (ctx, token) => ctx.scopes,

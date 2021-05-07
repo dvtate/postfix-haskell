@@ -56,6 +56,7 @@ const operators :  MacroOperatorsSpec = {
             const sym = ctx.pop();
             let syms : value.IdValue[];
             if (sym.type === value.ValueType.Macro) {
+                // TODO verify there's enough items when {$a $b} =
                 // List of identifiers to pull from stack in reverse order
                 const tr = ctx.traceIO(sym, token);
                 if (tr instanceof error.SyntaxError)

@@ -10,5 +10,21 @@
 
 # Can use lambdas in fun/branches
 { 1 } {+} $branch fun                   # with macros
-{ b 0 <} { $a $b } lam                # with lambdas
-{ a b -} { $a $b } lam $branch fun
+{ b 0 < } { $a  $b } lam                # with lambdas
+{ a b - } { $a  $b } lam $branch fun
+
+
+# This is weirder but maybe after this {} = is called
+# it sets a temporary number of inputs and outputs to bind
+# and the user isn't supposed to pull any after that...
+# Not a good solution but imo most elegant
+{{ $a  $b } =
+    a b +
+}
+
+# These are alternative to inline type info...
+{+} {{I32 I32} {I32}} ::  $add =
+
+{ :: {{Any Any} {Any}}
+    +
+} $add =

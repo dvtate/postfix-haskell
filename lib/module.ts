@@ -16,11 +16,11 @@ export default class ModuleManager {
 
             // $import_23
             importId: string;
+
+            // (func $import_23 (param i32 i32) (result f32))
+            typeName: string;
         }
     } = {};
-
-    /// Unique identifier number for imports
-    private importId: number = 0;
 
     /// Functions to export
     private exports: Array<expr.FunExportExpr> = [];
@@ -64,14 +64,22 @@ export default class ModuleManager {
         // const scopesKey = scopes.map(ModuleManager.escapeSpaces).join(' ');
         const scopesKey = scopes.join('\0');
 
-        if (!this.imports[scopesKey]) {
-            // TODO verify that it doesn't actually have multiple returns (not allowed in imports yet)
+        // Imports currently limited to single return
+        if (type.outputTypes.length > 1)
+            return '';
+
+        // Haven't seen this import yet or it's a polymorphic import
+        if (!this.imports[scopesKey] || type.getWasmTypeName(this.imports[scopesKey].importId) !== this.imports[scopesKey].typeName) {
+            // Add to imports list
+            const importId = `$import_${Object.keys(this.imports).length}`;
             this.imports[scopesKey] = {
                 scopes,
                 type,
-                importId: `$import_${this.importId++}`,
+                importId,
+                typeName: type.getWasmTypeName(importId),
             };
         }
+
         return this.imports[scopesKey].importId;
     }
 
@@ -114,9 +122,15 @@ export default class ModuleManager {
      * Make a copy
      */
     clone(): ModuleManager {
-        const ret = new ModuleManager();
-        ret.imports = { ...this.imports };
-        ret.importId = this.importId;
+        const ret = new ModuleManager(this.optLevel);
+        // Slice exports
+        ret.exports = { ...this.exports };
+
+
+        ret.imports = this.imports;
+        ret.staticData = this.staticData;
+        ret.definitions = this.definitions;
+
         return ret;
     }
 
@@ -153,7 +167,7 @@ export default class ModuleManager {
         // TODO maybe handle bigints?
 
         // Check to see if same value already exists
-        if (this.optLevel > 1)
+        if (this.optLevel >= 1)
             for (let i = 0; i < this.staticData.length; i++) {
                 let j = 0;
                 for (; j < bytes.length; j++)

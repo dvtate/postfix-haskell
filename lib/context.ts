@@ -10,7 +10,7 @@ import WasmNumber from "./numbers";
 
 import debugMacros from './debug_macros';
 import globalOps from './globals';
-import ModuleManager from "./module_mgr";
+import ModuleManager from "./module";
 
 
 // Load wabt on next tick

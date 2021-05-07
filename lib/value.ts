@@ -3,7 +3,7 @@ import WasmNumber from './numbers';
 import { LexerToken } from './scan';
 import Context from './context';
 import Macro from './macro';
-import ModuleManager from './module_mgr';
+import ModuleManager from './module';
 import * as expr from './expr';
 
 

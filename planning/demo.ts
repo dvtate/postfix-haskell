@@ -25,8 +25,20 @@ import * as util from '../tools/util';
         throw new Error("WebAssembly.validate() failed");
 
     // Invoke WASM exports
-    const mod = await WebAssembly.instantiate(wasm.buffer, {});
-    const sqrt = mod.instance.exports.sqrt as CallableFunction;
-    for (let i = 1; i < 10; i++)
-        console.log(sqrt(i));
+    let mod;
+    mod = await WebAssembly.instantiate(wasm.buffer, {
+        js: {
+            'console.log': console.log,
+            'logStr': (addr, len) => {
+                const str = new Uint8Array(
+                    mod.instance.exports.memory.buffer,
+                    len,
+                    addr);
+                console.log(new TextDecoder().decode(str));
+            }
+        }
+    });
+
+    const main = mod.instance.exports.main as CallableFunction;
+    main();
 })();

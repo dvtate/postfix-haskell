@@ -38,3 +38,7 @@
 { 5 % 0 == } { pop buzz } $fb fun
 { $n = n 3 % 0 == n 5 % 0 == * } { pop fizzbuzz } $fb fun
 { I32 } { fb } $fb_export export
+
+
+# todo this errors
+{aaaaa {"abc" "xyz"}}

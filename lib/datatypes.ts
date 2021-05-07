@@ -27,6 +27,14 @@ export class Type {
      */
     getWasmTypeName(name?: string): string { return ''; }
 
+
+    /**
+     * Does this type hold a value in wasm?
+     */
+     isVoid(): boolean {
+        return false;
+    }
+
     /**
      * Do Typecheck
      * @param {Type} type - type to check against
@@ -168,6 +176,13 @@ export class TupleType extends Type {
      */
     getWasmTypeName(name?: string) {
         return this.types.map(t => t.getWasmTypeName(name)).join(' ');
+    }
+
+    /**
+     * @override
+     */
+    isVoid(): boolean {
+        return this.types.length === 0;
     }
 
     /**
