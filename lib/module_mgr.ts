@@ -26,10 +26,10 @@ export default class ModuleManager {
     private exports: Array<expr.FunExportExpr> = [];
 
     /// Static data section of linear memory
-    private staticData: number[];
+    private staticData: number[] = [];
 
     /// Primarily function exports. Compiled functions and stuff that go in main body of module
-    definitions: string[];
+    definitions: string[] = [];
 
     /**
      * @constructor
