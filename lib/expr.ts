@@ -311,12 +311,12 @@ export class FunExportExpr extends Expr {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
         const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
-        const resultTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
+        const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
         return `(func (export "${this.name}") ${
             paramTypes ? `(param ${paramTypes})` : ''
         } ${
-            resultTypes ? `(param ${paramTypes})` : ''
+            resultTypes ? `(result ${resultTypes})` : ''
         }\n\t\t${
             this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
         }\n\t${
