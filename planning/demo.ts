@@ -40,5 +40,5 @@ import * as util from '../tools/util';
     });
 
     const main = mod.instance.exports.main as CallableFunction;
-    main();
+    main(20);
 })();

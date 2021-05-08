@@ -320,7 +320,7 @@ const operators :  MacroOperatorsSpec = {
                 // New function
                 sym.scopes[sym.scopes.length - 1][sym.value.slice(1)] =
                     new value.Value(token, value.ValueType.Fxn,
-                        new Fun(token, condition, action));
+                        new Fun(token, condition, action, sym.value.slice(1)));
                 return;
             } else if (v.type === value.ValueType.Fxn) {
                 // Pre-existing function to overload
@@ -351,7 +351,7 @@ const operators :  MacroOperatorsSpec = {
             const ev = ctx.traceIO(args, token);
             if (!(ev instanceof Context.TraceResults))
                 return ev;
-            const inputs = ev.gives;
+            const inputs = ev.gives.reverse();
             if (inputs.some(t => t.type !== value.ValueType.Type))
                 return ['expected a macro of types'];
             const inTypes = inputs.map(t => t.value);
@@ -519,6 +519,7 @@ const funs = {
                     ? a
                     : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, [a, b]));
         })),
+        '+',
     )),
     '*' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
@@ -557,6 +558,7 @@ const funs = {
                         ? b
                         : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, [a, b]));
         })),
+        '*',
     )),
     '%' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
@@ -584,6 +586,7 @@ const funs = {
                 ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.rem${type[0] === 'f' ? '' : '_s'}`, [a, b]));
             }
         })),
+        '%',
     )),
     '-' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
@@ -609,6 +612,7 @@ const funs = {
                     ? a
                     : new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, [a, b]));
         })),
+        '-',
     )),
     '/' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
@@ -642,6 +646,7 @@ const funs = {
                     : new expr.InstrExpr(token, b.datatype, `${type.name}.div`, [a, b]));
             }
         })),
+        '/',
     )),
 
     // Invoke operator: dreference/unescape a symbol
@@ -653,6 +658,7 @@ const funs = {
             ctx.push(toBool(true, token));
         })),
         new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => ctx.invoke(ctx.pop(), token))),
+        '@',
     )),
 
     // Dereference operator: dereference a symbol (equivalent to @ except doesn't invoke macros + functions)
@@ -673,6 +679,7 @@ const funs = {
             v.token = token;
             ctx.push(v);
         })),
+        '~',
     )),
 
     // Default ==
@@ -799,6 +806,7 @@ const funs = {
                     return ['syntax error'];
             }
         })),
+        '==',
     )),
 
     // TODO _s _u signedness????
@@ -825,6 +833,7 @@ const funs = {
                 ));
             }
         })),
+        '<',
     )),
     '>' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
@@ -849,6 +858,7 @@ const funs = {
                 ));
             }
         })),
+        '>',
     )),
     // TODO comparisons: < >
     // TODO type-casting
@@ -885,6 +895,7 @@ const funs = {
             value.datatype = type.value;
             ctx.push(value);
         })),
+        'as',
     )),
 };
 

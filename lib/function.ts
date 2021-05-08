@@ -23,18 +23,20 @@ export default class Fun {
     conditions: value.Value[] = []
     actions: value.Value[] = [];
     datatype?: types.Type;
+    name: string;
 
     /**
      * @param [token] - token for first def
      * @param [condition] - condition macro for first def
      * @param [action] - action macro for first def
      */
-    constructor(token, condition, action, datatype?: types.Type) {
+    constructor(token, condition, action, name: string, datatype?: types.Type) {
         // Macros corresponding to checks and outputs
         this.tokens = token ? [token] : [];
         this.conditions = condition ? [condition] : [];
         this.actions = action ? [action] : [];
         this.datatype = datatype;
+        this.name = name;
     }
 
     /**
@@ -123,10 +125,9 @@ export default class Fun {
 
         // No truthy condition found
         // TODO non-const-expr
-        // console.log(ctx.stack);
         if (branches.length === 0) {
             console.log(ctx.stack);
-            return new error.SyntaxError("no matching function case", [token], ctx);
+            return new error.SyntaxError(`${this.name}: no matching function case`, [token], ctx);
         }
 
         // Determine if entire branch is constexpr and locate first else-clause

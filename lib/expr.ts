@@ -112,9 +112,11 @@ export class BranchExpr extends Expr {
         const conds = this.conditions.map(c => c.out(ctx, fun)).reverse();
         const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
         const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
-
+        const results = this.results.filter(r => !r.datatype.getBaseType().isVoid());
         // Add result datatypes
-        this.results.forEach(r => { r.index = fun.addLocal(r.datatype); });
+        results.forEach(r => {
+            r.index = fun.addLocal(r.datatype);
+        });
 
         // Last condition must be else clause
         // TODO move this to function.js
@@ -153,7 +155,7 @@ export class BranchExpr extends Expr {
                     }\n\t(then ${acts[i]})\n\t(else ${compileIf(i + 1)}))`;
         })(0);
 
-        ret += '\n\t' + this.results.map(r => `(local.set ${r.index})`).join();
+        ret += '\n\t' + results.map(r => `(local.set ${r.index})`).join();
 
         // console.log('BranchExpr', ret);
         return ret;
@@ -294,7 +296,7 @@ export class FunExportExpr extends Expr {
         super(token);
         this.name = name;
         this.inputTypes = inputTypes.filter(t => !t.getBaseType().isVoid());
-        this._locals = inputTypes.map(t => null);
+        this._locals = inputTypes.filter(t => !t.getBaseType().isVoid()).map(t => null);
     }
 
     /**
@@ -419,22 +421,30 @@ export class RecursiveBodyExpr extends Expr {
         // Prevent multiple compilations
         this._isCompiled = true;
 
+        // Filter out void types
+        this.takeExprs = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+        this.giveExprs = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+
         // Store inputs in locals
         this.takeExprs.forEach(e => {
-            e.index = fun.addLocal(e.datatype);
+            if (e)
+                e.index = fun.addLocal(e.datatype);
         });
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${this.takes[i].out(ctx, fun)}\n\t(local.set ${e.index})`
+            `${this.takes[i].out(ctx, fun)}${e ? `\n\t(local.set ${e.index})` : ''}`
         ).join('\n\t')}\n\t`;
 
         // Create place to store outputs
-        this.giveExprs.forEach(e => { e.index = fun.addLocal(e.datatype); });
+        this.giveExprs.forEach(e => {
+            if (e)
+                e.index = fun.addLocal(e.datatype);
+        });
 
         // Body
         const retType = this.gives.map(e => e.datatype.getWasmTypeName()).join(' ');
         ret += `(loop ${this.label} (result ${retType})\n\t`;
         ret += this.gives.map(e => e.out(ctx, fun)).join('\n\t');
-        ret += `)\n\t${this.giveExprs.map(e => `(local.set ${e.index})`).join(' ')}\n\t`;
+        ret += `)\n\t${this.giveExprs.map(e => e ? `(local.set ${e.index})` : '').join(' ')}\n\t`;
 
         // console.log('RecursiveBodyExpr', ret);
         return ret;
@@ -463,7 +473,9 @@ export class RecursiveCallExpr extends Expr {
     out(ctx, fun) {
         // Set arg locals
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${e.out(ctx, fun)}\n\t(local.set ${this.body.takeExprs[i].index})`
+            `${e.out(ctx, fun)}${
+                (!this.body.takeExprs[i] || e.datatype.getBaseType().isVoid())
+                    ? '' : `\n\t(local.set ${this.body.takeExprs[i].index})`}`
         ).join('\n\t')}\n\t`;
 
         // Invoke function
@@ -490,7 +502,11 @@ export class DependentLocalExpr extends DataExpr {
 
     out(ctx, fun) {
         // source.out() will update our index to be valid
-        return `${!this.source._isCompiled ? this.source.out(ctx, fun) : ''
-            }(local.get ${this.index})`;
+
+        return `${
+            !this.source._isCompiled ? this.source.out(ctx, fun) : ''
+        } ${
+            this.datatype.getBaseType().isVoid() ? '' : `(local.get ${this.index})`
+        }`;
     }
 };

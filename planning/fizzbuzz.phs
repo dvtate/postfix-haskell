@@ -3,6 +3,9 @@
 {+} $|| global =
 {$_ =} $pop =
 {{ $a  $b } = b a } $swap =
+{0 ==} $! =
+{> !} $<= =
+{< !} $>= =
 
 # Strings
 { I32 I32 } pack class $Str =
@@ -38,14 +41,32 @@ $>>= =
     io str { io type Str } { io type } Arrow { "js" "logStr" } import @
 } $print fun
 
-# TODO bug: polymorphic imports
-{ "Testing" to_Str print }
-{ 123.456 print } >> $action =
 
 # export for performing IO
-{ Void IO } {
-    #action
+{ Void IO  I32 } {
+    $n =
 
-    "Hello, world!" to_Str print
-    123456 print
+    # Some strings
+    "fizz" to_Str $fizz =
+    "buzz" to_Str $buzz =
+    "fizzbuzz" to_Str $fizzbuzz =
+
+    # fizzbuzz logic
+    { true } { print } $fb fun
+    { 3 % 0 == } { pop fizz print } $fb fun
+    { 5 % 0 == } { pop buzz print } $fb fun
+    { $n = n 3 % 0 == n 5 % 0 == * } { pop fizzbuzz print } $fb fun
+
+    # from 0 - n do fizzbuzz
+    {
+        { $n  $i } =
+        { true } { $io = $io ~ } $cond fun
+        { i n <= } {
+            i fb
+            n  i 1 +  iter
+        } $cond fun
+        cond
+    } $iter =
+
+    n 1 iter
 } $main export
