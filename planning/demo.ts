@@ -29,14 +29,14 @@ import * as util from '../tools/util';
     mod = await WebAssembly.instantiate(wasm.buffer, {
         js: {
             'console.log': console.log,
-            'logStr': (addr, len) => {
+            logStr: (addr : number, len : number) => {
                 const str = new Uint8Array(
                     mod.instance.exports.memory.buffer,
                     len,
                     addr);
                 console.log(new TextDecoder().decode(str));
-            }
-        }
+            },
+        },
     });
 
     const main = mod.instance.exports.main as CallableFunction;

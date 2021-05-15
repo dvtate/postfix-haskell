@@ -38,30 +38,13 @@ export default class ModuleManager {
     constructor(public optLevel: number = 1) {}
 
     /**
-     *
-     * @param s
-     * @returns
-     */
-    private static escapeSpaces(s: string) {
-        // TODO in a million years replace this with String.prototype.replaceAll
-        return s.split('').map(c => {
-            if (c === '\\')
-                return '\\\\';
-            else if (c === ' ')
-                return '\\ ';
-            else
-                return c;
-        }).join('');
-    }
-
-    /**
      * Add an import
      * @param scopes - env scopes to import from
      * @param type - type of imported value
      * @returns - identifier to which the import is assigned
      */
     addImport(scopes: string[], type: types.ArrowType): string {
-        // const scopesKey = scopes.map(ModuleManager.escapeSpaces).join(' ');
+        // TODO this assumes that the user doesn't have imports with '\0' characters
         const scopesKey = scopes.join('\0');
 
         // Imports currently limited to single return
@@ -96,8 +79,6 @@ export default class ModuleManager {
      * @returns -  webassembly text code
      */
     compile() {
-        // TODO imports
-        // TODO exports
         // TODO globals/stack pointer
 
         // Compile imports
@@ -126,7 +107,7 @@ export default class ModuleManager {
         // Slice exports
         ret.exports = { ...this.exports };
 
-
+        // These properties are only referenced as we want to keep changes from smaller scopes
         ret.imports = this.imports;
         ret.staticData = this.staticData;
         ret.definitions = this.definitions;

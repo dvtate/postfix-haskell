@@ -187,8 +187,12 @@ export default class WasmNumber {
             return;
         }
         if (typeof n === 'string') {
-            // TODO accept serialized string since bigint can't be json'd
-            this.value = BigInt(n);
+            // accept serialized string since bigint can't be json'd
+            try {
+                this.value = BigInt(n);
+            } catch (e) {
+                this.value = Number(n);
+            }
             return;
         }
     }
@@ -200,7 +204,7 @@ export default class WasmNumber {
     {
         return {
             type: this.type,
-            value: this.value[0] || this.value.toString(), // TODO this doesn't support bigint,,
+            value: this.value[0] || this.value.toString(),
         };
     }
 
@@ -240,16 +244,16 @@ export default class WasmNumber {
         }
     }
 
-    // TODO these are stubs for now, in the future should add rest of operators
-    //  and use the correct way so that we get *same results as WASM*
-
     /**
      * Overloaded + operator
      *
      * @param {WasmNumber} b
      */
     add(b: WasmNumber): this {
-        // TODO switch on types
+        // Only accept compatible types
+        if (this.type !== b.type)
+            throw new Error("Invalid WasmNumberType");
+
         // @ts-ignore
         this.value += b.value;
         this.wrap();
@@ -262,7 +266,10 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     mul(b: WasmNumber): this {
-        // TODO switch on types
+        // Only accept compatible types
+        if (this.type !== b.type)
+            throw new Error("Invalid WasmNumberType");
+
         // @ts-ignore
         this.value *= b.value;
         this.wrap();
@@ -275,7 +282,10 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     mod(b: WasmNumber): this {
-        // TODO switch on types
+        // Only accept compatible types
+        if (this.type !== b.type)
+            throw new Error("Invalid WasmNumberType");
+
         // @ts-ignore
         this.value %= b.value;
         this.wrap();
@@ -288,7 +298,10 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     div(b: WasmNumber): this {
-        // TODO switch on types
+        // Only accept compatible types
+        if (this.type !== b.type)
+            throw new Error("Invalid WasmNumberType");
+
         // @ts-ignore
         this.value /= b.value;
         this.wrap();
@@ -301,7 +314,10 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     sub(b: WasmNumber): this {
-        // TODO switch on types
+        // Only accept compatible types
+        if (this.type !== b.type)
+            throw new Error("Invalid WasmNumberType");
+
         // @ts-ignore
         this.value -= b.value;
         this.wrap();
@@ -315,6 +331,10 @@ export default class WasmNumber {
      * @returns {boolean}
      */
     lt(b: WasmNumber): boolean {
+        // Only accept compatible types
+        if (this.type !== b.type)
+            throw new Error("Invalid WasmNumberType");
+
         return this.value < b.value;
     }
 
@@ -325,8 +345,12 @@ export default class WasmNumber {
      * @returns {boolean}
      */
     gt(b: WasmNumber): boolean {
+        // Only accept compatible types
+        if (this.type !== b.type)
+            throw new Error("Invalid WasmNumberType");
+
         return this.value > b.value;
     }
 
-    // TODO more
+    // TODO more operators
 };
