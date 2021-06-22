@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node index.js",
+    "start": "ts-node index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,8 +25,12 @@
   },
   "homepage": "https://github.com/dvtate/postfix-haskell#readme",
   "dependencies": {
-    "@types/node": "^14.0.27",
     "binaryen": "^99.0.0-nightly.20210129",
-    "wabt": "^1.0.20"
+    "wabt": "^1.0.20",
+    "yargs": "^17.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.27",
+    "@types/yargs": "^17.0.0"
   }
 }

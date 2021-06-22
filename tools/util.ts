@@ -22,7 +22,7 @@ export function fileLocate(file: string, pos: number): FileSnapshot {
         else
             cur += 1 + lines[lineNumber].length;
     return null;
-}
+};
 
 
 interface CompileError extends Error {
@@ -32,8 +32,8 @@ interface CompileError extends Error {
 
 /**
  * Make a pretty error string
- * @param {string} file - file name/path
- * @param {number} pos - character index in file
+ * @param errors - Array of errors to display
+ * @returns - formatted string with escape sequence colors
  */
 export function formatErrorPos(errors: CompileError[]): string {
     return errors.map(e =>
@@ -46,4 +46,4 @@ export function formatErrorPos(errors: CompileError[]): string {
                     + `\t\t${wss}\x1B[1m\x1b[31m^${'~'.repeat(Math.max(t.token.length -1, 0))}\x1B[0m`;
             }).join('\n')
         }`).join('\n\n');
-}
+};

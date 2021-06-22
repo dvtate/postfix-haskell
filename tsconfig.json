@@ -12,7 +12,8 @@
     "include": [
         "*/*.js",
         "*/*.ts",
-        "*.js"
+        "*.js",
+        "*.ts"
     ],
     "exclude": [
         "node_modules", "dist"

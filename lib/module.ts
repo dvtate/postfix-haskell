@@ -7,7 +7,7 @@ import * as expr from './expr';
 export default class ModuleManager {
     /// Set of imports
     private imports: {
-        [k : string] : {
+        [k: string]: {
             // ['js', 'eval']
             scopes: string[];
 
@@ -35,7 +35,7 @@ export default class ModuleManager {
      * @constructor
      * @param optLevel - optimization level for the compilation
      */
-    constructor(public optLevel: number = 1) {}
+    constructor(public optLevel: number = 1) { }
 
     /**
      * Add an import
@@ -70,7 +70,7 @@ export default class ModuleManager {
      * Export a function
      * @param fn - function to export
      */
-    export(fn : expr.FunExportExpr) {
+    export(fn: expr.FunExportExpr) {
         this.exports.push(fn);
     }
 
@@ -84,19 +84,17 @@ export default class ModuleManager {
         // Compile imports
         this.definitions.push(Object.values(this.imports)
             .map(i => `(import ${
-                // TODO use String.prototype.replaceAll() in 2 years
-                i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
-            } ${i.type.getWasmTypeName(i.importId)})`).join('\n'));
+                    // TODO use String.prototype.replaceAll() in 2 years
+                    i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
+                } ${i.type.getWasmTypeName(i.importId)})`).join('\n'));
 
         // Compile exports
         this.definitions.push(...this.exports.map(e => e.out(this)));
 
-        return `(module\n
-            ${this.definitions.join('\n\n')}
+        return `(module
+            ${this.definitions.filter(Boolean).join('\n\n')}
             (memory (export "memory") ${this.initialPages()})
-            (data (i32.const 0) "${
-                this.staticDataToHexString()
-            }"))`;
+            (data (i32.const 0) "${this.staticDataToHexString()}"))`;
     }
 
     /**
@@ -121,7 +119,7 @@ export default class ModuleManager {
      * @returns - memory address
      */
     addStaticData(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {
-        let bytes : Uint8Array;
+        let bytes: Uint8Array;
 
         // Convert into array of bytes
         if (d instanceof Uint32Array)
@@ -176,7 +174,7 @@ export default class ModuleManager {
          * @param b - byte
          * @returns - string of form \XX where XX is replaced by character hex equiv
          */
-         function byteToHexEsc(b : number): string {
+        function byteToHexEsc(b: number): string {
             const hexChrs = '0123456789ABCDEF';
             return '\\'
                 + hexChrs[(b & (((1 << 4) - 1) << 4)) >> 4]
