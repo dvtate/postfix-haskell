@@ -1,8 +1,8 @@
 {
   "name": "postfix-haskell",
-  "version": "1.0.0",
+  "version": "0",
   "description": "A very low-level functional programming language designed to compile directly to WebAssembly",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "ts-node index.ts",
@@ -18,6 +18,9 @@
     "webassembly",
     "embeddable"
   ],
+  "bin": {
+    "phc": "dist/index.js"
+  },
   "author": "dvtate",
   "license": "GPL-3.0-or-later",
   "bugs": {

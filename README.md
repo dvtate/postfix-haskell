@@ -13,9 +13,27 @@ $ node dist/tools/shell.js
 ```
 
 ## Utilities
-The `tools/*` directory offers some different ways to use the language.
+The compiler now has a main program that lets you use it through the command line. This can be done by first doing `npm run build` and then either run it locally as `node dist/index.js` or install it to your machine via `npm install --global` so that you can use it via `phc`.
+```
+[postfix-haskell]$ npm run build
+[postfix-haskell]$ sudo npm install --global
+[postfix-haskell]$ phc --help
+phc <command> [args]
+
+Commands:
+  phc shell [options]        run interactive shell                     [default]
+  phc file <name> [options]  compile a file to WAT
+
+Options:
+      --version  Show version number                                   [boolean]
+  -v, --verbose  include verbose output               [boolean] [default: false]
+      --help     Show help                                             [boolean]
+  -l, --lex      debug lexer tokens                   [boolean] [default: false]
+```
+
 ### Shell
-Run short bits of code and test expected compiler behavior. It's recommended to stick to this tool unless you have a solid grasp of the language & compiler. In addition to being able to use normal code, you can also use the macros in `lib/debug_macros.ts` for example:
+The shell is probably the best way to learn the language, allowing you to run short bits of code and test expected compiler behavior. In addition to normal code there exist some compiler macros that make debugging easier you can find these in `lib/debug_macros.ts`, for example:
+
 ```
 [postfix-haskell]$ node dist/tools/shell.js
 1 2 + :data
@@ -41,10 +59,25 @@ Run short bits of code and test expected compiler behavior. It's recommended to 
 ```
 
 ### File
-For compiling a file to WASM Text format with expectation of errors. Note that it's recommended to use `tools/optimized.sh` if you know it will compile.
+For compiling a file to WASM Text format with expectation of errors. Once you know it compiles you can use `tools/optimized.sh` to get an optimized binary
 ```
-[postfix-haskell]$ node dist/tools/file.js ./planning/sqrt.phs
-(module ... )
+phc file <name> [options]
+
+compile a file to WAT
+
+Positionals:
+  name  name of the file to open                             [string] [required]
+
+Options:
+      --version     Show version number                                [boolean]
+  -v, --verbose     include verbose output            [boolean] [default: false]
+      --help        Show help                                          [boolean]
+  -t, --track-time  track time spent compiling         [boolean] [default: true]
+      --fast        skip validation and pretty-print steps
+                                                      [boolean] [default: false]
+      --folding     use folding/s-expr WAT syntax     [boolean] [default: false]
+  -O, --optimize    pass compiled output through binaryen optimizer
+                                                                [default: false]
 ```
 
 ### Optimized.sh

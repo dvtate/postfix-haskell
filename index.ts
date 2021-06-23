@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import yargs = require('yargs');
+import cp = require('child_process');
 
 import runShell from './tools/shell';
 import compileFile from './tools/file';
 
+
 yargs
-    .scriptName('phaskell')
+    // .scriptName('phc')
     .usage('$0 <command> [args]')
     .option('verbose', {
         describe: 'include verbose output',
@@ -13,7 +15,7 @@ yargs
         default: false,
         alias: 'v',
     })
-    .command(['shell', '*'], 'run interactive shell',
+    .command(['shell [options]', '*'], 'run interactive shell',
         yargs =>
             yargs.options({
                 'lex': {
@@ -24,7 +26,7 @@ yargs
             }),
         argv =>
             runShell(argv.lex, argv.verbose))
-    .command('file [name]', 'compile a file to WAT',
+    .command('file <name> [options]', 'compile a file to WAT',
         yargs => yargs
             .positional('name', {
                 describe: 'name of the file to open',
@@ -49,11 +51,11 @@ yargs
                 },
                 'optimize' : {
                     describe: 'pass compiled output through binaryen optimizer',
-                    type: 'boolean',
                     default: false,
                     alias: 'O',
                 },
             }),
-        argv => compileFile(argv.name, argv['track-time'], argv.fast, argv.folding, argv.optimize))
+        argv =>
+            compileFile(argv.name, argv['track-time'], argv.fast, argv.folding, argv.optimize))
     .help()
     .argv;
