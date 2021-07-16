@@ -1,4 +1,4 @@
-import Macro from './macro';
+import { CompilerMacro } from './macro';
 import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
@@ -20,10 +20,11 @@ import { LexerToken } from './scan';
  */
 export default class Fun {
     tokens: LexerToken[] = [];
-    conditions: value.Value[] = []
-    actions: value.Value[] = [];
+    conditions: value.MacroValue[] = []
+    actions: value.MacroValue[] = [];
     datatype?: types.Type;
     name: string;
+    recursive: boolean = false;
 
     /**
      * @param [token] - token for first def
@@ -41,11 +42,11 @@ export default class Fun {
 
     /**
      * Add branch to this functor
-     * @param {Token} token -
-     * @param {Macro} condition -
-     * @param {Macro} action -
+     * @param token -
+     * @param condition -
+     * @param action -
      */
-    overload(token : LexerToken, condition : value.Value, action : value.Value) {
+    overload(token : LexerToken, condition : value.MacroValue, action : value.MacroValue) {
         // Prevent multiple overloads... (is this ok?)
         const idx = this.tokens.indexOf(token);
         // console.log('overload', this.tokens[0].token, this.tokens.includes(token));
@@ -61,7 +62,7 @@ export default class Fun {
     }
 
     /**
-     * @returns {SyntaxError|Context} - same as return value of Macro.action()
+     * @returns same as return value of Macro.action()
      */
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals

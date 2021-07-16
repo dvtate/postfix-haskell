@@ -20,7 +20,7 @@
         { true } { improve } $cond fun
         { good_enough } { guess } $cond fun
         cond
-	} $iter =
+	} rec $iter =
 
     # Start calculating with first guess being 1
     1.0 iter

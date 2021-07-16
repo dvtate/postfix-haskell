@@ -1,4 +1,4 @@
-import Macro from "./macro";
+import { CompilerMacro } from "./macro";
 import * as value from "./value";
 import * as error from "./error";
 import { Context } from "vm";
@@ -92,5 +92,5 @@ export default Object.entries(debugOperators).reduce((acc, [k, v]) => ({
     [k] : new value.Value(
         undefined,
         value.ValueType.Macro,
-        new Macro((ctx, token) => logWithToken(k, ctx, token, v))),
+        new CompilerMacro((ctx, token) => logWithToken(k, ctx, token, v))),
 }), {});

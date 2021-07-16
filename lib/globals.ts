@@ -2,11 +2,11 @@ import * as value from './value'
 import * as types from './datatypes'
 import * as expr from './expr'
 import * as error from './error'
-import Macro from './macro'
 import Context, { TraceResults } from './context'
 import WasmNumber from './numbers'
 import Fun from './function'
 import { LexerToken } from './scan'
+import { CompilerMacro, LiteralMacro, Macro } from './macro'
 
 /*
 These are globally defined operators some may eventually be moved to standard library
@@ -169,7 +169,7 @@ const operators :  MacroOperatorsSpec = {
             if (v.type === value.ValueType.Type) {
                 const v2 = v;
                 v = new value.Value(token, value.ValueType.Macro,
-                    new Macro((ctx, token) => void ctx.push(v2), ctx));
+                    new CompilerMacro((ctx, token) => void ctx.push(v2)));
             }
 
             // Assert macro type
@@ -204,7 +204,7 @@ const operators :  MacroOperatorsSpec = {
             };
 
             // Push
-            ctx.push(new value.Value(token, value.ValueType.Macro, new Macro(wrapper, ctx)));
+            ctx.push(new value.Value(token, value.ValueType.Macro, new CompilerMacro(wrapper)));
         },
     },
 
@@ -444,7 +444,7 @@ const operators :  MacroOperatorsSpec = {
                 return ["invalid import"];
 
             // Wrap import call in a macro
-            ctx.push(new value.MacroValue(token, new Macro((ctx, token) => {
+            ctx.push(new value.MacroValue(token, new CompilerMacro((ctx, token) => {
                 // Verify matching input types
                 const inputs: value.Value[] = [];
                 for (let i = type.value.inputTypes.length - 1; i >= 0; i--) {
@@ -459,11 +459,41 @@ const operators :  MacroOperatorsSpec = {
             }), type.value));
         },
     },
+
+    // Mark as recursive
+    'rec' : {
+        action: (ctx: Context, token: LexerToken) => {
+            const arg = ctx.pop();
+            if (arg.value instanceof Fun || arg.value instanceof LiteralMacro) {
+                arg.value.recursive = true;
+                ctx.push(arg);
+            } else {
+                return ['expected a macro or function to mark as recursive'];
+            }
+        },
+    },
+
+    // Namespaces
+    'namespace' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Pull macro
+            const arg = ctx.pop();
+            if (!(arg.value instanceof LiteralMacro))
+                return ['expected a macro literal'];
+
+            // Create ns
+            const ns = arg.value.getNamespace(ctx, token);
+            if (ns instanceof value.MacroValue)
+                ctx.push(ns);
+            else
+                return ns;
+        },
+    },
 };
 
 // Condition for two numeric types
 // This macro returns 1 when the top two values on the stack are numbers and 0 otherwise
-const numberCheck = new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+const numberCheck = new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
     // Pull args
     if (ctx.stack.length < 2)
         return [`expected two numbers but only received ${ctx.stack.length} values`];
@@ -490,7 +520,7 @@ const funs = {
     '+' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
         numberCheck,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Get args
             const b = ctx.pop();
             const a = ctx.pop();
@@ -524,7 +554,7 @@ const funs = {
     '*' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
         numberCheck,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             const b = ctx.pop();
             const a = ctx.pop();
 
@@ -563,7 +593,7 @@ const funs = {
     '%' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
         numberCheck,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Pull args
             const b = ctx.pop();
             const a = ctx.pop();
@@ -591,7 +621,7 @@ const funs = {
     '-' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
         numberCheck,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Get args
             const b = ctx.pop();
             const a = ctx.pop();
@@ -617,7 +647,7 @@ const funs = {
     '/' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
         numberCheck,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Get args
             const b = ctx.pop();
             const a = ctx.pop();
@@ -652,28 +682,33 @@ const funs = {
     // Invoke operator: dreference/unescape a symbol
     '@' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             if (!ctx.pop())
                 return ['missing argument'];
             ctx.push(toBool(true, token));
         })),
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => ctx.invoke(ctx.pop(), token))),
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
+            let v = ctx.pop();
+            if (v instanceof value.IdValue)
+                v = v.deref(ctx);
+            return ctx.invoke(v, token);
+        })),
         '@',
     )),
 
     // Dereference operator: dereference a symbol (equivalent to @ except doesn't invoke macros + functions)
     '~' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             if (!ctx.pop())
                 return ['missing argument'];
             ctx.push(toBool(true, token));
         })),
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             const sym = ctx.pop();
             if (!(sym instanceof value.IdValue))
                 return ['expected an escaped identifier to extract value from'];
-            const v = ctx.getId(sym.value.slice(1), sym.scopes);
+            const v = sym.deref(ctx);
             if (!v)
                 return ['undefined'];
             v.token = token;
@@ -686,7 +721,7 @@ const funs = {
     // TODO Expr
     '==' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Pull args
             if (ctx.stack.length < 2)
                 return ['expected two expressions to compare'];
@@ -709,7 +744,7 @@ const funs = {
             // Continue
             ctx.push(toBool(true, token));
         })),
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Pull args
             if (ctx.stack.length < 2)
                 return ['expected two expressions to compare'];
@@ -813,7 +848,7 @@ const funs = {
     '<' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
         numberCheck,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Get args
             const b = ctx.pop();
             const a = ctx.pop();
@@ -838,7 +873,7 @@ const funs = {
     '>' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
         numberCheck,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Get args
             const b = ctx.pop();
             const a = ctx.pop();
@@ -868,7 +903,7 @@ const funs = {
     // TODO maybe use make instead?
     'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // macro + any datatype
             const type = ctx.pop();
             const v = ctx.pop();
@@ -879,7 +914,7 @@ const funs = {
             else
                 return ctx.push(toBool(true, token));
         })),
-        new value.Value(null, value.ValueType.Macro, new Macro((ctx, token) => {
+        new value.Value(null, value.ValueType.Macro, new CompilerMacro((ctx, token) => {
             // Get args
             const type = ctx.pop();
             const value = ctx.pop();
@@ -905,7 +940,7 @@ const exportsObj = Object.entries(operators).reduce((ret, [k, v]) =>
         ...ret,
         [k] : new value.MacroValue(
             null,
-            new Macro(v.action),
+            new CompilerMacro(v.action),
             v.type || undefined,
         ),
     }), {});

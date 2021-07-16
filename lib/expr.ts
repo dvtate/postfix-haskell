@@ -63,7 +63,7 @@ export class DataExpr extends Expr {
      * @param token - location in code
      * @param datatype - Datatype for value
      */
-    constructor(token, datatype) {
+    constructor(token: LexerToken, datatype: types.Type) {
         super(token);
         this.datatype = datatype;
     }
@@ -113,6 +113,7 @@ export class BranchExpr extends Expr {
         const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
         const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
         const results = this.results.filter(r => !r.datatype.getBaseType().isVoid());
+
         // Add result datatypes
         results.forEach(r => {
             r.index = fun.addLocal(r.datatype);

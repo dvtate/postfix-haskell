@@ -273,7 +273,7 @@ export class ArrowType extends Type {
     /**
      * @override
      */
-    getWasmTypeName(name: string) {
+    getWasmTypeName(name?: string) {
         return `(func ${name} (param ${
             this.inputTypes.map(t => t.getWasmTypeName()).join(' ')
         }) (result ${

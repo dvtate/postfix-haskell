@@ -2,7 +2,7 @@ import { BlockToken, LexerToken, NumberToken } from "./scan";
 
 import * as value from './value';
 import Context from './context';
-import Macro from './macro';
+import { CompilerMacro, LiteralMacro } from './macro';
 import * as error from './error';
 
 /*
@@ -31,7 +31,7 @@ export default function parse(tokens: LexerToken[], ctx = new Context()): Contex
 
             // Blocks: Need to form a closure with current scope
             case LexerToken.Type.Block:
-                ctx.push(new value.MacroValue(t, Macro.fromLiteral(ctx, t as BlockToken, parse)));
+                ctx.push(new value.MacroValue(t, new LiteralMacro(ctx, t as BlockToken)));
                 break;
 
             case LexerToken.Type.String:

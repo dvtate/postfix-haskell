@@ -301,7 +301,7 @@ export default class Context {
                 this.trace.push(v.value);
                 if (this.trace.length > 1000)
                     throw new Error('[parse] max call stack exceeded');
-                const ret = this._toError(v.value.action(this, token), token);
+                const ret = this.toError(v.value.action(this, token), token);
                 this.trace.pop();
                 return ret;
             } catch (e) {
@@ -410,7 +410,7 @@ export default class Context {
      * @param v - value to convert to error
      * @param token - location in code
      */
-    _toError(v, token: LexerToken): error.SyntaxError | Context | null {
+    toError(v, token: LexerToken): error.SyntaxError | Context | null {
         // Success
         if (v === undefined)
             return this;

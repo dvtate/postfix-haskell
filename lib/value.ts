@@ -2,7 +2,7 @@ import * as types from './datatypes';
 import WasmNumber from './numbers';
 import { LexerToken } from './scan';
 import Context from './context';
-import Macro from './macro';
+import { Macro } from './macro';
 import ModuleManager from './module';
 import * as expr from './expr';
 
@@ -68,15 +68,20 @@ export class Value {
 export class DataValue extends Value {
     datatype: types.Type;
     type: ValueType.Data = ValueType.Data;
+
     constructor(token, type: types.Type, value) {
         super(token, ValueType.Data, value, type);
     }
 };
 
+/**
+ * Invokable block of code
+ */
 export class MacroValue extends Value {
     value: Macro;
     datatype: types.ArrowType = null;
     type: ValueType.Macro = ValueType.Macro;
+
     constructor(token, value: Macro, type: types.ArrowType = null) {
         super(token, ValueType.Macro, value, type);
     }
@@ -122,7 +127,7 @@ export class IdValue extends Value {
      * Convert Id's to values
      */
     deref(ctx: Context) {
-        return ctx.getId(this.value, this.scopes || ctx.scopes);
+        return ctx.getId(this.value.slice(1), this.scopes || ctx.scopes);
     }
 };
 

@@ -1,0 +1,9 @@
+
+
+
+{
+    5 $five =
+    { + } $add =
+} namespace $ns =
+
+{ I32 } { $five ns ~ $add ns @ } $export export

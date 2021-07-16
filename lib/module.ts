@@ -114,36 +114,56 @@ export default class ModuleManager {
     }
 
     /**
-     * Store static data
-     * @param d - data to save statically
-     * @returns - memory address
+     * Convert data to byte array
+     * @param d data source
+     * @returns data as array of bytes
      */
-    addStaticData(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {
-        let bytes: Uint8Array;
+    static toByteArray(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string | bigint): Uint8Array {
+        // No action
+        if (d instanceof Uint8Array)
+            return d;
 
-        // Convert into array of bytes
+        // Encode string to utf-8
+        if (typeof d === 'string')
+            return new TextEncoder().encode(d);
+
+        // Convert other typed arrays
         if (d instanceof Uint32Array)
-            bytes = new Uint8Array(d.reduce((a, c) => [
+            return new Uint8Array(d.reduce((a, c) => [
                 ...a,
                 c & 0b11111111,
                 (c & 0b11111111_00000000) >> 8,
                 (c & 0b11111111_00000000_00000000) >> 16,
                 (c >> 24) & 0b11111111, // Note: Downshift to avoid i32 overflow
             ], []));
-        else if (d instanceof Uint16Array)
-            bytes = new Uint8Array(d.reduce((a, c) => [
+        if (d instanceof Uint16Array)
+            return new Uint8Array(d.reduce((a, c) => [
                 ...a,
                 c & 0b11111111,
                 c >> 8,
             ], []));
-        else if (typeof d === 'string')
-            bytes = new TextEncoder().encode(d); // u8array
-        else if (d instanceof Uint8Array)
-            bytes = d;
-        else if (d instanceof Array)
-            bytes = new Uint8Array(d);
+        if (d instanceof Array)
+            return new Uint8Array(d);
 
-        // TODO maybe handle bigints?
+        // Convert bigint
+        if (typeof d == 'bigint') {
+            const ret = [];
+            while (d) {
+                ret.push(Number(d & 0b11111111n))
+                d >>= 8n;
+            }
+            return new Uint8Array(ret.reverse());
+        }
+    }
+
+    /**
+     * Store static data
+     * @param data - data to save statically
+     * @returns - memory address
+     */
+    addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {
+        // Convert data to byte array
+        const bytes = ModuleManager.toByteArray(data);
 
         // Check to see if same value already exists
         if (this.optLevel >= 1)

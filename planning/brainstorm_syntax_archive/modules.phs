@@ -1,13 +1,11 @@
-
-
 # Import using compiler import paths
 $wasm import $wasm =
 
 # Import via absolute path
-$/home/users/tate/Desktop/libmath.phs import $math =
+"/home/users/tate/Desktop/libmath.phs" import $math =
 
 # Import via relative path
-$./vector.phs import $vec =
+"./vector.phs" import $vec =
 
 # Define all module children locally
 vec $ use
@@ -15,7 +13,17 @@ vec $ use
 # Define module children starting with . locally
 math $. use
 
-# Note: @ == unescape identifier
+# using a namespace
+{
+    {
+        {+} $add =
+    } namespace $math =
+} namespace $ops =
+
+1 3 $add $math ops @ @ :data
+
+# Note: @ == invoke identifier
+# Note: ~ == unescape identifier
 # n = math::fib(10)
 10 $fib math @ $n =
 

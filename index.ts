@@ -7,7 +7,7 @@ import compileFile from './tools/file';
 
 
 yargs
-    // .scriptName('phc')
+    .scriptName('phc')
     .usage('$0 <command> [args]')
     .option('verbose', {
         describe: 'include verbose output',
@@ -57,5 +57,5 @@ yargs
             }),
         argv =>
             compileFile(argv.name, argv['track-time'], argv.fast, argv.folding, argv.optimize))
-    .help()
+    // .help()
     .argv;
