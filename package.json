@@ -1,6 +1,6 @@
 {
   "name": "postfix-haskell",
-  "version": "0",
+  "version": "0.0.1",
   "description": "A very low-level functional programming language designed to compile directly to WebAssembly",
   "main": "dist/index.js",
   "scripts": {
