@@ -35,17 +35,17 @@ Options:
 The shell is probably the best way to learn the language, allowing you to run short bits of code and test expected compiler behavior. In addition to normal code there exist some compiler macros that make debugging easier you can find these in `lib/debug_macros.ts`, for example:
 
 ```
-[postfix-haskell]$ node dist/tools/shell.js
-1 2 + :data
+[postfix-haskell]$ npm start
+> 1 2 + :data
 :data - 3n
 
-1 2 + :type
+> 1 2 + :type
 :type - {
   syntaxType: 'Data',
   datatype: PrimitiveType { token: undefined, name: 'i32' }
 }
 
-{ I32 } { 1 + } $incr export :compile
+> { I32 } { 1 + } $incr export :compile
 :compile - (module
   (func (;0;) (param i32) (result i32)
     local.get 0
