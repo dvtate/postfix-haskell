@@ -2,11 +2,11 @@ import * as value from './value'
 import * as types from './datatypes'
 import * as expr from './expr'
 import * as error from './error'
-import Context, { TraceResults } from './context'
+import Context from './context'
 import WasmNumber from './numbers'
 import Fun from './function'
 import { LexerToken } from './scan'
-import { CompilerMacro, LiteralMacro, Macro } from './macro'
+import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro'
 
 /*
 These are globally defined operators some may eventually be moved to standard library
@@ -17,12 +17,13 @@ These are globally defined operators some may eventually be moved to standard li
 // TODO Move some to standard library
 
 // Util to convert to boolean value
-const toBool = (b, token) => new value.NumberValue(token, new WasmNumber().fromString(b ? '1' : '0'));
+const toBool = (b : boolean, token: LexerToken) =>
+    new value.NumberValue(token, new WasmNumber().fromString(b ? '1' : '0'));
 
 
 type MacroOperatorsSpec = {
     [k : string] : {
-        action: (ctx: Context, token: LexerToken) => any;
+        action: (ctx: Context, token: LexerToken) => Context | Array<string> | undefined | SyntaxError | void;
         type?: types.ArrowType;
     };
 };
@@ -488,6 +489,39 @@ const operators :  MacroOperatorsSpec = {
                 return ns;
         },
     },
+
+    // Promote all members of namespace to current scope
+    'use' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get namespace
+            const ns = ctx.pop();
+            if (!(ns instanceof value.MacroValue && ns.value instanceof NamespaceMacro))
+                return ['expected a namespace'];
+
+            // Promote members
+            ns.value.promote(ctx, token);
+        },
+    },
+
+    // Promote some of the members of a namespace to current scope
+    // <namespace> <include rxp> <exclude rxp> use_some
+    'use_some' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get params
+            const exclude = ctx.pop();
+            if (!(exclude instanceof value.StrValue))
+                return ['expected a string containing regex for symbols to exclude'];
+            const include = ctx.pop();
+            if (!(include instanceof value.StrValue))
+                return ['expected a string containing regex for symbols to include'];
+            const ns = ctx.pop();
+            if (!(ns instanceof value.MacroValue && ns.value instanceof NamespaceMacro))
+                return ['expected a namespace'];
+
+            // Promote members
+            ns.value.promote(ctx, token, include.value, exclude.value);
+        }
+    }
 };
 
 // Condition for two numeric types

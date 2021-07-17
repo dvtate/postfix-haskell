@@ -6,10 +6,15 @@
     { + } $add =
 } namespace $ns =
 
+10 $five =
+$ns ~ "" "" use_some
+
 { I32 } {
     # Get 'five' from the namespace
     $five ns ~
 
     # Invoke 'add' from the namespace
     $add ns @
+
+    five -
 } $export export

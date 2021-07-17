@@ -4,6 +4,7 @@ import parse from "./parse";
 import * as error from './error';
 import { Type } from "./datatypes";
 import * as value from './value';
+import { number } from "yargs";
 
 // TODO add arrow type
 // TOOD make it extend Value - not addressing because not clear what the `.value` would be
@@ -58,6 +59,7 @@ export class CompilerMacro extends Macro {
     }
 };
 
+
 /**
  * User-defined macros only
  */
@@ -106,27 +108,6 @@ export class LiteralMacro extends Macro {
     }
 
     /**
-     * Convert scope into an invokable macro
-     * Takes Id and Gives it namespace as it's scope
-     * @param token - token of the namespace
-     * @param scope - sope of the
-     * @returns - Macro Value that when given an id returns corresponding id in namespace
-     */
-    private static toNsMacro(
-        token: LexerToken,
-        scope: { [k: string]: value.Value },
-    ): value.MacroValue {
-        return new value.MacroValue(token, new CompilerMacro((ctx: Context, token: LexerToken): ActionRet => {
-            // Assign the scope to the given identifier
-            const id = ctx.pop();
-            if (!(id instanceof value.IdValue))
-                return ['expected an identifier'];
-            id.scopes = [scope];
-            ctx.push(id);
-        }));
-    }
-
-    /**
      * Handle namespace call
      * @param ctx - context object
      * @param token - invokee token
@@ -156,7 +137,7 @@ export class LiteralMacro extends Macro {
 
         // On successs return the scope otherwise give the error
         return ret instanceof Context
-            ? LiteralMacro.toNsMacro(token, newScope)
+            ? new value.MacroValue(token, new NamespaceMacro(newScope))
             : ret;
     }
 
@@ -164,3 +145,63 @@ export class LiteralMacro extends Macro {
         return `LiteralMacro { ${this.token.file || this.token.position} }`;
     }
 };
+
+/**
+ * Macro Value that when given an id returns corresponding id in namespace
+ */
+ export class NamespaceMacro extends Macro {
+    constructor(
+        public scope: { [k: string]: value.Value },
+    ) {
+        super();
+    }
+
+    /**
+     * Given an identifier assign to it this.scope
+     * @override
+     */
+    action(ctx: Context, token: LexerToken): ActionRet {
+        // Assign the scope to the given identifier
+        const id = ctx.pop();
+        if (!(id instanceof value.IdValue))
+            return ['expected an identifier'];
+        id.scopes = [this.scope];
+        ctx.push(id);
+    }
+
+    /**
+     * Promote [some] identifiers to the current scope
+     * @param ctx context objecr
+     * @param token invokee site
+     * @param include regex for identifiers to include
+     * @param exclude regex for identifiers to exclude
+     */
+    promote(ctx: Context, token: LexerToken, include?: string, exclude?: string): void {
+        // Figure out what to promote
+        let toPromote = Object.entries(this.scope);
+        if (include !== undefined) {
+            const inclRxp = new RegExp(`^${include}$`);
+            const exclRxp = new RegExp(`^${exclude}$`);
+            toPromote = toPromote
+                .filter(([id]) => id.match(inclRxp))
+                .filter(([id]) => !id.match(exclRxp));
+        }
+
+        // Warn nothing promoted
+        if (toPromote.length === 0 ) {
+            ctx.warn(token, 'nothing to promote');
+            return;
+        }
+
+        // Promote each into an unqualified id
+        const curScope = ctx.scopes[ctx.scopes.length - 1];
+        toPromote.forEach(([id, v]) => {
+            // Warn on overwrite
+            if (curScope[id] && !include)
+                ctx.warn(token, `Overwrote identifier $${id}`);
+
+            // Write to current scope
+            curScope[id] = v;
+        });
+    }
+}

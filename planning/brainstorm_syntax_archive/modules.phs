@@ -33,7 +33,7 @@ math $. use
 # s = wasm::i32::add(10, 22)
 10 22 $i32.add wasm @ $s =
 
-# Override fib function in math library to accept vectors
+# Overload fib function in math library to accept vectors
 {
     type Any Vector2 ==
 } {
@@ -42,4 +42,23 @@ math $. use
 
 # :debug math::fib(new Vector2<I32>(1, 2))
 { 1 2 } pack I32 Vector2 make $fib math @ :data
+
+
+# This gives us a, b, c
+"abc" import use
+
+# Module contains c, d, e
+# Warning: overlapping identifier 'c'
+"cde" import use
+
+# Solution: select what to use
+# Use all identifiers except $c
+"cde" import "" "^c$" use_some
+
+# More sophistocated example
+# Include everything that doesn't start with a .
+#  except for some trig functions
+"math" import $math =
+math "^[^.]" "^(sin|cos|tan)h?$" use_some
+
 
