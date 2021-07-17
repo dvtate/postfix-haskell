@@ -89,8 +89,7 @@ const debugOperators = {
 // Export Macros because user shouldn't override
 export default Object.entries(debugOperators).reduce((acc, [k, v]) => ({
     ...acc,
-    [k] : new value.Value(
+    [k] : new value.MacroValue(
         undefined,
-        value.ValueType.Macro,
         new CompilerMacro((ctx, token) => logWithToken(k, ctx, token, v))),
 }), {});

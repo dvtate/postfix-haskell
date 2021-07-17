@@ -1,9 +1,7 @@
-import { CompilerMacro } from './macro';
 import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
-import WasmNumber from './numbers';
 import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
 
@@ -31,7 +29,13 @@ export default class Fun {
      * @param [condition] - condition macro for first def
      * @param [action] - action macro for first def
      */
-    constructor(token, condition, action, name: string, datatype?: types.Type) {
+    constructor(
+        token: LexerToken,
+        condition: value.MacroValue,
+        action: value.MacroValue,
+        name: string,
+        datatype?: types.Type
+    ) {
         // Macros corresponding to checks and outputs
         this.tokens = token ? [token] : [];
         this.conditions = condition ? [condition] : [];
@@ -42,16 +46,16 @@ export default class Fun {
 
     /**
      * Add branch to this functor
-     * @param token -
-     * @param condition -
-     * @param action -
+     * @param token - overload site (`fun`)
+     * @param condition - pre-invoke test
+     * @param action - action when test passses
      */
-    overload(token : LexerToken, condition : value.MacroValue, action : value.MacroValue) {
-        // Prevent multiple overloads... (is this ok?)
+    overload(token: LexerToken, condition: value.MacroValue, action: value.MacroValue) {
+        // Prevent multiple overloads
         const idx = this.tokens.indexOf(token);
         // console.log('overload', this.tokens[0].token, this.tokens.includes(token));
         if (idx !== -1) {
-            this.tokens[idx] = token;
+            // this.tokens[idx] = token;
             this.actions[idx] = action;
             this.conditions[idx] = condition;
         } else {
@@ -61,8 +65,11 @@ export default class Fun {
         }
     }
 
+    // TODO refactor
     /**
-     * @returns same as return value of Macro.action()
+     * @param ctx context object
+     * @param token invokee token
+     * @returns same as return value of Macro.action
      */
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals

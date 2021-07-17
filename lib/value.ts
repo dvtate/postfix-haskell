@@ -82,7 +82,7 @@ export class MacroValue extends Value {
     datatype: types.ArrowType = null;
     type: ValueType.Macro = ValueType.Macro;
 
-    constructor(token, value: Macro, type: types.ArrowType = null) {
+    constructor(token: LexerToken, value: Macro, type: types.ArrowType = null) {
         super(token, ValueType.Macro, value, type);
     }
 };
@@ -118,7 +118,7 @@ export class IdValue extends Value {
     scopes: Array<{ [id: string]: Value }>;
     value: string;
     type: ValueType.Id;
-    constructor(token: LexerToken, id: string, scopes) {
+    constructor(token: LexerToken, id: string, scopes: Array<{ [id: string]: Value }>) {
         super(token, ValueType.Id, id);
         this.scopes = scopes;
     }
@@ -131,7 +131,9 @@ export class IdValue extends Value {
     }
 };
 
-// Packed values
+/**
+ * Packed values
+ */
 export class TupleValue extends DataValue {
     value: Value[];
     constructor(token: LexerToken, values: Value[]) {
@@ -147,8 +149,9 @@ export class TupleValue extends DataValue {
 // Note that there is no need for a UnionValue class because there are no instances of unions
 // unions will only be needed as types for opaque?-expressions
 
-
-// String literal, not data
+/**
+ * String literal, not data
+ */
 export class StrValue extends Value {
     value: string;
     constructor(token: LexerToken) {
