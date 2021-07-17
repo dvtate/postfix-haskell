@@ -40,7 +40,7 @@ export class LexerToken {
 export class NumberToken extends LexerToken {
     value: WasmNumber;
 
-    constructor(token, position, file) {
+    constructor(token: string, position: number, file: string) {
         super(token, TokenType.Number, position, file);
         this.value = new WasmNumber().fromString(token);
     }
@@ -54,7 +54,7 @@ export class BlockToken extends LexerToken {
     subtype: ContainerType;
     body!: Array<LexerToken>;
 
-    constructor(token, position, file) {
+    constructor(token: string, position: number, file: string) {
         const type = '[{('.includes(token) ? TokenType.ContainerOpen : TokenType.ContainerClose;
         super(token, type, position, file);
         this.subtype = [

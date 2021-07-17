@@ -5,20 +5,11 @@ import * as error from './error';
 import { Type } from "./datatypes";
 import * as value from './value';
 
-/* TODO
- * Break this into OOP approach
- * - Macro abstract base class
- * - LiteralMacro - macro that interprets user-source
- * - InternalMacro - macro that executes javascript
- */
-
 // TODO add arrow type
-// TOOD make it extend Value
-// TODO make a child class for StringLiterals
+// TOOD make it extend Value - not addressing because not clear what the `.value` would be
 
 // Return Type for macro implementations
 type ActionRet = Context | Array<string> | undefined | SyntaxError | void;
-
 
 /**
  * Macros are similar to blocks of code, or executable arrays in postscript
@@ -29,29 +20,49 @@ export class Macro {
      * Did the user flag this macro as recursive?
      */
     recursive: boolean = false;
+
+    /**
+     * Invoke macro
+     * @virtual
+     * @param ctx - Context object
+     * @param token - token of invokee
+     * @returns - Macro return
+     */
+    action(ctx: Context, token: LexerToken): ActionRet {}
 }
 
 /**
  * A macro that is created internally by the compiler
  */
 export class CompilerMacro extends Macro {
-    action: (ctx: Context, token: LexerToken) => ActionRet;
+    /**
+     * @param invokeAction - body of the macro
+     */
+    constructor(
+        private invokeAction: (ctx: Context, token: LexerToken) => ActionRet,
+        public name?: string
+    ) {
+        super();
+    }
 
     /**
-     * @param action - body of the macro
+     * @override
      */
-    constructor(action) {
-        super();
-        this.action = action;
+    action(ctx: Context, token: LexerToken): ActionRet {
+        return this.invokeAction(ctx, token);
     }
 
     // TODO toString for debugging
+    toString(){
+        return `CompilerMacro { ${this.name} }`;
+    }
 };
 
 /**
  * User-defined macros only
  */
 export class LiteralMacro extends Macro {
+    token: BlockToken;
     body: LexerToken[];
     scopes: Array<{ [k: string] : value.Value }>;
 
@@ -62,15 +73,13 @@ export class LiteralMacro extends Macro {
      */
     constructor(ctx: Context, token: BlockToken) {
         super();
+        this.token = token;
         this.body = token.body;
         this.scopes = ctx.scopes.slice();
     }
 
     /**
-     * called by Macro.action
-     * @param ctx - context object
-     * @param token - invokee token
-     * @returns - macro return
+     * @override
      */
     action(ctx: Context, token: LexerToken): ActionRet {
         // TODO simplify and/or use ctx.copyState()
@@ -97,12 +106,16 @@ export class LiteralMacro extends Macro {
     }
 
     /**
-     *
+     * Convert scope into an invokable macro
+     * Takes Id and Gives it namespace as it's scope
      * @param token - token of the namespace
      * @param scope - sope of the
-     * @returns -
+     * @returns - Macro Value that when given an id returns corresponding id in namespace
      */
-    private static toNsMacro(token, scope: { [k: string]: value.Value }): value.MacroValue {
+    private static toNsMacro(
+        token: LexerToken,
+        scope: { [k: string]: value.Value },
+    ): value.MacroValue {
         return new value.MacroValue(token, new CompilerMacro((ctx: Context, token: LexerToken): ActionRet => {
             // Assign the scope to the given identifier
             const id = ctx.pop();
@@ -146,4 +159,8 @@ export class LiteralMacro extends Macro {
             ? LiteralMacro.toNsMacro(token, newScope)
             : ret;
     }
-}
+
+    toString() {
+        return `LiteralMacro { ${this.token.file || this.token.position} }`;
+    }
+};
