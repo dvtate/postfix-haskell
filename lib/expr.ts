@@ -81,10 +81,10 @@ export class BranchExpr extends Expr {
     tokens: LexerToken[];
 
     // Condtions for brances
-    conditions: DataExpr[];
+    conditions: Array<DataExpr|value.DataValue>;
 
     // Actions for branches
-    actions: DataExpr[][];
+    actions: Array<DataExpr|value.DataValue>[];
 
     // Where results are delivered
     results: DependentLocalExpr[];
@@ -94,7 +94,7 @@ export class BranchExpr extends Expr {
      * @param conditions - conditions for branches
      * @param actions - actions for brances
      */
-    constructor(tokens, conditions, actions) {
+    constructor(tokens: LexerToken[], conditions: Array<DataExpr|value.DataValue>, actions: Array<DataExpr|value.DataValue>[]) {
         super(tokens[0]);
         this.tokens = tokens;
         this.conditions = conditions;
@@ -105,7 +105,7 @@ export class BranchExpr extends Expr {
     /**
      * @override
      */
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
 
@@ -116,7 +116,9 @@ export class BranchExpr extends Expr {
 
         // Add result datatypes
         results.forEach(r => {
-            r.index = fun.addLocal(r.datatype);
+            if (r.datatype instanceof types.PrimitiveType)
+                r.index = fun.addLocal(r.datatype);
+            // TODO handle others
         });
 
         // Last condition must be else clause
@@ -149,7 +151,7 @@ export class BranchExpr extends Expr {
         // return ret;
 
         // Compile to (if (...) (result ...) (then ...) (else ...))
-        let ret = (function compileIf(i) {
+        let ret: string = (function compileIf(i) {
             return i + 1 >= acts.length
                 ? acts[i]
                 : `(if (result ${retType})${conds[i]
@@ -179,7 +181,7 @@ export class NumberExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         const outValue = v => v instanceof value.TupleValue
             ? this.value.map(outValue).join()
             : this.value.toWAST();
@@ -206,7 +208,7 @@ export class InstrExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         return `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
     }
 
@@ -235,7 +237,7 @@ export class ParamExpr extends DataExpr {
         this.position = position;
     }
 
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         if (this.datatype.getBaseType().isVoid())
             return '';
         return `(local.get ${this.position})`;
@@ -266,7 +268,7 @@ export class UnusedResultExpr extends DataExpr {
         this.position = position;
     }
 
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         return !this.source._isCompiled ? this.source.out(ctx, fun) : "";
     }
 };
@@ -293,7 +295,7 @@ export class FunExportExpr extends Expr {
      * @param inputTypes - Types for input values
      * @param outputs - Generated exprs for return values
      */
-    constructor(token, name, inputTypes: types.Type[]) {
+    constructor(token: LexerToken, name: string, inputTypes: types.Type[]) {
         super(token);
         this.name = name;
         this.inputTypes = inputTypes.filter(t => !t.getBaseType().isVoid());
@@ -304,13 +306,31 @@ export class FunExportExpr extends Expr {
      * @param type - storage type for local
      * @returns - local index
      */
-    addLocal(type: types.PrimitiveType): number {
-        return this._locals.push(type) - 1;
+    addLocal(type: types.Type /*types.PrimitiveType*/): number {
+        // TODO when given non-primitive type expand it to a list of primitives
+        // new return type will be array
+        return this._locals.push(type as types.PrimitiveType) - 1;
+    }
+
+    /**
+     * Reserve space for value
+     * @param type storage type for local
+     * @param token source location
+     * @returns local indicies
+     */
+    addLocals(type: types.Type, token: LexerToken | LexerToken[]): number[] {
+        try {
+            return type.flatPrimitiveList().map(this.addLocal);
+        } catch (e) {
+            throw e === 'union'
+                ? new error.SyntaxError('Invalid union type', token)
+                : e;
+        }
     }
 
     // TODO should make apis to help lift nested functions/closures
 
-    out(ctx) {
+    out(ctx: ModuleManager) {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
         const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
@@ -349,7 +369,7 @@ export class TeeExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         if (this.local === null) {
             this.local = fun.addLocal(this.datatype);
             return `${this.value.out(ctx, fun)}\n\t${
@@ -418,7 +438,7 @@ export class RecursiveBodyExpr extends Expr {
         this.label = `$rec_${this.id}`;
     }
 
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
 
@@ -471,7 +491,7 @@ export class RecursiveCallExpr extends Expr {
             new UnusedResultExpr(token, e.datatype, this, i));
     }
 
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         // Set arg locals
         let ret = `\n\t${this.takeExprs.map((e, i) =>
             `${e.out(ctx, fun)}${
@@ -501,7 +521,7 @@ export class DependentLocalExpr extends DataExpr {
         this.index = -1;
     }
 
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         // source.out() will update our index to be valid
 
         return `${

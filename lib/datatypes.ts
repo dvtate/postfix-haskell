@@ -27,6 +27,14 @@ export class Type {
      */
     getWasmTypeName(name?: string): string { return ''; }
 
+    /**
+     * Get a flat list of primitive types that constitute this type
+     * @returns list of primitives that this type compiles to
+     * @throws if union encountered throws string "union"
+     */
+    flatPrimitiveList(): PrimitiveType[] {
+        return [];
+    }
 
     /**
      * Does this type hold a value in wasm?
@@ -103,6 +111,13 @@ export class ClassType extends Type {
     /**
      * @override
      */
+    flatPrimitiveList(): PrimitiveType[] {
+        return this.getBaseType().flatPrimitiveList();
+    }
+
+    /**
+     * @override
+     */
     getWasmTypeName(name?: string) {
         return this.getBaseType().getWasmTypeName(name);
     }
@@ -134,7 +149,7 @@ export class UnionType extends Type {
     /**
      * @override
      */
-    check(type): boolean {
+    check(type: Type): boolean {
         if (type === null)
             return false;
 
@@ -151,6 +166,13 @@ export class UnionType extends Type {
 
         // Verify type is in this set
         return this.types.includes(type);
+    }
+
+    /**
+     * @override
+     */
+    flatPrimitiveList(): PrimitiveType[] {
+        throw "union type";
     }
 
     /**
@@ -188,7 +210,16 @@ export class TupleType extends Type {
     /**
      * @override
      */
-    check(type): boolean {
+    flatPrimitiveList(): PrimitiveType[] {
+        return this.types
+            .map(t => t.flatPrimitiveList())
+            .reduce((a,b) => a.concat(b));
+    }
+
+    /**
+     * @override
+     */
+    check(type: Type): boolean {
         if (type == null)
             return false;
 
@@ -258,6 +289,14 @@ export class PrimitiveType extends Type {
 
         // All instances of PrimitiveType will be in the static Types map
         return this == type;
+    }
+
+
+    /**
+     * @override
+     */
+    flatPrimitiveList(): PrimitiveType[] {
+        return [this]
     }
 };
 

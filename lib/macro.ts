@@ -204,4 +204,4 @@ export class LiteralMacro extends Macro {
             curScope[id] = v;
         });
     }
-}
+};

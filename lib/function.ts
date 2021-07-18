@@ -4,6 +4,7 @@ import * as error from './error';
 import * as expr from './expr';
 import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
+import { inflateRawSync } from 'zlib';
 
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
@@ -123,13 +124,13 @@ export default class Fun {
         // Create a list of pairs containing possibly truthy branch conditions
         // and their corresponding actions. Remove anything invalid/falsey
         // TODO some checks should give user errors instead of ignoring
-        const branches = conds
+        const branches = (conds
             .map((ret, i) =>
                 !(ret instanceof Array || ret instanceof error.SyntaxError)
-                && (ret.type === value.ValueType.Expr
-                    || (ret.type === value.ValueType.Data && ret.value.value != BigInt(0)))
+                && (ret instanceof expr.DataExpr
+                    || (ret instanceof value.DataValue && ret.value.value != BigInt(0)))
                 && [ret, this.actions[i]])
-            .filter(b => !!b);
+            .filter(b => !!b)) as Array<[value.DataValue | expr.DataExpr, value.MacroValue]>;
 
         // No truthy condition found
         // TODO non-const-expr
@@ -143,19 +144,19 @@ export default class Fun {
         let i = branches.length - 1;
         for (; i >= 0; i--) {
             // Constexpr-truthy branch, this makes an else clause, even if there were others after it
-            if (branches[i][0].type === value.ValueType.Data && branches[i][0].value.value != BigInt(0))
+            if (branches[i][0] instanceof value.DataValue && branches[i][0].value.value != BigInt(0))
                 break;
 
             // Non-constexpr, keep going in case we can eliminate some paths w/ const-exprs
-            if (branches[i][0].type === value.ValueType.Expr)
+            if (branches[i][0] instanceof expr.Expr)
                 isConstExpr = false;
         }
-        if (i == -1)
+        if (i === -1)
             i = 0;
 
         // Branch is known at compile-time: invoke corresponding action
         if (isConstExpr)
-            return branches[i][1].value.action(ctx, token);
+            return ctx.toError(branches[i][1].value.action(ctx, token), token);
 
         // Runtime checks... fmllll
         // Unfortunately we have to trace in order to construct the branch expression
@@ -196,9 +197,10 @@ export default class Fun {
 
         // Verify all have same return types
         const first = ios[0].gives as expr.DataExpr[];
-        if (ios.some(t => t.gives.some((v, i) => (v instanceof value.DataValue || v instanceof expr.DataExpr)
-            && !v.datatype.getBaseType().check(first[i].datatype))))
-        {
+        if (ios.some(t => t.gives.some((v, i) =>
+            (v instanceof value.DataValue || v instanceof expr.DataExpr)
+            && !v.datatype.getBaseType().check(first[i].datatype)))
+        ) {
             console.log(ios);
             return ['function must have consistent return types'];
         }
@@ -207,7 +209,8 @@ export default class Fun {
         ctx.popn(maxTakes.length);
 
         // Push branch expr
-        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => t.gives));
+        // TODO remove `as` here
+        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => t.gives) as expr.DataExpr[][]);
         const results = first.map(o => new expr.DependentLocalExpr(token, o.datatype, branch));
         branch.results = results;
         ctx.push(...results);
