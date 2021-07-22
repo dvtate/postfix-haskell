@@ -1,0 +1,14 @@
+"./prelude.phs" import use
+
+# String Datatype
+{
+    $lit =
+    # $lit ~ type {} {I32 I32} arrow == :assert
+    { lit } pack
+} class $Str =
+
+# String TypeClass
+{ I32 I32 } pack class $Str =
+{ type Str == } { unpack pop } $.len fun
+{ type Str == } { unpack swap pop } $.addr fun
+{ $lit = { lit } pack Str make } $to_Str = # todo: overload make

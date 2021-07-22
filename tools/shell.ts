@@ -36,7 +36,7 @@ export default function runShell(lexFlag: boolean = false, verboseFlag: boolean 
         }
 
         // Tokenize the line
-        const toks = lex(line, 'stdin');
+        const toks = lex(line);
         if (lexFlag)
             console.log(toks);
 

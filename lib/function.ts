@@ -127,7 +127,7 @@ export default class Fun {
         const branches = (conds
             .map((ret, i) =>
                 !(ret instanceof Array || ret instanceof error.SyntaxError)
-                && (ret instanceof expr.DataExpr
+                && (ret instanceof expr.Expr
                     || (ret instanceof value.DataValue && ret.value.value != BigInt(0)))
                 && [ret, this.actions[i]])
             .filter(b => !!b)) as Array<[value.DataValue | expr.DataExpr, value.MacroValue]>;

@@ -113,7 +113,7 @@ export class LiteralMacro extends Macro {
      * @param token - invokee token
      * @returns - on success return namespace accessor macro on otherwise returns error
      */
-    getNamespace(ctx: Context, token: LexerToken): value.MacroValue | error.SyntaxError {
+    getNamespace(ctx: Context, token: LexerToken): value.MacroValue<NamespaceMacro> | error.SyntaxError {
         // TODO simplify and/or use ctx.copyState()
         // Use proper lexical scope
         const oldScopes = ctx.scopes;

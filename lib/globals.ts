@@ -1,12 +1,14 @@
-import * as value from './value'
-import * as types from './datatypes'
-import * as expr from './expr'
-import * as error from './error'
-import Context from './context'
-import WasmNumber from './numbers'
-import Fun from './function'
-import { LexerToken } from './scan'
-import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro'
+import * as value from './value';
+import * as types from './datatypes';
+import * as expr from './expr';
+import * as error from './error';
+import Context from './context';
+import WasmNumber from './numbers';
+import Fun from './function';
+import scan, { BlockToken, LexerToken } from './scan';
+import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /*
 These are globally defined operators some may eventually be moved to standard library
@@ -14,41 +16,26 @@ These are globally defined operators some may eventually be moved to standard li
 
 // TODO break this up into files
 // TODO ALWAYS verify input length
-// TODO Move some to standard library
+// TODO THINK: could this be moved to a standard library?
 
 // Util to convert to boolean value
 const toBool = (b : boolean, token: LexerToken) =>
     new value.NumberValue(token, new WasmNumber().fromString(b ? '1' : '0'));
 
-
+// Type for following type
 type MacroOperatorsSpec = {
     [k : string] : {
-        action: (ctx: Context, token: LexerToken) => Context | Array<string> | undefined | SyntaxError | void;
+        action: (ctx: Context, token: LexerToken)
+            => Context | Array<string> | undefined | SyntaxError | void;
         type?: types.ArrowType;
     };
 };
 
 // Operators that the user shouldn't overload
-const operators :  MacroOperatorsSpec = {
-    // Boolean literals
-    'false' : {
-        action: (ctx, token) => {
-            ctx.push(toBool(false, token));
-        },
-        type: new types.ArrowType(null, [], [types.PrimitiveType.Types.I32]),
-    },
-    'true' : {
-        action: (ctx, token) => {
-            ctx.push(toBool(true, token));
-        },
-        type: new types.ArrowType(null, [], [types.PrimitiveType.Types.I32]),
-    },
-
-    // Everything above here should probably be moved to standard library
-
+const operators : MacroOperatorsSpec = {
     // Bind identifier(s) to expression(s)
     '=' : {
-        action: (ctx: Context, token) => {
+        action: (ctx, token) => {
             // Get identifier
             if (ctx.stack.length < 2)
                 return ['expected an expression and a binding identifier'];
@@ -167,7 +154,7 @@ const operators :  MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['expected a macro or type'];
             let v = ctx.pop();
-            if (v.type === value.ValueType.Type) {
+            if (v instanceof types.Type) {
                 const cpy = v;
                 v = new value.MacroValue(token, new CompilerMacro((ctx, token) => void ctx.push(cpy)));
             }
@@ -521,7 +508,45 @@ const operators :  MacroOperatorsSpec = {
             // Promote members
             ns.value.promote(ctx, token, include.value, exclude.value);
         }
-    }
+    },
+
+    // Include another file as a module
+    'include' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get argument
+            const arg = ctx.pop();
+            if (!(arg instanceof value.StrValue))
+                return ['expected a string path'];
+
+            // Get full-path
+            const curDir = token.file ? path.parse(token.file).dir : '.';
+            const realpath = fs.realpathSync(path.normalize(path.join(curDir, arg.value)));
+
+            // Check if already included
+            // If so give user the cached namespace
+            if (ctx.includedFiles[realpath]) {
+                ctx.push(new value.MacroValue<NamespaceMacro>(
+                    token,
+                    ctx.includedFiles[realpath]));
+                return;
+            }
+
+            // Load file
+            const tokens = scan(fs.readFileSync(realpath).toString(), realpath);
+
+            // Put file into a macro
+            const block = new BlockToken('{', token.position, token.file || curDir);
+            block.token = token.token;
+            block.body  = tokens;
+
+            // Convert file into namespace and push it
+            const ns = new LiteralMacro(ctx, block).getNamespace(ctx, token);
+            if (!(ns instanceof value.MacroValue))
+                return ns;
+            ctx.push(ns);
+            ctx.includedFiles[realpath] = ns.value;
+        },
+    },
 };
 
 // Condition for two numeric types
@@ -930,7 +955,6 @@ const funs = {
     // TODO comparisons: < >
     // TODO type-casting
     // TODO import, import from js/env
-
 
     // TODO maybe use make instead?
     'as' : new value.Value(null, value.ValueType.Fxn, new Fun(

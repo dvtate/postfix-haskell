@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+
 import binaryen = require("binaryen");
 import wabtMod = require("wabt");
 
@@ -7,11 +9,10 @@ import * as error from './error';
 import * as expr from './expr';
 import { LexerToken } from "./scan";
 import WasmNumber from "./numbers";
-
 import debugMacros from './debug_macros';
 import globalOps from './globals';
 import ModuleManager from "./module";
-
+import { NamespaceMacro } from "./macro";
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
@@ -77,8 +78,11 @@ export default class Context {
     // Link external class
     static TraceResults = TraceResults;
 
+    // Recycled `include` namespaces
+    includedFiles: { [k: string]: NamespaceMacro } = {};
+
     // Default constructor
-    constructor(optLevel: number = 1) {
+    constructor(optLevel: number = 1, private entryPoint?: string) {
         // Initialize Module Manager
         this.optLevel = optLevel;
         this.module = new ModuleManager(this.optLevel);
@@ -92,6 +96,10 @@ export default class Context {
             this.globals[typeName] = new value.Value(null, value.ValueType.Type, type)
         );
         this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.Type());
+
+        // If there's an entry file we need to track imports to it
+        if (entryPoint)
+            this.includedFiles[fs.realpathSync(entryPoint)] = new NamespaceMacro(this.scopes[0]);
     }
 
     /**
@@ -135,7 +143,7 @@ export default class Context {
 
     /**
      * Restore copied state
-     * @param {Object} obj - state copy object from Context.copyState()
+     * @param obj - state copy object from Context.copyState()
      */
     restoreState(obj) {
         this.stack = obj.stack;
@@ -178,20 +186,6 @@ export default class Context {
         const ret = new Context();
         ret.restoreState(this.copyState());
         return ret;
-    }
-
-    /**
-     * Get index for first value on stack that hasn't been seen before
-     *
-     * @deprecated
-     * @param {number} old - index for first value on stack that hasn't been seen before
-     */
-    cmpStack(old) {
-        let i;
-        for (i = 0; i < old.length; i++)
-            if (this.stack[i] !== old[i])
-                return i;
-        return i;
     }
 
     /**
@@ -281,9 +275,6 @@ export default class Context {
             return this;
         }
 
-        // Check recursion
-        const recursiveInv = this.trace.includes(v.value);
-
         // Check trace status
         const tResults = this._getTraceResults(v);
 
@@ -293,14 +284,20 @@ export default class Context {
 
         // Try to invoke normally
         // TODO handle constexprs specially
-        if (!recursiveInv || isTrace) {
+        if (!v.value.recursive || isTrace) {
             const stack = this.stack.slice();
             const mss = this.minStackSize;
             try  {
                 // console.log('non rec', token.token, v.type);
                 this.trace.push(v.value);
-                if (this.trace.length > 1000)
-                    throw new Error('[parse] max call stack exceeded');
+                if (this.trace.length > 1000) {
+                    console.warn('1000 invocations reached, probably forgot to use `rec`');
+                    const toks = this.trace.map(t => t.token.token);
+                    console.info('Tokens: ',
+                        toks.slice(0, 20).join(', '),
+                        ' ... ', toks.slice(-20).join(', '));
+                    throw new error.SyntaxError('max call stack exceeded', this.trace.map(v => v.token), this);
+                }
                 const ret = this.toError(v.value.action(this, token), token);
                 this.trace.pop();
                 return ret;
@@ -319,7 +316,7 @@ export default class Context {
         }
 
         // It's recursive and we didn't see it yet
-        if (recursiveInv && (!tResults || tResults.result !== null) && !this.recursiveMacros.has(v.value))
+        if (v.value.recursive && (!tResults || tResults.result !== null) && !this.recursiveMacros.has(v.value))
             throw v;
 
         // if (!recursiveInv)
@@ -398,6 +395,8 @@ export default class Context {
         } else if (tResults.result === null) {
             // Recursive tracing (bad!)
             // console.log('already tracing!', token.token);
+            console.log('already tracing!', token);
+            console.log(new Error().stack);
             return null; // already tracing
         }
 
