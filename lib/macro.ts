@@ -190,6 +190,7 @@ export class LiteralMacro extends Macro {
         // Warn nothing promoted
         if (toPromote.length === 0 ) {
             ctx.warn(token, 'nothing to promote');
+            // console.log({ include, exclude, toPromote, obj: this });
             return;
         }
 

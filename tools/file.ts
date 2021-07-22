@@ -51,6 +51,7 @@ export default async function compileFile(
     if (trackTime)
         console.log('lex:', performance.now() - start);
 
+    try {
     // Parse (weird meaning here, more like "interpret phase")
     start = performance.now();
     const ctx = parse(ptree, new Context(process.env.FAST ? 1 : 2, fname));
@@ -73,4 +74,8 @@ export default async function compileFile(
         console.log('compile:', performance.now() - start);
 
     return wast;
+    } catch (e) {
+        console.log('error', e);
+        throw e;
+    }
 };

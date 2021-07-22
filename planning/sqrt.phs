@@ -1,4 +1,4 @@
-#"stdlib/prelude.phs" include use
+"stdlib/prelude.phs" include use
 
 # Average
 { + 2.0 / } $avg =
