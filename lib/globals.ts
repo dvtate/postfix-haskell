@@ -154,19 +154,19 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['expected a macro or type'];
             let v = ctx.pop();
-            if (v instanceof types.Type) {
+            if (v.type == value.ValueType.Type) {
                 const cpy = v;
                 v = new value.MacroValue(token, new CompilerMacro((ctx, token) => void ctx.push(cpy)));
             }
 
             // Assert macro type
-            if (v instanceof value.MacroValue)
+            if (!(v instanceof value.MacroValue))
                 return ['expected a macro or type'];
 
             const id = new types.ClassType(token, null).id;
 
             // Wrap macro with one that appends class type to return value
-            const wrapper = (ctx, tok) => {
+            const wrapper = (ctx: Context, tok: LexerToken) => {
                 // TODO i think scoping is fucked :/
                 // Invoke v
                 const oldStack = ctx.stack.slice();
@@ -520,7 +520,12 @@ const operators : MacroOperatorsSpec = {
 
             // Get full-path
             const curDir = token.file ? path.parse(token.file).dir : '.';
-            const realpath = fs.realpathSync(path.normalize(path.join(curDir, arg.value)));
+            let realpath : string;
+            try {
+                realpath = fs.realpathSync(path.normalize(path.join(curDir, arg.value)));
+            } catch (e) {
+                return new error.SyntaxError(`include: ${e.message}`, token, ctx);
+            }
 
             // Check if already included
             // If so give user the cached namespace

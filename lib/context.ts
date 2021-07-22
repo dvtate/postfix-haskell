@@ -189,6 +189,20 @@ export default class Context {
     }
 
     /**
+     * Get index for first value on stack that hasn't been seen before
+     *
+     * @deprecated
+     * @param old - index for first value on stack that hasn't been seen before
+     */
+    cmpStack(old) {
+        let i: number = 0;
+        for (; i < old.length; i++)
+            if (this.stack[i] !== old[i])
+                return i;
+        return i;
+    }
+
+    /**
      * Determine number of inputs and outputs
      * @param {value.Value} v - value to invoke
      * @param {Object} knownResults - trace results to use for recursion
