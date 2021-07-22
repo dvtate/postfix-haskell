@@ -77,8 +77,8 @@ export class DataValue extends Value {
 /**
  * Invokable block of code
  */
-export class MacroValue extends Value {
-    value: Macro;
+export class MacroValue <T extends Macro = Macro> extends Value{
+    value: T;
     datatype: types.ArrowType = null;
     type: ValueType.Macro = ValueType.Macro;
 

@@ -28,7 +28,7 @@ export class SyntaxError extends ParseError {
      * @param tokens - Location
      * @param ctx - parser context
      */
-    constructor(message, tokens: LexerToken | LexerToken[], ctx?: Context) {
+    constructor(message: string, tokens: LexerToken | LexerToken[], ctx?: Context) {
         super(message);
         this.tokens = tokens instanceof Array ? tokens : [tokens];
         this.ctx = ctx;

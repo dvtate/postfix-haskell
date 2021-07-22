@@ -38,6 +38,7 @@ export class LexerToken {
 
 // Number literal
 export class NumberToken extends LexerToken {
+    type: TokenType.Number;
     value: WasmNumber;
 
     constructor(token: string, position: number, file: string) {
@@ -51,6 +52,7 @@ export class NumberToken extends LexerToken {
  * later it's converted to a block and the body is assgined
  */
 export class BlockToken extends LexerToken {
+    type: TokenType.Block;
     subtype: ContainerType;
     body!: Array<LexerToken>;
 
@@ -102,7 +104,7 @@ function toToken(token: string, position: number, file: string): LexerToken|null
  * @param file - file name/path
  * @returns - List of tokens
  */
-export function lex(src: string, file: string): LexerToken[] {
+export function lex(src: string, file?: string): LexerToken[] {
     let i: number = 0,
         prev: number = 0;
     const ret: LexerToken[] = [];
@@ -177,6 +179,7 @@ export function lex(src: string, file: string): LexerToken[] {
  * @param file - file name/path
  */
 function throwParseError(message: string, tokens: LexerToken[], file?: string) {
+    // TODO convert to constructor
     throw {
         type: 'SyntaxError',
         message,
@@ -193,7 +196,7 @@ function throwParseError(message: string, tokens: LexerToken[], file?: string) {
  * @param code - code to scan
  * @param file - file name/path
  */
-export default function parse(code: string, file: string): LexerToken[] {
+export default function scan(code: string, file?: string): LexerToken[] {
 
     const tokens = lex(code, file);
     let ret = [];

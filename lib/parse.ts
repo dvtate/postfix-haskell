@@ -1,8 +1,7 @@
 import { BlockToken, LexerToken, NumberToken } from "./scan";
-
 import * as value from './value';
 import Context from './context';
-import { CompilerMacro, LiteralMacro } from './macro';
+import { LiteralMacro } from './macro';
 import * as error from './error';
 
 /*
@@ -16,10 +15,10 @@ make a somewhat different expression tree
 /**
  * Create parse tree
  *
- * @param {LexerToken.token} tokens - tokens to parse
- * @param {Context} ctx - parse ctx
+ * @param tokens - tokens to parse
+ * @param ctx - parse ctx
  */
-export default function parse(tokens: LexerToken[], ctx = new Context()): Context | error.SyntaxError {
+export default function parse(tokens: LexerToken[], ctx = new Context(undefined, tokens[0].file)): Context | error.SyntaxError {
     // For each token
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];

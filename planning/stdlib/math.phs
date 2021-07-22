@@ -1,4 +1,4 @@
-"stdlib/prelude.phs" include use
+"./prelude.phs" include use
 
 # Average
 { + 2.0 / } $avg =
@@ -7,7 +7,7 @@
 { true } {} $abs fun
 { 0.0 < } { -1.0 * } $abs fun
 
-{ F64 } { # Square route via newton's method
+{ # Square route via newton's method
 	{ # Tail-recursive helper
         $guess =
         $x =
@@ -26,4 +26,24 @@
 
     # Start calculating with first guess being 1
     1.0 iter
-} $sqrt export
+} $sqrt =
+
+
+# Factorial
+{ true } {
+    {
+        { $ret $n } =
+        { true } { n } $branch fun
+        { n 0 > } { ret n * n 1 - iter } $branch fun
+        branch
+    } rec iter
+} $fac fun
+
+# Use bigger of two values
+{ true } { pop } $max fun
+{ < } { { $a $b } = b } $max fun
+
+# Use smaller of two values
+{ true } { pop } $min fun
+{ > } { { $a $b } = b } $min fun
+

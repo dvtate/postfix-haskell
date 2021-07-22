@@ -36,14 +36,19 @@ interface CompileError extends Error {
  * @returns - formatted string with escape sequence colors
  */
 export function formatErrorPos(errors: CompileError[]): string {
+    // TODO meme
+    function ppToken(t: lex.LexerToken) {
+        const loc = fileLocate(t.file, t.position),
+            wsn = Math.min(Math.max(loc.lineOffset - t.token.length, 0), loc.line.length, loc.lineOffset),
+            wss = loc.line.slice(0, wsn).split('').reduce((a, v) => a + (v === '\t' ? '\t' : ' '), '');
+        return `\tat \x1B[1m${t.file}:${loc.lineNumber}:${loc.lineOffset}\x1B[0m\n\t\t${loc.line}\n`
+            + `\t\t${wss}\x1B[1m\x1b[31m^${'~'.repeat(Math.max(t.token.length -1, 0))}\x1B[0m`;
+    }
     return errors.map(e =>
         `\x1B[1mError: ${e.message}:\x1b[0m\n${
-            e.tokens.map(t => {
-                const loc = fileLocate(t.file, t.position),
-                    wsn = Math.min(Math.max(loc.lineOffset - t.token.length, 0), loc.line.length, loc.lineOffset),
-                    wss = loc.line.slice(0, wsn).split('').reduce((a, v) => a + (v === '\t' ? '\t' : ' '), '');
-                return `\tat \x1B[1m${t.file}:${loc.lineNumber}:${loc.lineOffset}\x1B[0m\n\t\t${loc.line}\n`
-                    + `\t\t${wss}\x1B[1m\x1b[31m^${'~'.repeat(Math.max(t.token.length -1, 0))}\x1B[0m`;
-            }).join('\n')
+            e.tokens.length > 35
+                ? `${e.tokens.slice(0, 15).map(ppToken).join('\n')
+                    }\n\n...\n\n${e.tokens.slice(-15).map(ppToken).join('\n')}`
+                : e.tokens.map(ppToken).join('\n')
         }`).join('\n\n');
 };

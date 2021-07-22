@@ -1,0 +1,21 @@
+# Import some other modules
+"./stdlib/monad.phs" include use
+"./stdlib/io.phs" include use
+"./stdlib/str.phs" include
+    "to_Str" "" use_some
+
+# Lazy evaluated IO action
+{ "Testing" to_Str print }
+{ 888 print } $>> monad @ $action =
+
+# Export that performs IO
+{ Void IO } {
+    # Invoke IO action
+    action
+
+    # Print string
+    "Hello, world!" to_Str print
+
+    # Print an i32
+    123456 print
+} $main export
