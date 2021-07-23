@@ -28,15 +28,15 @@
     1.0 iter
 } $sqrt =
 
-
 # Factorial
 { true } {
     {
-        { $ret $n } =
+        { $n $ret } =
         { true } { n } $branch fun
-        { n 0 > } { ret n * n 1 - iter } $branch fun
+        { n 0 > } { n 1 - ret n * iter } $branch fun
         branch
-    } rec iter
+    } rec $iter =
+    1 iter
 } $fac fun
 
 # Use bigger of two values

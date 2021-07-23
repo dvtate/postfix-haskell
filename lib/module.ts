@@ -31,7 +31,7 @@ export default class ModuleManager {
     /// Primarily function exports. Compiled functions and stuff that go in main body of module
     definitions: string[] = [];
 
-    private uid: number = 0;
+    private static uid: number = 0;
 
     /**
      * @constructor
@@ -65,7 +65,7 @@ export default class ModuleManager {
         }
 
         // Has not been seen before
-        const importId = `$import_${this.uid++}`;
+        const importId = `$import_${ModuleManager.uid++}`;
         this.imports[scopesKey].push({
             scopes,
             type,

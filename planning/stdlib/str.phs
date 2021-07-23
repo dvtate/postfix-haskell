@@ -6,7 +6,13 @@
 { type Str == } { unpack swap pop } $addr fun
 
 # Overload as operator to convert string literals
-{ Str == } {
+{ { $lit $t } = t type Str == } {
     $lit =
     { lit } pack Str make
 } $as global fun
+
+
+{
+    $lit =
+    { lit } pack Str make
+} $to_Str =

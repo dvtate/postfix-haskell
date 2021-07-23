@@ -793,7 +793,7 @@ const funs = {
 
             // Check syntax types
             const isData = ![a, b].some(v =>
-                ![value.ValueType.Data, value.ValueType.Expr].includes(v.type));
+                !(v instanceof value.DataValue || v instanceof expr.DataExpr));
             if (a.type !== b.type && !isData) {
                 return ['invalid syntax'];
             }

@@ -1,5 +1,0 @@
-# Import stdlib
-
-# Absolute value function
-{ 1 } { } $abs fun
-{ 0 < } { 0 swap - } $abs fun

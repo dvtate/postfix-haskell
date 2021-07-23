@@ -2,31 +2,14 @@
 "stdlib/str.phs" include use
 "stdlib/io.phs" include use
 
-# Define print for numbers
-{ { $io  $v } =
-    v type I32 I64 | F32 F64 | | ==
-    io type Any IO == && }
-{ { $io  $v } =
-    io v { io type v type } { io type } Arrow { "js" "console.log" } import @
-} $print fun
-
-# Define print for strings
-{ { $io  $str } =
-    str type Str ==
-    io type Any IO == && }
-{ { $io  $str } =
-    io str { io type Str } { io type } Arrow
-        { "js" "logStr" } import @
-} $print fun
-
 # export for performing IO
 { Void IO  I32 } {
     $n =
 
     # Some strings
-    "fizz" Str as $fizz =
-    "buzz" Str as $buzz =
-    "fizzbuzz" Str as $fizzbuzz =
+    "fizz" to_Str $fizz =
+    "buzz" to_Str $buzz =
+    "fizzbuzz" to_Str $fizzbuzz =
 
     # fizzbuzz logic
     { true } { print } $fb fun
