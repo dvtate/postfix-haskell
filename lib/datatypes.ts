@@ -302,7 +302,7 @@ export class PrimitiveType extends Type {
 
 // Datatype to describe function/macros
 export class ArrowType extends Type {
-    constructor(token,
+    constructor(token: LexerToken,
         public inputTypes: Type[],
         public outputTypes: Type[])
     {

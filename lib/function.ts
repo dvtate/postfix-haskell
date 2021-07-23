@@ -181,7 +181,7 @@ export default class Fun {
         }
 
         // Figure out how many args to pull
-        const maxTakes = ios.map(t => t.takes).reduce((acc, v) => v.length > acc.length ? v : acc);
+        const maxTakes = ios.map(t => t.takes).reduce((acc, v) => v.length > acc.length ? v : acc, []);
         const maxGives = Math.max(...ios.map(t => t.gives.length));
 
         // Allgin all branch ios

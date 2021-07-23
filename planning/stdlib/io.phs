@@ -1,9 +1,9 @@
 "./prelude.phs" include use
-"./monad.phs" include $monad =
+"./monad.phs" include "Monad" "" use_some
 "./str.phs" include "Str" "" use_some
 
 # IO extends class monad
-$Monad monad ~ class $IO =
+$Monad ~ class $IO =
 
 # Define print for numbers
 { { $io  $v } =

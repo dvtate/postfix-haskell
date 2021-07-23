@@ -2,24 +2,11 @@
 
 # String TypeClass
 { I32 I32 } pack class $Str =
-{ type Str == } { unpack pop } $.len fun
-{ type Str == } { unpack swap pop } $.addr fun
+{ type Str == } { unpack pop } $len fun
+{ type Str == } { unpack swap pop } $addr fun
 
-
-{ # TODO convert make into overrideable function ?
-    { { $lit $type } =
-        type Str ==
-        { lit } pack { I32 I32 } pack ==
-            &&
-    }
-    {
-        pop
-        $lit = { lit } pack Str make
-    } $make fun
-} pop
-
-
-{ $lit =
-    { lit } pack
-    Str make
-} $to_Str =
+# Overload as operator to convert string literals
+{ Str == } {
+    $lit =
+    { lit } pack Str make
+} $as global fun

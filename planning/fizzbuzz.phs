@@ -1,35 +1,6 @@
-# Basics
-{*} $&& global =
-{+} $|| global =
-{$_ =} $pop =
-{{ $a  $b } = b a } $swap =
-{0 ==} $! =
-{> !} $<= =
-{< !} $>= =
-
-# Strings
-{ I32 I32 } pack class $Str =
-{ type Str == } { unpack pop } $.len fun
-{ type Str == } { unpack swap pop } $.addr fun
-{ $lit = { lit } pack Str make } $to_Str = # todo: overload make
-
-# kinda like io monad
-{ $T = T } class $Monad =
-$Monad ~ class $IO =
-
-# These operators exist only such that we can do operations involving various monad types
-{ { $a  $b } = { a b } }
-   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
-$>> =
-{ { $a  $b } = { a b } }
-   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
-$>>= =
-
-{ { $v  $t } =
-    $t Str ==
-} {
-    to_Str
-} $as global fun
+"stdlib/prelude.phs" include use
+"stdlib/str.phs" include use
+"stdlib/io.phs" include use
 
 # Define print for numbers
 { { $io  $v } =
@@ -48,15 +19,14 @@ $>>= =
         { "js" "logStr" } import @
 } $print fun
 
-
 # export for performing IO
 { Void IO  I32 } {
     $n =
 
     # Some strings
-    "fizz" to_Str $fizz =
-    "buzz" to_Str $buzz =
-    "fizzbuzz" to_Str $fizzbuzz =
+    "fizz" Str as $fizz =
+    "buzz" Str as $buzz =
+    "fizzbuzz" Str as $fizzbuzz =
 
     # fizzbuzz logic
     { true } { print } $fb fun

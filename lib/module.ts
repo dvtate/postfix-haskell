@@ -19,7 +19,7 @@ export default class ModuleManager {
 
             // (func $import_23 (param i32 i32) (result f32))
             typeName: string;
-        }
+        }[]
     } = {};
 
     /// Functions to export
@@ -30,6 +30,8 @@ export default class ModuleManager {
 
     /// Primarily function exports. Compiled functions and stuff that go in main body of module
     definitions: string[] = [];
+
+    private uid: number = 0;
 
     /**
      * @constructor
@@ -51,19 +53,26 @@ export default class ModuleManager {
         if (type.outputTypes.length > 1)
             return '';
 
-        // Haven't seen this import yet or it's a polymorphic import
-        if (!this.imports[scopesKey] || type.getWasmTypeName(this.imports[scopesKey].importId) !== this.imports[scopesKey].typeName) {
-            // Add to imports list
-            const importId = `$import_${Object.keys(this.imports).length}`;
-            this.imports[scopesKey] = {
-                scopes,
-                type,
-                importId,
-                typeName: type.getWasmTypeName(importId),
-            };
+        // Look to see if we've seen it before
+        if (this.imports[scopesKey]) {
+            // TODO .getWasmTypeName() is probably expensive and this is O(M*N)
+            const match = this.imports[scopesKey].find(imp =>
+                imp.typeName == type.getWasmTypeName(imp.importId))
+            if (match)
+                return match.importId;
+        } else {
+            this.imports[scopesKey] = [];
         }
 
-        return this.imports[scopesKey].importId;
+        // Has not been seen before
+        const importId = `$import_${this.uid++}`;
+        this.imports[scopesKey].push({
+            scopes,
+            type,
+            importId,
+            typeName: type.getWasmTypeName(importId),
+        });
+        return importId;
     }
 
     /**
@@ -83,10 +92,10 @@ export default class ModuleManager {
 
         // Compile imports
         this.definitions.push(Object.values(this.imports)
-            .map(i => `(import ${
+            .map(is => is.map(i => `(import ${
                     // TODO use String.prototype.replaceAll() in 2 years
                     i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
-                } ${i.type.getWasmTypeName(i.importId)})`).join('\n'));
+                } ${i.type.getWasmTypeName(i.importId)})`).join('\n')).join('\n\n'));
 
         // Compile exports
         this.definitions.push(...this.exports.map(e => e.out(this)));
