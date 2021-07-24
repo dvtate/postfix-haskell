@@ -137,7 +137,7 @@ export class LiteralMacro extends Macro {
 
         // On successs return the scope otherwise give the error
         return ret instanceof Context
-            ? new value.MacroValue(token, new NamespaceMacro(newScope))
+            ? new value.MacroValue(token, new NamespaceMacro(newScope, token))
             : ret;
     }
 
@@ -152,6 +152,7 @@ export class LiteralMacro extends Macro {
  export class NamespaceMacro extends Macro {
     constructor(
         public scope: { [k: string]: value.Value },
+        public token?: LexerToken,
     ) {
         super();
     }
@@ -189,8 +190,8 @@ export class LiteralMacro extends Macro {
 
         // Warn nothing promoted
         if (toPromote.length === 0 ) {
-            // ctx.warn(token, 'nothing to promote');
-            // console.log({ include, exclude, toPromote, obj: this });
+            ctx.warn(token, 'nothing to promote');
+            console.warn({ include, exclude, toPromote, obj: this });
             return;
         }
 
@@ -198,7 +199,7 @@ export class LiteralMacro extends Macro {
         const curScope = ctx.scopes[ctx.scopes.length - 1];
         toPromote.forEach(([id, v]) => {
             // Warn on overwrite
-            if (curScope[id] && !include)
+            if (curScope[id] && curScope[id] != v)
                 ctx.warn(token, `Overwrote identifier $${id}`);
 
             // Write to current scope

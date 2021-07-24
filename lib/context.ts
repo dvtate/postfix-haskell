@@ -93,8 +93,7 @@ export default class Context {
             ...debugMacros, // Debug operators
         };
         Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
-            this.globals[typeName] = new value.Value(null, value.ValueType.Type, type)
-        );
+            this.globals[typeName] = new value.Value(null, value.ValueType.Type, type));
         this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.Type());
 
         // If there's an entry file we need to track imports to it

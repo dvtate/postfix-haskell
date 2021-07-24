@@ -1,7 +1,7 @@
 # Import stuff from modules
-"stdlib/monad.phs" include ">>"       ""  use_some
-"stdlib/io.phs"    include "IO|print" ""  use_some
-"stdlib/str.phs"   include "Str|to_Str"      ""  use_some
+"stdlib/monad.phs" include use # ">>"       ""  use_some
+"stdlib/io.phs"    include use #"IO|print" ""  use_some
+"stdlib/str.phs"   include use #"Str|to_Str"      ""  use_some
 
 # Lazy evaluated IO action
 { "Testing" to_Str print }

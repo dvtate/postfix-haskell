@@ -1,14 +1,4 @@
-# Booleans
-1 $true =
-0 $false =
-
-# Stack operators
-{ $_ = } $pop =				# Pop value
-{ $v = v v } $dup =			# Duplicate value
-{ $b = $a = b a } $swap =	# swap values
-
-# Not operator
-{ 1 } { 0 == } $! global fun
+"stdlib/prelude.phs" import use
 
 #{ I32 } {!} $not export
 
