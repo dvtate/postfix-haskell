@@ -19,7 +19,7 @@ data DataExpr =
     | I64Lit Int    -- ^ Compiles to i64.const
     | F32Lit Float  -- ^ Compiles to f32.const
     | F64Lit Float  -- ^ Compiles to f64.const
-    | Local Int     -- ^ Refers to indexed local function
+    | LocalExpr Int     -- ^ Refers to indexed local function
     | InstrExpr     -- ^ Result of an instruction
         String      -- ^ Mnemonic
         [DataExpr]  -- ^ Stack arguments
@@ -27,7 +27,7 @@ data DataExpr =
     | CallExpr      -- ^ Call a function
         String      -- ^ Identifier for function
         [DataExpr]  -- ^ Stack arguments
-        [WASMType]  -- ^ Result types
+        WASMType    -- ^ Result types
     deriving (Read, Show, Eq)
 
 -- Gets result wasm types
@@ -36,13 +36,13 @@ getDataType fun (I32Lit _) = [I32]
 getDataType fun (I64Lit _) = [I64]
 getDataType fun (F32Lit _) = [F32]
 getDataType fun (F64Lit _) = [F64]
-getDataType fun (Local i) = [funLocals fun !! i]
+getDataType fun (LocalExpr i) = [funLocals fun !! i]
 getDataType fun (InstrExpr _ _ t) = [t]
-getDataType fun (CallExpr _ _ ts) = ts
+getDataType fun (CallExpr _ _ ts) = [ts]
 
-
+-- | Expressions which don't directly act on the stack
 data NonDataExpr =
-    BranchExpr    -- ^ Branching code
+    BranchExpr      -- ^ Branching code
         [DataExpr]  -- ^ Conditions
         [DataExpr]  -- ^ Actions
         [Int]       -- ^ Output Identifiers
@@ -52,8 +52,8 @@ data ExportedFun = FunExport {
     funId :: String,            -- ^ Identifier
     funParams :: [WASMType],    -- ^ Params
     funLocals :: [WASMType],    -- ^ Locals
-    funResults :: [DataExpr]   -- ^ Result exprs
-}
+    funResults :: [DataExpr]    -- ^ Result exprs
+} deriving (Read, Show, Eq)
 
 type Module = [ExportedFun]
 data Context = Ctx Module ExportedFun
@@ -68,9 +68,24 @@ class Expr a where
     -- | Compile
     outExpr :: Context -> a -> (String, Context)
 
--- TODO
+
 instance Expr DataExpr where
-    outExpr ctx e = ("", ctx)
+    outExpr ctx (I32Lit n) = ("(i32.const " ++ show n ++ ")", ctx)
+    outExpr ctx (I64Lit n) = ("(i64.const " ++ show n ++ ")", ctx)
+    outExpr ctx (F32Lit n) = ("(f32.const " ++ show n ++ ")", ctx)
+    outExpr ctx (F64Lit n) = ("(f64.const " ++ show n ++ ")", ctx)
+    outExpr ctx (LocalExpr n)  = ("(local.get " ++ show n ++ ")", ctx)
+    outExpr ctx (InstrExpr instr args _) = impl [] ctx args
+        where
+            impl ret ctx [] = ("(" ++ instr ++ ret ++ ")", ctx)
+            impl ret ctx (arg : args) = impl (ret ++ " " ++ str) ctx' args
+                where (str, ctx') = outExpr ctx arg
+    outExpr ctx (CallExpr id args _) = impl [] ctx args
+        where
+            impl ret ctx [] = ("(call $" ++ id ++ ret ++ ")", ctx)
+            impl ret ctx (arg : args) = impl (ret ++ " " ++ str) ctx' args
+                where (str, ctx') = outExpr ctx arg
+
 
 outModule :: Module -> String
 outModule funs =
@@ -100,6 +115,14 @@ outModule funs =
 
         funSig :: ExportedFun -> String -> String
         funSig f body = "(func $" ++ funId f ++ " " ++ paramSig f ++ " " ++ resultSig f
-            ++ " " ++ localSig f ++ " " ++ body ++ ")"
+            ++ " " ++ localSig f ++ " " ++ body
+            ++ ") (export \"" ++ funId f ++ "\" (func $" ++ funId f ++ ")"
     in
         "(module " ++ concat (zipWith funSig funs' bodies) ++ ")"
+
+exampleFunction = FunExport "incr" [I32] [] [
+    InstrExpr "i32.add" [LocalExpr 0, I32Lit 1] I32]
+
+-- demo
+main :: IO ()
+main = putStrLn $ outModule [exampleFunction]
