@@ -13,6 +13,8 @@ import ModuleManager from './module';
 // TODO pass contextual expressions to children as array so that they can manage locals and such
 // IDEA make a type for WAST code that makes debugging easier as we can determine where each part came from
 
+// TODO this should be refactored
+
 /**
  * This stores expressions that we can reason about
  * but can't completly eliminate from the code.
@@ -45,6 +47,15 @@ export abstract class Expr extends value.Value {
     }
 
     /**
+     * Get all expressions which constitute this one
+     * @returns child nodes
+     * @virtual
+     */
+    children(): Expr[] {
+        return [];
+    }
+
+    /**
      * Would it be better to store the value in a local or inline it multiple times?
      * @virtual
      */
@@ -72,6 +83,29 @@ export abstract class DataExpr extends Expr {
 };
 
 /**
+ * Flatten a list of mixed values+expressions into a single list of expressions
+ * @param vs array of values
+ * @returns array of expressions
+ */
+function fromDataValue(vs: Array<DataExpr | value.Value>) {
+    return vs.map(v => {
+        if (v instanceof DataExpr)
+            return v;
+
+        if (v instanceof value.NumberValue)
+            return new NumberExpr(v.token, v);
+        if (v instanceof value.TupleValue)
+            return fromDataValue(v.value);
+
+        // Eww runtime error...
+        throw new error.TypeError("incompatible type", v.token, v, null);
+    }).reduce((a, v) =>
+        v instanceof Array ? a.concat(v) : (a.push(v), a),
+        [],
+    );
+}
+
+/**
  * Describes branching action
  *
  * this should only get used when it cannot be determined which branch to take at compile time
@@ -81,10 +115,10 @@ export class BranchExpr extends Expr {
     tokens: LexerToken[];
 
     // Condtions for brances
-    conditions: Array<DataExpr|value.DataValue>;
+    conditions: Array<DataExpr>;
 
     // Actions for branches
-    actions: Array<DataExpr|value.DataValue>[];
+    actions: Array<DataExpr>[];
 
     // Where results are delivered
     results: DependentLocalExpr[];
@@ -94,11 +128,15 @@ export class BranchExpr extends Expr {
      * @param conditions - conditions for branches
      * @param actions - actions for brances
      */
-    constructor(tokens: LexerToken[], conditions: Array<DataExpr|value.DataValue>, actions: Array<DataExpr|value.DataValue>[]) {
+    constructor(
+        tokens: LexerToken[],
+        conditions: Array<DataExpr|value.DataValue>,
+        actions: Array<DataExpr|value.DataValue>[]
+    ) {
         super(tokens[0]);
         this.tokens = tokens;
-        this.conditions = conditions;
-        this.actions = actions;
+        this.conditions = fromDataValue(conditions);
+        this.actions = actions.map(fromDataValue);
         this.results = [];
     }
 
@@ -122,7 +160,6 @@ export class BranchExpr extends Expr {
         });
 
         // Last condition must be else clause
-        // TODO move this to function.js
         if (conds[conds.length - 1] != '(i32.const 1)') {
             // console.log(conds[conds.length - 1]);
             throw new error.SyntaxError("no else case for fun branch", this.tokens);
@@ -163,6 +200,13 @@ export class BranchExpr extends Expr {
         // console.log('BranchExpr', ret);
         return ret;
     }
+
+    /**
+     * @override
+     */
+    children(): Expr[] {
+        return this.conditions.concat(this.actions.reduce((a, v)=>a.concat(v)));
+    }
 };
 
 /**
@@ -173,7 +217,7 @@ export class NumberExpr extends DataExpr {
      * @param token - Location in code
      * @param value - Value to wrap
      */
-    constructor(token, value) {
+    constructor(token: LexerToken, value: value.NumberValue) {
         super(token, value.datatype);
         this.value = value;
     }
@@ -186,6 +230,10 @@ export class NumberExpr extends DataExpr {
             ? this.value.map(outValue).join()
             : this.value.toWAST();
         return outValue(this.value);
+    }
+
+    children() {
+        return [];
     }
 };
 
@@ -213,6 +261,10 @@ export class InstrExpr extends DataExpr {
     }
 
     static expensive = true;
+
+    children() {
+        return this.args;
+    }
 };
 
 /**
@@ -272,6 +324,10 @@ export class UnusedResultExpr extends DataExpr {
 
     out(ctx: ModuleManager, fun: FunExportExpr) {
         return !this.source._isCompiled ? this.source.out(ctx, fun) : "";
+    }
+
+    children() {
+        return [this.source];
     }
 };
 
@@ -348,6 +404,8 @@ export class FunExportExpr extends Expr {
             outs.join('\n\t')
         })`;
     }
+
+
 };
 
 /**
@@ -447,7 +505,7 @@ export class RecursiveBodyExpr extends Expr {
         this._isCompiled = true;
 
         // console.log('takes', this.takeExprs);
-        // console.log('gives', this.giveExprs);
+        console.log('gives', this.gives);
 
         // Filter out void types
         this.takeExprs = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
@@ -476,6 +534,13 @@ export class RecursiveBodyExpr extends Expr {
 
         // console.log('RecursiveBodyExpr', ret);
         return ret;
+    }
+
+    children() {
+        return this.takes
+            .concat(this.takeExprs)
+            .concat(this.gives)
+            .concat(this.giveExprs);
     }
 };
 
@@ -515,6 +580,10 @@ export class RecursiveCallExpr extends Expr {
 
     // Shouldn't matter because result shouldn't get used
     static expensive = true;
+
+    children() {
+        return this.body.children().concat(this.takeExprs).concat(this.giveExprs);
+    }
 };
 
 /**
@@ -538,5 +607,9 @@ export class DependentLocalExpr extends DataExpr {
         } ${
             this.datatype.getBaseType().isVoid() ? '' : `(local.get ${this.index})`
         }`;
+    }
+
+    children() {
+        return this.source.children();
     }
 };
