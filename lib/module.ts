@@ -5,7 +5,9 @@ import * as expr from './expr';
  * Manges module imports & exports
  */
 export default class ModuleManager {
-    /// Set of imports
+    /**
+     * Set of imports
+     */
     private imports: {
         [k: string]: {
             // ['js', 'eval']
@@ -22,19 +24,27 @@ export default class ModuleManager {
         }[]
     } = {};
 
-    /// Functions to export
+    /**
+     * Functions to export
+     */
     private exports: Array<expr.FunExportExpr> = [];
 
-    /// Static data section of linear memory
+    /**
+     * Static data section of linear memory
+     */
     private staticData: number[] = [];
 
-    /// Primarily function exports. Compiled functions and stuff that go in main body of module
+    /**
+     * Primarily function exports. Compiled functions and stuff that go in main body of module
+     */
     definitions: string[] = [];
 
+    /**
+     * Used to generate unique importIds
+     */
     private static uid: number = 0;
 
     /**
-     * @constructor
      * @param optLevel - optimization level for the compilation
      */
     constructor(public optLevel: number = 1) { }
@@ -85,9 +95,9 @@ export default class ModuleManager {
 
     /**
      * Generate import section of wasm
-     * @returns -  webassembly text code
+     * @returns - WebAssembly text code
      */
-    compile() {
+    compile(): string {
         // TODO globals/stack pointer
 
         // Compile imports
@@ -100,6 +110,7 @@ export default class ModuleManager {
         // Compile exports
         this.definitions.push(...this.exports.map(e => e.out(this)));
 
+        // Create module as string
         return `(module
             ${this.definitions.filter(Boolean).join('\n\n')}
             (memory (export "memory") ${this.initialPages()})
@@ -118,7 +129,6 @@ export default class ModuleManager {
         ret.imports = this.imports;
         ret.staticData = this.staticData;
         ret.definitions = this.definitions;
-
         return ret;
     }
 

@@ -16,7 +16,7 @@ type ActionRet = Context | Array<string> | undefined | SyntaxError | void;
  * Macros are similar to blocks of code, or executable arrays in postscript
  * @abstract
  */
-export class Macro {
+export abstract class Macro {
     /**
      * Did the user flag this macro as recursive?
      */

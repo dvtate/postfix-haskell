@@ -68,7 +68,6 @@ class Expr a where
     -- | Compile
     outExpr :: Context -> a -> (String, Context)
 
-
 instance Expr DataExpr where
     outExpr ctx (I32Lit n) = ("(i32.const " ++ show n ++ ")", ctx)
     outExpr ctx (I64Lit n) = ("(i64.const " ++ show n ++ ")", ctx)
@@ -85,7 +84,6 @@ instance Expr DataExpr where
             impl ret ctx [] = ("(call $" ++ id ++ ret ++ ")", ctx)
             impl ret ctx (arg : args) = impl (ret ++ " " ++ str) ctx' args
                 where (str, ctx') = outExpr ctx arg
-
 
 outModule :: Module -> String
 outModule funs =

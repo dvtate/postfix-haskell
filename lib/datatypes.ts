@@ -1,9 +1,9 @@
 import { LexerToken } from './scan';
 
-// TODO depict function/method
-
-// Abstract Base class
-export class Type {
+/**
+ * Abstract base for datatypes
+ */
+export abstract class Type {
     token: LexerToken;
 
     /**
@@ -38,8 +38,9 @@ export class Type {
 
     /**
      * Does this type hold a value in wasm?
+     * @virtual
      */
-     isVoid(): boolean {
+    isVoid(): boolean {
         return false;
     }
 
@@ -54,17 +55,30 @@ export class Type {
     }
 };
 
-// More specific than types, used for applying methods and stuff
-export class ClassType extends Type {
-    type: Type;
-    id: number;
+/**
+ * Type which matches any other type
+ */
+export class AnyType extends Type {};
 
-    // Unique ids
+/**
+ * More specific than types, used for applying methods and stuff
+ */
+export class ClassType extends Type {
+    /**
+     * Base type
+     */
+    type: Type;
+
+    /**
+     * Unique identifier for the class
+     */
+    id: number;
     static _uid = 0;
 
     /**
-     * @param {LexerToken} token - code where
-     * @param {Type} type - Underlying Data type
+     * @param token - code where
+     * @param type - Underlying Data type
+     * @param [id] - Clone a class
      */
     constructor(token: LexerToken, type: Type, id: number = ClassType._uid++) {
         super(token);
@@ -136,8 +150,10 @@ export class ClassType extends Type {
     }
 };
 
-// When need to be able to handle more than one type
-//  Used for types resulting from `|` operator
+/**
+ * When need to be able to handle more than one type
+ *  aka sum type (`|`)
+ */
 export class UnionType extends Type {
     types: Type[];
 
@@ -183,8 +199,10 @@ export class UnionType extends Type {
     }
 };
 
-// When need to store more than one piece of data in a single value
-//  Used for types resulting from `pack` operator
+/**
+ * When need to store more than one piece of data in a single value
+ *  aka product type (`pack`)
+ */
 export class TupleType extends Type {
     types: Type[];
 
@@ -246,7 +264,9 @@ export class TupleType extends Type {
     }
 };
 
-// Type that's a component of compilation target
+/**
+ * Type that's a component of compilation target
+ */
 export class PrimitiveType extends Type {
     name: string;
 
@@ -300,7 +320,9 @@ export class PrimitiveType extends Type {
     }
 };
 
-// Datatype to describe function/macros
+/**
+ * Datatype to describe function/macros
+ */
 export class ArrowType extends Type {
     constructor(token: LexerToken,
         public inputTypes: Type[],
@@ -330,6 +352,5 @@ export class ArrowType extends Type {
             || this.outputTypes.some((t, i) => t.check(type.outputTypes[i])));
     }
 };
-
 
 // TODO add ValueTypes as classes?

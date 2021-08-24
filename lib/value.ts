@@ -27,6 +27,7 @@ export enum ValueType {
     // TODO make tuples a distinct ValueType
 };
 
+// TODO should be abstract
 /**
  * Generic value base class
  */

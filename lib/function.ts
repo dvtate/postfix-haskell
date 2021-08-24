@@ -75,7 +75,7 @@ export default class Fun {
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
         ctx.stack = ctx.stack.map(v =>
-            // @ts-ignore
+            // @ts-ignore typescript doesn't understand `.constructor`
             v instanceof expr.DataExpr && v.constructor.expensive
                 ? new expr.TeeExpr(v.token, v)
                 : v);

@@ -5,7 +5,9 @@ import WasmNumber from "./numbers";
 // TODO optimize, use regex, etc.
 // TODO chars
 
-// Enums
+/**
+ * Lexical type for token
+ */
 export enum TokenType {
     String = 0,         // String literal
     Number = 1,         // Number literal

@@ -31,12 +31,13 @@ inline.compileWat(src, env).then(mod => {
 }).catch(e => console.error(e));
 */
 
-const fname = '/home/tate/Desktop/postfix-haskell/planning/wat.wasm';
+const fname = '/home/tate/Desktop/postfix-haskell/planning/fac.wasm';
 const bin = fs.readFileSync(fname)
 const valid = WebAssembly.validate(bin.buffer);
 if (!valid)
 	console.error("wasm invalid!", valid);
 else
 	WebAssembly.instantiate(bin.buffer, importObject).then(m =>
-		m.instance.exports.main())
+		console.log([1,2,3,4,5,6,7,8]
+			.map(m.instance.exports.fac)))
 	.catch(console.error);

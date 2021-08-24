@@ -94,7 +94,7 @@ export default class Context {
         };
         Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
             this.globals[typeName] = new value.Value(null, value.ValueType.Type, type));
-        this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.Type());
+        this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.AnyType());
 
         // If there's an entry file we need to track imports to it
         if (entryPoint)
@@ -159,14 +159,11 @@ export default class Context {
     /**
      * Look up identifier
      *
-     * @param {LexerToken|string} id - identifier name
-     * @param {Array<Object<String, Value>>} [scopes] - scopes to check in
-     * @returns {[value, scope] | undefined} - returns value if found
+     * @param id - identifier name
+     * @param [scopes] - scopes to check in
+     * @returns returns value stored if found
      */
-    getId(id, scopes?) {
-        // Use provided scope
-        scopes = scopes || this.scopes;
-
+    getId(id : string, scopes: typeof Context.prototype.scopes = this.scopes): value.Value | undefined {
         // Resolve Local
         for (let i = scopes.length - 1; i >= 0; i--)
             if (scopes[i][id])
@@ -177,23 +174,12 @@ export default class Context {
     }
 
     /**
-     * Copy state/context
-     *
-     * @returns {Context} - Cloned Context instance
-     */
-    clone() {
-        const ret = new Context();
-        ret.restoreState(this.copyState());
-        return ret;
-    }
-
-    /**
      * Get index for first value on stack that hasn't been seen before
      *
-     * @deprecated
      * @param old - index for first value on stack that hasn't been seen before
+     * @deprecated
      */
-    cmpStack(old) {
+    cmpStack(old: value.Value[]) {
         let i: number = 0;
         for (; i < old.length; i++)
             if (this.stack[i] !== old[i])
@@ -203,14 +189,10 @@ export default class Context {
 
     /**
      * Determine number of inputs and outputs
-     * @param {value.Value} v - value to invoke
-     * @param {Object} knownResults - trace results to use for recursion
-     * @returns {null|TraceResults|error.SyntaxError} - results from trace
-     *   + null: item is already being traced
-     *   + error.SyntaxError: encountered error
-     *   + Object{in,out,delta}
+     * @param v - value to invoke
+     * @param knownResults - trace results to use for recursion
      */
-    traceIO(v, token, knownResults = { result: null, body: null }) {
+    traceIO(v: value.Value, token: LexerToken, knownResults: null | error.SyntaxError | object = { result: null, body: null }) {
         // console.log(v);
         // console.log('trace', v);
         // Copy state
@@ -428,9 +410,7 @@ export default class Context {
         // Success
         if (v === undefined)
             return this;
-        if (v === null)
-            return v;
-        if (v instanceof Context)
+        if (v === null || v instanceof Context)
             return v;
 
         // Error
@@ -451,7 +431,7 @@ export default class Context {
 
     /**
      * Pull value from stack
-     * @returns {Value|undefined} - last value from stack
+     * @returns - last value from stack
      */
     pop(): value.Value {
         // Pop value

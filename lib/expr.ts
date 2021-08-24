@@ -22,7 +22,7 @@ import ModuleManager from './module';
  * @abstract
  * @class
  */
-export class Expr extends value.Value {
+export abstract class Expr extends value.Value {
     // State variable to prevent duplicated compilation
     _isCompiled: boolean = false;
 
@@ -56,7 +56,7 @@ export class Expr extends value.Value {
  * @abstract
  * @class
  */
-export class DataExpr extends Expr {
+export abstract class DataExpr extends Expr {
     datatype: types.Type;
 
     /**
@@ -248,6 +248,8 @@ export class ParamExpr extends DataExpr {
  * Unused Result of an expression that can have multiple return values
  *
  * If the result is used we should use
+ *
+ * @deprecated
  */
 export class UnusedResultExpr extends DataExpr {
     // Orign expression
@@ -262,7 +264,7 @@ export class UnusedResultExpr extends DataExpr {
      * @param source - Origin expression
      * @param position - Stack index (0 == left)
      */
-    constructor(token, datatype, source, position) {
+    constructor(token: LexerToken, datatype: types.Type, source: Expr, position: number) {
         super(token, datatype);
         this.source = source;
         this.position = position;
@@ -384,7 +386,7 @@ export class TeeExpr extends DataExpr {
 };
 
 /**
- * Used to wrap arguments passed to recursive functions in a way that
+ * Used to wrap arguments passed to recursive functions as they are being tracd in a way that
  * they can later be used to determine the bindings for parameters in
  * recursive calls within the body
  */
@@ -392,19 +394,18 @@ export class RecursiveTakesExpr extends DataExpr {
     negIndex: number;
 
     /**
-     * @constructor
-     * @param token
-     * @param datatype
-     * @param negIndex
-     * @param value
+     * @param token location in source code
+     * @param datatype type of argument
+     * @param negIndex stack index of argument
+     * @param value value being passed as argument
      */
-    constructor(token, datatype, negIndex: number, value) {
+    constructor(token: LexerToken, datatype: types.Type, negIndex: number, value) {
         super(token, datatype);
         this.negIndex = negIndex;
         this.value = value;
     }
 
-    out(ctx, fun) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
         return this.value.out(ctx, fun);
     }
 };
@@ -416,10 +417,13 @@ export class RecursiveTakesExpr extends DataExpr {
 export class RecursiveBodyExpr extends Expr {
     // Input expressions
     takes: Array<DataExpr> = null;
+
     // Input Locals
     takeExprs: DependentLocalExpr[] = null;
+
     // Output expressions
     gives: Array<DataExpr> = null;
+
     // Output locals
     giveExprs: DependentLocalExpr[] = null;
 
@@ -430,7 +434,7 @@ export class RecursiveBodyExpr extends Expr {
     // Used to make unique label
     static _uid = 0;
 
-    constructor(token) {
+    constructor(token: LexerToken) {
         super(token);
 
         // Unique labels
@@ -441,6 +445,9 @@ export class RecursiveBodyExpr extends Expr {
     out(ctx: ModuleManager, fun: FunExportExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
+
+        // console.log('takes', this.takeExprs);
+        // console.log('gives', this.giveExprs);
 
         // Filter out void types
         this.takeExprs = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
@@ -492,6 +499,7 @@ export class RecursiveCallExpr extends Expr {
     }
 
     out(ctx: ModuleManager, fun: FunExportExpr) {
+        // console.log('call', this.giveExprs);
         // Set arg locals
         let ret = `\n\t${this.takeExprs.map((e, i) =>
             `${e.out(ctx, fun)}${
@@ -515,7 +523,8 @@ export class RecursiveCallExpr extends Expr {
 export class DependentLocalExpr extends DataExpr {
     source: Expr;
     index: number;
-    constructor(token, datatype, source) {
+
+    constructor(token: LexerToken, datatype: types.Type, source: Expr) {
         super(token, datatype);
         this.source = source;
         this.index = -1;

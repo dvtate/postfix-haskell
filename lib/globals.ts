@@ -159,10 +159,13 @@ const operators : MacroOperatorsSpec = {
                 v = new value.MacroValue(token, new CompilerMacro((ctx, token) => void ctx.push(cpy)));
             }
 
-            // Assert macro type
+            // Validate input
             if (!(v instanceof value.MacroValue))
-                return ['expected a macro or type'];
+                return ['expected a type or macro to make a class of'];
+            if (v.value.recursive)
+                return ['recursive types currently not supported'];
 
+            // Generate new class
             const id = new types.ClassType(token, null).id;
 
             // Wrap macro with one that appends class type to return value
