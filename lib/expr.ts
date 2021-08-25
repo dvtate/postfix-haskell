@@ -213,6 +213,8 @@ export class BranchExpr extends Expr {
  * Constant value that we're treating as an Expr
  */
 export class NumberExpr extends DataExpr {
+    value: value.NumberValue;
+
     /**
      * @param token - Location in code
      * @param value - Value to wrap
@@ -227,8 +229,8 @@ export class NumberExpr extends DataExpr {
      */
     out(ctx: ModuleManager, fun: FunExportExpr) {
         const outValue = v => v instanceof value.TupleValue
-            ? this.value.map(outValue).join()
-            : this.value.toWAST();
+            ? v.value.map(outValue).join()
+            : v.value.toWAST();
         return outValue(this.value);
     }
 
@@ -505,7 +507,7 @@ export class RecursiveBodyExpr extends Expr {
         this._isCompiled = true;
 
         // console.log('takes', this.takeExprs);
-        console.log('gives', this.gives);
+        console.log('gives', this.gives.map(e => e.children()).reduce((a,b)=>a.concat(b)));
 
         // Filter out void types
         this.takeExprs = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
