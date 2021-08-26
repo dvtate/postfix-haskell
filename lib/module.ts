@@ -89,7 +89,7 @@ export default class ModuleManager {
      * Export a function
      * @param fn - function to export
      */
-    export(fn: expr.FunExportExpr) {
+    addFunction(fn: expr.FunExportExpr) {
         this.exports.push(fn);
     }
 
@@ -108,7 +108,11 @@ export default class ModuleManager {
                 } ${i.type.getWasmTypeName(i.importId)})`).join('\n')).join('\n\n'));
 
         // Compile exports
-        this.definitions.push(...this.exports.map(e => e.out(this)));
+        do {
+            const exports = this.exports;
+            this.exports = [];
+            this.definitions.push(...exports.map(e => e.out(this)));
+        } while (this.exports.length);
 
         // Create module as string
         return `(module

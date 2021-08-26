@@ -12,7 +12,6 @@ import {
     NumberExpr
 } from './expr';
 
-
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
  * @param vs array of values

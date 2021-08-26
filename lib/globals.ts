@@ -362,7 +362,7 @@ const operators : MacroOperatorsSpec = {
                 return ['wasm exports can only return data values'];
             out.outputs = ovs as expr.DataExpr[]; // TODO more safety checks
 
-            ctx.module.export(out);
+            ctx.module.addFunction(out);
 
             for (let i = 0; i < pes.length; i++)
                 ctx.pop();

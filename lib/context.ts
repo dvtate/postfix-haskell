@@ -379,11 +379,17 @@ export default class Context {
 
         } else if (tResults.result) { // Invoking an already traced recursive function
             // console.log('tail:', token.token);
-            // This is an invocation of a recursive function in it's body
+            // This is an invocation of a recursive function within it's body
             const { result, body } = tResults;
-            // Create recursive function call expression using data from tResults
+
+            // Get args to recursive call
             const args = this.popn(result.takes.length).reverse();
-            const callExpr = new expr.RecursiveCallExpr(token, body, args);
+            for (let i = 0; i < args.length; i++)
+                if (!args[i].out)
+                    // TODO this shouldn't suck so bad :(
+                    return new error.SyntaxError(`cannot pass abstract value ${args[i]} in recursive call`, token, this);
+
+            const callExpr = new expr.RecursiveCallExpr(token, body, args as expr.DataExpr[]);
             // Note that if they're used after this it woudln't be tail recursion and would be unreachable
 
             this.push(...callExpr.giveExprs);

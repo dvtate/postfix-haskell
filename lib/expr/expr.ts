@@ -49,6 +49,33 @@ import ModuleManager from '../module';
      * @virtual
      */
     static expensive = true;
+
+    /**
+     * Exhaustive version of .children()
+     * @returns all child nodes which don't have children
+     */
+    getLeaves(): Expr[] {
+        let ret: Set<Expr> = new Set(this.children());
+        let retLen = ret.size;
+        do {
+            retLen = ret.size;
+            ret = [...ret]
+                .map(e => {
+                    const ret = e.children();
+                    return ret.length === 0 ? e : ret;
+                }).reduce((a, v) => {
+                    if (v instanceof Array) {
+                        v.forEach(e => a.add(e));
+                        return a;
+                    } else {
+                        a.add(v);
+                    }
+                    return a;
+                }, new Set<Expr>());
+        } while (retLen != ret.size);
+
+        return [...ret];
+    }
 };
 
 /**

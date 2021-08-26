@@ -58,9 +58,7 @@ export class Value {
         return this.type !== ValueType.Expr;
     }
 
-    out(ctx: ModuleManager, fun?: expr.FunExportExpr) {
-        throw new Error("this value cannot be compiled!");
-    }
+    out?(ctx: ModuleManager, fun?: expr.FunExportExpr): string
 };
 
 /**
@@ -105,10 +103,17 @@ export class NumberValue extends DataValue {
         }), {});
 
     /**
-     * See code in expr.ts
+     * See code in expr/expr.ts
      */
     out(): string {
         return this.value.toWAST();
+    }
+
+    /**
+     * See code in expr/expr.ts
+     */
+    children() {
+        return [];
     }
 };
 

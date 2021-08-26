@@ -1,7 +1,7 @@
 
 
 
-{ # Intentionally naive factorial
+{ # Intentionally non-tail-recursive factorial
     $n =
     { 1 } { n n 1 - fac * } $branch fun
     { n 2 < } { 1 } $branch fun
