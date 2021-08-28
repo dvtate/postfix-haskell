@@ -39,7 +39,7 @@ import * as util from '../tools/util';
         },
     });
 
-    const fac = mod.instance.exports.fac as CallableFunction;
+    const fac = mod.instance.exports.nfac as CallableFunction;
     for (let i = 0; i < 10; i++)
-        console.log(fac(i));
+        console.log(fac(i, 1, 0));
 })();

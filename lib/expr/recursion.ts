@@ -134,7 +134,8 @@ export class RecursiveBodyExpr extends Expr {
                     throw new Error("wtf?");
                 }
                 return false;
-            }) as ParamExpr[];
+            })
+            .reverse() as ParamExpr[];
 
         // Make recursive helper function
         this.helper = new RecFunExpr(
@@ -156,7 +157,7 @@ export class RecursiveBodyExpr extends Expr {
         let ret = `${
             this.takes.map(e => e.out(ctx, fun)).join('')
         }${
-            captureExprs.slice().reverse().map(e => e.out(ctx, fun)).join('')
+            captureExprs.map(e => e.out(ctx, fun)).join('')
         }\n\t(call ${this.label})${
             this.giveExprs.map(e => `(local.set ${e.index})`).join('')
         }`;
@@ -285,9 +286,9 @@ export class RecursiveCallExpr extends Expr {
         // Call helper function
         // Note this will always be in the body of the helper function and thus a recursive call
         return `\n\t${
-            this.takeExprs.map((e, i) => e.out(ctx, fun)).join(' ')
+            this.body.helper.copiedParams.map(p => p.out(ctx, fun)).join('')
         } ${
-            this.body.helper.copiedParams.slice().reverse().map(p => p.out(ctx, fun)).join('')
+            this.takeExprs.map((e, i) => e.out(ctx, fun)).join(' ')
         } (call ${this.body.label})`;
     }
 
