@@ -18,7 +18,7 @@
     { # Intentionally non-tail-recursive factorial
         $n =
         { 1 } { n 1 - fac n * } $branch fun
-        { n 2 < } { v v2 - } $branch fun
+        { n 2 < } { v2 v - } $branch fun
         branch
     } rec $fac =
     fac

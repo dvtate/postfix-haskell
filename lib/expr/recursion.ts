@@ -10,6 +10,7 @@ import {
     FunExportExpr,
     DependentLocalExpr,
     ParamExpr,
+    TeeExpr,
 } from './expr';
 
 /**
@@ -80,7 +81,7 @@ export class RecursiveBodyExpr extends Expr {
         // Prevent multiple compilations
         this._isCompiled = true;
 
-        // If tail recursive generate a helper function
+        // If not tail recursive, generate a helper function instead of a loop
         this.isTailRecursive = this._isTailRecursive();
         if (!this.isTailRecursive)
             return this.outFn(ctx, fun);
@@ -122,17 +123,23 @@ export class RecursiveBodyExpr extends Expr {
         this.takeExprs = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
         this.giveExprs = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
 
-        // Since we're moving body to another function we ahve to move it
+        // Since we're moving body to another function we have to move locals
         const captureExprs = this.gives
             .map(e => e.getLeaves())
             .reduce((a, v) => a.concat(v), [])
             .filter(e => {
+                // Parameters need to be passed as arguments to helper
                 if (e instanceof ParamExpr)
                     return true;
-                if (e instanceof DependentLocalExpr && e.index !== -1) {
+
+                // Should not already be bound, right?
+                if ((e instanceof DependentLocalExpr && e.index !== -1)
+                    || (e instanceof TeeExpr && e.local !== null))
+                {
                     console.error(e);
                     throw new Error("wtf?");
                 }
+
                 return false;
             })
             .reverse() as ParamExpr[];
@@ -181,6 +188,18 @@ export class RecursiveBodyExpr extends Expr {
         if (this.gives.some(c => c instanceof RecursiveResultExpr))
             return true;
 
+        function isSameBodyCall(e: Expr): boolean {
+            return false
+        }
+
+        // If body not a branch result DependentLocalExpr, return false
+        // Go through branch conditions, if any of them calls self say no
+        // Go through branch actions, if any of them isn't tr, say no
+        // istr:
+        //  - if it returns RecursiveResultExpr then it's TR
+        //  - if it doesn't call self it is tr
+        //  - otherwise it's not tr
+
         // TODO actually detect tail-recursion lol
         return false;
     }
@@ -200,7 +219,7 @@ export class RecursiveBodyExpr extends Expr {
         super(
             token,
             name,
-            takeExprs.map(e => e.datatype).concat(copiedParams.map(p => p.datatype).reverse())
+            takeExprs.map(e => e.datatype).concat(copiedParams.map(p => p.datatype))
         );
     }
 
@@ -208,14 +227,14 @@ export class RecursiveBodyExpr extends Expr {
         // Capture original positions so that we can revert later so that old references don't break
         const originalIndicies = this.copiedParams.map(e => e.position);
 
-        // Temporarily update indicies to refer to our params
-        this.copiedParams.forEach((e, i) => {
-            e.position = i;
-        });
-
         // Alias our DependentLocalExpr inputs to params
         this.takeExprs.forEach((e, i) => {
-            e.index = this.copiedParams.length + i;
+            e.index =  i;
+        });
+
+        // Temporarily update indicies to refer to our params
+        this.copiedParams.forEach((e, i) => {
+            e.position = this.takeExprs.length + i;
         });
 
         // Compile body & generate type signatures
@@ -283,12 +302,15 @@ export class RecursiveCallExpr extends Expr {
             return ret;
         }
 
+        if (fun !== this.body.helper)
+            throw new Error('wtf?');
+
         // Call helper function
         // Note this will always be in the body of the helper function and thus a recursive call
         return `\n\t${
-            this.body.helper.copiedParams.map(p => p.out(ctx, fun)).join('')
-        } ${
             this.takeExprs.map((e, i) => e.out(ctx, fun)).join(' ')
+        } ${
+            this.body.helper.copiedParams.map(p => p.out(ctx, fun)).join('')
         } (call ${this.body.label})`;
     }
 

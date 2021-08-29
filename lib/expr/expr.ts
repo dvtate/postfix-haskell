@@ -59,14 +59,16 @@ import ModuleManager from '../module';
         let retLen = ret.size;
         do {
             retLen = ret.size;
+            // console.log('v', retLen, [...ret][2]);
             ret = [...ret]
                 .map(e => {
+                    // if (!e.children)
+                    //     console.error(e);
                     const ret = e.children();
                     return ret.length === 0 ? e : ret;
                 }).reduce((a, v) => {
                     if (v instanceof Array) {
                         v.forEach(e => a.add(e));
-                        return a;
                     } else {
                         a.add(v);
                     }

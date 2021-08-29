@@ -348,7 +348,7 @@ const operators : MacroOperatorsSpec = {
 
             // Put param exprs onto stack
             const out = new expr.FunExportExpr(token, sym.value.slice(1), inTypes);
-            const pes = inTypes.map((t, i) => new expr.ParamExpr(token, t, out, i)).reverse();
+            const pes = inTypes.map((t, i) => new expr.ParamExpr(token, t, out, i));
             ctx.push(...pes);
 
             // Invoke macro to determine structure of fxn

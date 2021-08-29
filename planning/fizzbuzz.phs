@@ -5,6 +5,7 @@
 # export for performing IO
 { Void IO  I32 } {
     $n =
+    :stack
 
     # Some strings
     "fizz" to_Str $fizz =
