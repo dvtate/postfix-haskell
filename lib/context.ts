@@ -343,11 +343,25 @@ export default class Context {
             const ios = this.traceIO(v, token);
             if (!(ios instanceof TraceResults))
                 return ios;
+            if (!ios.takes)
+                throw new Error("wtf?");
+
+            // If all inputs are constexprs, invoke at compile-time
+            if (!stack.slice(0, ios.takes.length).some(v => v.type === value.ValueType.Expr)) {
+                this.trace.push(v.value);
+                try {
+                    this.stack = stack;
+                    const ret = this.toError(v.value.action(this, token), token);
+                    this.trace.pop();
+                    return ret;
+                } catch (e) {
+                    this.trace.pop();
+                    throw e;
+                }
+            }
 
             // Link body inputs
             // Generate input locals
-            if (!ios.takes)
-                console.log(ios);
             body.takes = ios.takes as expr.DataExpr[];
             body.takeExprs = body.takes.map(e =>
                 e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : null);
