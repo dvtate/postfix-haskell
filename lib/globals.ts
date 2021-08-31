@@ -10,11 +10,11 @@ import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
 import { DataExpr } from './expr';
-// import { fromDataValue } from './expr';
+import { fromDataValue } from './expr';
 
-function fromDataValue(params: value.Value[]): DataExpr[] {
-    return params as DataExpr[];
-}
+// function fromDataValue(params: value.Value[]): DataExpr[] {
+//     return params as DataExpr[];
+// }
 
 /*
 These are globally defined operators some may eventually be moved to standard library
@@ -347,14 +347,15 @@ const operators : MacroOperatorsSpec = {
             const ev = ctx.traceIO(args, token);
             if (!(ev instanceof Context.TraceResults))
                 return ev;
-            const inputs = ev.gives.reverse();
+            const inputs = ev.gives;
             if (inputs.some(t => t.type !== value.ValueType.Type))
                 return ['expected a macro of types'];
-            const inTypes = inputs.map(t => t.value);
+            const inTypes: types.Type[] = inputs.map(t => t.value);
 
             // Put param exprs onto stack
             const out = new expr.FunExportExpr(token, sym.value.slice(1), inTypes);
-            const pes = inTypes.map((t, i) => new expr.ParamExpr(token, t, out, i));
+            let nonVoidIndex = 0;
+            const pes = inTypes.map((t) => new expr.ParamExpr(token, t, out, t.isVoid() ? -1 : nonVoidIndex++));
             ctx.push(...pes);
 
             // Invoke macro to determine structure of fxn

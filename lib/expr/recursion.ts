@@ -86,30 +86,34 @@ export class RecursiveBodyExpr extends Expr {
         if (!this.isTailRecursive)
             return this.outFn(ctx, fun);
 
-        // Filter out void types
-        this.takeExprs = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
-        this.giveExprs = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+        // Select non void types
+        const voidTakes: Array<DependentLocalExpr | false>
+            = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+        const voidGives: Array<DependentLocalExpr | false>
+            = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
 
         // Store inputs in locals
         this.takeExprs.forEach(e => {
-            if (e)
-                e.index = fun.addLocal(e.datatype);
+            e.index = fun.addLocal(e.datatype);
         });
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${this.takes[i].out(ctx, fun)}${e ? `\n\t(local.set ${e.index})` : ''}`
+            `${this.takes[i].out(ctx, fun)}${e.datatype.isVoid() ? '' : `\n\t(local.set ${e.index})`}`
         ).join('\n\t')}\n\t`;
 
         // Create place to store outputs
         this.giveExprs.forEach(e => {
-            if (e)
-                e.index = fun.addLocal(e.datatype);
+            e.index = fun.addLocal(e.datatype);
         });
 
         // Body
         const retType = this.gives.map(e => e.datatype.getWasmTypeName()).join(' ');
         ret += `(loop ${this.label} (result ${retType})\n\t`;
         ret += this.gives.map(e => e.out(ctx, fun)).join('\n\t');
-        ret += `)\n\t${this.giveExprs.map(e => e ? `(local.set ${e.index})` : '').join(' ')}\n\t`;
+        ret += `)\n\t${
+            this.giveExprs.map(e =>
+                e.datatype.isVoid() ? '' : `(local.set ${e.index})`
+            ).join(' ')
+        }\n\t`;
 
         // console.log('RecursiveBodyExpr', ret);
         return ret;
@@ -119,10 +123,6 @@ export class RecursiveBodyExpr extends Expr {
      * Version of this.out() for when it's not tail-recursive
      */
     outFn(ctx: ModuleManager, fun: FunExportExpr) {
-        // Filter out void types
-        this.takeExprs = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
-        this.giveExprs = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
-
         // Since we're moving body to another function we have to move locals
         const captureExprs = this.gives
             .map(e => e.getLeaves())
@@ -156,8 +156,7 @@ export class RecursiveBodyExpr extends Expr {
 
         // Create place to store outputs
         this.giveExprs.forEach(e => {
-            if (e)
-                e.index = fun.addLocal(e.datatype);
+            e.index = fun.addLocal(e.datatype);
         });
 
         // Invoke helper function and capture return values into dependent locals
@@ -166,7 +165,7 @@ export class RecursiveBodyExpr extends Expr {
         }${
             captureExprs.map(e => e.out(ctx, fun)).join('')
         }\n\t(call ${this.label})${
-            this.giveExprs.map(e => `(local.set ${e.index})`).join('')
+            this.giveExprs.map(e => e.datatype.isVoid() ? '' : `(local.set ${e.index})`).join('')
         }`;
 
         return ret;
@@ -205,22 +204,32 @@ export class RecursiveBodyExpr extends Expr {
     }
 };
 
-// TODO swap this with FunExportExpr
+// TODO swap extension order with FunExportExpr
 /**
  * Function that gets added to module but isn't exported
  */
 export class RecFunExpr extends FunExportExpr {
+    public takeExprs: DependentLocalExpr[];
+    public copiedParams: ParamExpr[];
+
     constructor(
         token: LexerToken,
         name: string,
-        public takeExprs: DependentLocalExpr[],
-        public copiedParams: ParamExpr[],
+        takeExprs: DependentLocalExpr[],
+        copiedParams: ParamExpr[],
     ) {
+        // Filter void
+        takeExprs = takeExprs.filter(e => !e.datatype.isVoid());
+        copiedParams = copiedParams.filter(e => !e.datatype.isVoid());
+
         super(
             token,
             name,
             takeExprs.map(e => e.datatype).concat(copiedParams.map(p => p.datatype))
         );
+
+        this.takeExprs = takeExprs;
+        this.copiedParams = copiedParams;
     }
 
     out(ctx: ModuleManager) {
@@ -229,7 +238,7 @@ export class RecFunExpr extends FunExportExpr {
 
         // Alias our DependentLocalExpr inputs to params
         this.takeExprs.forEach((e, i) => {
-            e.index =  i;
+                e.index = i;
         });
 
         // Temporarily update indicies to refer to our params

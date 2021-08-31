@@ -167,6 +167,9 @@ export class FunExportExpr extends Expr {
      * @returns - local index
      */
     addLocal(type: types.Type /*types.PrimitiveType*/): number {
+        // Don't add locals for void types
+        if (type.isVoid())
+            return -1;
         // TODO when given non-primitive type expand it to a list of primitives
         // new return type will be array
         return this._locals.push(type as types.PrimitiveType) - 1;

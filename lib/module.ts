@@ -110,15 +110,19 @@ export default class ModuleManager {
         } while (this.functions.length);
 
         // Compile imports
-        this.definitions.push(Object.values(this.imports)
+        const importDefs = Object.values(this.imports)
             .map(is => is.map(i => `(import ${
-                    // TODO use String.prototype.replaceAll() in 2 years
+                    // TODO use String.prototype.replaceAll() in 2 years or regex
                     i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
-                } ${i.type.getWasmTypeName(i.importId)})`).join('\n')).join('\n\n'));
+                } ${
+                    i.type.getWasmTypeName(i.importId)
+                })`)
+                .join('\n')
+            ).join('\n\n');
 
         // Create module as string
-        return `(module
-            ${this.definitions.filter(Boolean).join('\n\n')}
+        return `(module \n${importDefs
+            }\n\n${this.definitions.filter(Boolean).join('\n\n')}
             (memory (export "memory") ${this.initialPages()})
             (data (i32.const 0) "${this.staticDataToHexString()}"))`;
     }

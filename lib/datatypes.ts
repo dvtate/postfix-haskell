@@ -148,6 +148,13 @@ export class ClassType extends Type {
         }
         return ret;
     }
+
+    /**
+     * @override
+     */
+    isVoid() {
+        return this.getBaseType().isVoid();
+    }
 };
 
 /**
