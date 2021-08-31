@@ -18,7 +18,7 @@ import {
  * they can later be used to determine the bindings for parameters in
  * recursive calls within the body
  */
- export class RecursiveTakesExpr extends DataExpr {
+export class RecursiveTakesExpr extends DataExpr {
     negIndex: number;
 
     /**
@@ -27,7 +27,7 @@ import {
      * @param negIndex stack index of argument
      * @param value value being passed as argument
      */
-    constructor(token: LexerToken, datatype: types.Type, negIndex: number, value) {
+    constructor(token: LexerToken, datatype: types.Type, negIndex: number, value: value.Value) {
         super(token, datatype);
         this.negIndex = negIndex;
         this.value = value;
@@ -209,7 +209,7 @@ export class RecursiveBodyExpr extends Expr {
 /**
  * Function that gets added to module but isn't exported
  */
- export class RecFunExpr extends FunExportExpr {
+export class RecFunExpr extends FunExportExpr {
     constructor(
         token: LexerToken,
         name: string,
@@ -317,7 +317,7 @@ export class RecursiveCallExpr extends Expr {
     // Shouldn't matter because result shouldn't get used
     static expensive = true;
 
-    children() {
+    children(): Expr[] {
         return this.body.children().concat(this.takeExprs).concat(this.giveExprs);
     }
 };
@@ -325,7 +325,7 @@ export class RecursiveCallExpr extends Expr {
 /**
  * Unused Result of an expression that can have multiple return values
  */
- export class RecursiveResultExpr extends DataExpr {
+export class RecursiveResultExpr extends DataExpr {
     // Origin expression
     source: RecursiveCallExpr;
 

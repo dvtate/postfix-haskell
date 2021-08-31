@@ -9,38 +9,16 @@ import {
     Expr,
     FunExportExpr,
     DependentLocalExpr,
-    NumberExpr
+    NumberExpr,
+    fromDataValue,
 } from './expr';
-
-/**
- * Flatten a list of mixed values+expressions into a single list of expressions
- * @param vs array of values
- * @returns array of expressions
- */
- function fromDataValue(vs: Array<DataExpr | value.Value>) {
-    return vs.map(v => {
-        if (v instanceof DataExpr)
-            return v;
-
-        if (v instanceof value.NumberValue)
-            return new NumberExpr(v.token, v);
-        if (v instanceof value.TupleValue)
-            return fromDataValue(v.value);
-
-        // Eww runtime error...
-        throw new error.TypeError("incompatible type", v.token, v, null);
-    }).reduce((a, v) =>
-        v instanceof Array ? a.concat(v) : (a.push(v), a),
-        [],
-    );
-}
 
 /**
  * Describes branching action
  *
  * this should only get used when it cannot be determined which branch to take at compile time
  */
- export class BranchExpr extends Expr {
+export class BranchExpr extends Expr {
     // Locations in source
     tokens: LexerToken[];
 
@@ -118,7 +96,7 @@ import {
         // return ret;
 
         // Compile to (if (...) (result ...) (then ...) (else ...))
-        let ret: string = (function compileIf(i) {
+        let ret: string = (function compileIf(i): string {
             return i + 1 >= acts.length
                 ? acts[i]
                 : `(if (result ${retType})${conds[i]

@@ -6,13 +6,6 @@
     branch
 } rec $fac =
 
-{
-    $n =
-    { 1 } { n 1 - fib n 2 - fib + } $branch fun
-    { n 2 < } { 1 } $branch fun
-    branch
-} rec $fib =
-
 { I32 I32 I32 } {
     $v2 = $v =
     { # Intentionally non-tail-recursive factorial
@@ -23,6 +16,13 @@
     } rec $fac =
     fac
 } $nfac export
+
+{
+    $n =
+    { 1 } { n 1 - fib n 2 - fib + } $branch fun
+    { n 2 < } { 1 } $branch fun
+    branch
+} rec $fib =
 
 6 fib :data
 

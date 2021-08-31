@@ -13,7 +13,7 @@ import ModuleManager from '../module';
  * @abstract
  * @class
  */
- export abstract class Expr extends value.Value {
+export abstract class Expr extends value.Value {
     // State variable to prevent duplicated compilation
     _isCompiled: boolean = false;
 
@@ -62,9 +62,12 @@ import ModuleManager from '../module';
             // console.log('v', retLen, [...ret][2]);
             ret = [...ret]
                 .map(e => {
-                    // if (!e.children)
-                    //     console.error(e);
                     const ret = e.children();
+
+                    // ts-ignore
+                    if (ret.some(e => !e.children)) {
+                        console.log('no cs', e);
+                    }
                     return ret.length === 0 ? e : ret;
                 }).reduce((a, v) => {
                     if (v instanceof Array) {
@@ -105,7 +108,7 @@ export abstract class DataExpr extends Expr {
  *
  * used to handle multi-returns so that they don't get used out of order
  */
- export class DependentLocalExpr extends DataExpr {
+export class DependentLocalExpr extends DataExpr {
     source: Expr;
     index: number;
 
@@ -133,7 +136,7 @@ export abstract class DataExpr extends Expr {
 /**
  * Function Export expression
  */
- export class FunExportExpr extends Expr {
+export class FunExportExpr extends Expr {
     // Exported symbol
     name: string;
 
@@ -208,7 +211,7 @@ export abstract class DataExpr extends Expr {
 /**
  * Function parameters expression
  */
- export class ParamExpr extends DataExpr {
+export class ParamExpr extends DataExpr {
     // Origin FuncExportExpr
     source: FunExportExpr;
 
@@ -237,7 +240,7 @@ export abstract class DataExpr extends Expr {
 /**
  * Constant value that we're treating as an Expr
  */
- export class NumberExpr extends DataExpr {
+export class NumberExpr extends DataExpr {
     value: value.NumberValue;
 
     /**
@@ -253,13 +256,14 @@ export abstract class DataExpr extends Expr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        const outValue = v => v instanceof value.TupleValue
-            ? v.value.map(outValue).join()
-            : v.value.toWAST();
+        const outValue = (v: value.Value): string =>
+            v instanceof value.TupleValue
+                ? v.value.map(outValue).join()
+                : v.value.toWAST();
         return outValue(this.value);
     }
 
-    children() {
+    children(): Expr[] {
         return [];
     }
 };
@@ -274,7 +278,7 @@ export class InstrExpr extends DataExpr {
     // Arguments passed
     args: DataExpr[];
 
-    constructor(token, datatype, instr, args) {
+    constructor(token: LexerToken, datatype: types.Type, instr: string, args: DataExpr[]) {
         super(token, datatype);
         this.instr = instr;
         this.args = args;
@@ -300,14 +304,14 @@ export class InstrExpr extends DataExpr {
  * First time it's compiled it stores value in a new local
  * After that it just does local.get
  */
- export class TeeExpr extends DataExpr {
+export class TeeExpr extends DataExpr {
     local: null | number = null;
 
     /**
      * @param token - origin in source code
      * @param expr - value to store in a local so that we can copy it
      */
-    constructor(token, expr: DataExpr) {
+    constructor(token: LexerToken, expr: DataExpr) {
         super(token, expr.datatype);
         this.value = expr;
     }
@@ -329,4 +333,26 @@ export class InstrExpr extends DataExpr {
     static expensive = false;
 };
 
+/**
+ * Flatten a list of mixed values+expressions into a single list of expressions
+ * @param vs array of values
+ * @returns array of expressions
+ */
+export function fromDataValue(vs: Array<DataExpr | value.Value>): DataExpr[] {
+    return vs.map(v => {
+        if (v instanceof DataExpr)
+            return v;
 
+        if (v instanceof value.NumberValue)
+            return new NumberExpr(v.token, v);
+        if (v instanceof value.TupleValue)
+            return fromDataValue(v.value);
+
+        // Eww runtime error...
+        throw new error.TypeError("incompatible type", v.token, v, null);
+    }).reduce(
+        (a: DataExpr[], v: DataExpr | DataExpr[]) =>
+            v instanceof Array ? a.concat(v) : (a.push(v), a),
+        [],
+    );
+}

@@ -139,12 +139,11 @@ export default class Context {
         return ret;
     }
 
-
     /**
      * Restore copied state
      * @param obj - state copy object from Context.copyState()
      */
-    restoreState(obj) {
+    restoreState(obj: any) {
         this.stack = obj.stack;
         this.scopes = obj.scopes;
         this.globals = obj.globals;
@@ -239,7 +238,7 @@ export default class Context {
      * @param {*} v
      * @returns TraceResultTracker or null
      */
-    _getTraceResults(v): TraceResultTracker {
+    _getTraceResults(v: value.Value): TraceResultTracker {
         // TODO also check takes datatypes and constexprs against stack
         for (let i = this.traceResults.length - 1; i >= 0; i--)
             if (this.traceResults[i].value === v)
@@ -298,7 +297,9 @@ export default class Context {
                 const ret = this.toError(v.value.action(this, token), token);
                 this.trace.pop();
                 return ret;
-            } catch (e) {
+            } catch (e: any) {
+                if (!e || e.value == undefined)
+                    throw e;
                 // If the function throws our value then we know it's recursive
                 if (e.value !== v.value) {
                     this.trace.pop();
@@ -426,7 +427,7 @@ export default class Context {
      * @param v - value to convert to error
      * @param token - location in code
      */
-    toError(v, token: LexerToken): error.SyntaxError | Context | null {
+    toError(v: any, token: LexerToken): error.SyntaxError | Context | null {
         // Success
         if (v === undefined)
             return this;
@@ -526,7 +527,7 @@ export default class Context {
         // Validate
         if (validate) {
             try {
-                const invalid = mod.validate();
+                const invalid: any = mod.validate();
                 if (invalid) {
                     console.error(invalid);
                     console.log(src);
@@ -542,7 +543,7 @@ export default class Context {
         //  NOTE this doesn't work
         //  Something wrong with binaryen.js ig
         if (optimize) {
-            const m2 = binaryen.readBinary(mod.toBinary({}));
+            const m2 = binaryen.readBinary(mod.toBinary({}).buffer);
             m2.optimize();
             m2.validate();
             return folding ? m2.emitText() : m2.emitStackIR();
