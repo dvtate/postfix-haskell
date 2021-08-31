@@ -27,7 +27,7 @@ export default class ModuleManager {
     /**
      * Functions to export
      */
-    private exports: Array<expr.FunExportExpr> = [];
+    private functions: Array<expr.FunExportExpr> = [];
 
     /**
      * Static data section of linear memory
@@ -89,8 +89,8 @@ export default class ModuleManager {
      * Export a function
      * @param fn - function to export
      */
-    export(fn: expr.FunExportExpr) {
-        this.exports.push(fn);
+    addFunction(fn: expr.FunExportExpr) {
+        this.functions.push(fn);
     }
 
     /**
@@ -100,19 +100,29 @@ export default class ModuleManager {
     compile(): string {
         // TODO globals/stack pointer
 
-        // Compile imports
-        this.definitions.push(Object.values(this.imports)
-            .map(is => is.map(i => `(import ${
-                    // TODO use String.prototype.replaceAll() in 2 years
-                    i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
-                } ${i.type.getWasmTypeName(i.importId)})`).join('\n')).join('\n\n'));
-
         // Compile exports
-        this.definitions.push(...this.exports.map(e => e.out(this)));
+        // Some expressions add helper funcitons so we have to compile
+        //   until there are no more
+        do {
+            const exports = this.functions;
+            this.functions = [];
+            this.definitions.push(...exports.map(e => e.out(this)));
+        } while (this.functions.length);
+
+        // Compile imports
+        const importDefs = Object.values(this.imports)
+            .map(is => is.map(i => `(import ${
+                    // TODO use String.prototype.replaceAll() in 2 years or regex
+                    i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
+                } ${
+                    i.type.getWasmTypeName(i.importId)
+                })`)
+                .join('\n')
+            ).join('\n\n');
 
         // Create module as string
-        return `(module
-            ${this.definitions.filter(Boolean).join('\n\n')}
+        return `(module \n${importDefs
+            }\n\n${this.definitions.filter(Boolean).join('\n\n')}
             (memory (export "memory") ${this.initialPages()})
             (data (i32.const 0) "${this.staticDataToHexString()}"))`;
     }
@@ -123,7 +133,7 @@ export default class ModuleManager {
     clone(): ModuleManager {
         const ret = new ModuleManager(this.optLevel);
         // Slice exports
-        ret.exports = { ...this.exports };
+        ret.functions = { ...this.functions };
 
         // These properties are only referenced as we want to keep changes from smaller scopes
         ret.imports = this.imports;

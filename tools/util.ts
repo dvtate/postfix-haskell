@@ -36,7 +36,6 @@ interface CompileError extends Error {
  * @returns - formatted string with escape sequence colors
  */
 export function formatErrorPos(errors: CompileError[]): string {
-    // TODO meme
     function ppToken(t: lex.LexerToken) {
         const loc = fileLocate(t.file, t.position),
             wsn = Math.min(Math.max(loc.lineOffset - t.token.length, 0), loc.line.length, loc.lineOffset),

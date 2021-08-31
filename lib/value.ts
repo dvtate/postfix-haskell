@@ -5,6 +5,7 @@ import Context from './context';
 import { Macro } from './macro';
 import ModuleManager from './module';
 import * as expr from './expr';
+import { Expr } from './expr';
 
 
 /*
@@ -44,7 +45,7 @@ export class Value {
     /// If there's a datatype
     datatype?: types.Type;
 
-    constructor(token: LexerToken, type: ValueType, value, datatype?: types.Type) {
+    constructor(token: LexerToken, type: ValueType, value: any, datatype?: types.Type) {
         this.token = token;
         this.type = type;
         this.value = value;
@@ -58,9 +59,7 @@ export class Value {
         return this.type !== ValueType.Expr;
     }
 
-    out(ctx: ModuleManager, fun?: expr.FunExportExpr) {
-        throw new Error("this value cannot be compiled!");
-    }
+    out?(ctx: ModuleManager, fun?: expr.FunExportExpr): string
 };
 
 /**
@@ -70,7 +69,7 @@ export class DataValue extends Value {
     datatype: types.Type;
     type: ValueType.Data = ValueType.Data;
 
-    constructor(token, type: types.Type, value) {
+    constructor(token: LexerToken, type: types.Type, value: any) {
         super(token, ValueType.Data, value, type);
     }
 };
@@ -97,18 +96,25 @@ export class NumberValue extends DataValue {
     }
 
     // Map of number types to coresponding primitive datatypes
-    static _typeMap = Object.keys(WasmNumber.Type)
+    static _typeMap: { [k: number]: types.PrimitiveType} = Object.keys(WasmNumber.Type)
         .filter(k => isNaN(parseFloat(k))) // Only the labels because ts does both
         .reduce((acc, v) => ({
             ...acc,
-            [WasmNumber.Type[v]] : types.PrimitiveType.Types[v],
+            [WasmNumber.Type[<any>v]] : types.PrimitiveType.Types[v],
         }), {});
 
     /**
-     * See code in expr.ts
+     * See code in expr/expr.ts
      */
     out(): string {
         return this.value.toWAST();
+    }
+
+    /**
+     * See code in expr/expr.ts
+     */
+    children(): Expr[] {
+        return [];
     }
 };
 

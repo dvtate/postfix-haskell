@@ -40,7 +40,6 @@ export class LexerToken {
 
 // Number literal
 export class NumberToken extends LexerToken {
-    type: TokenType.Number;
     value: WasmNumber;
 
     constructor(token: string, position: number, file: string) {
@@ -54,7 +53,6 @@ export class NumberToken extends LexerToken {
  * later it's converted to a block and the body is assgined
  */
 export class BlockToken extends LexerToken {
-    type: TokenType.Block;
     subtype: ContainerType;
     body!: Array<LexerToken>;
 
@@ -75,7 +73,7 @@ export class BlockToken extends LexerToken {
  * @param token - lexical token string
  * @param options - override/extend defaults
  */
-function toToken(token: string, position: number, file: string): LexerToken|null {
+function toToken(token: string, position: number, file: string): LexerToken {
     // Trim whitespace
     token = token.trim();
 
@@ -201,7 +199,7 @@ function throwParseError(message: string, tokens: LexerToken[], file?: string) {
 export default function scan(code: string, file?: string): LexerToken[] {
 
     const tokens = lex(code, file);
-    let ret = [];
+    let ret: LexerToken[] = [];
 
     // Parse tokens
     tokens.forEach(tok => {
@@ -226,7 +224,7 @@ export default function scan(code: string, file?: string): LexerToken[] {
 
                 // Collapse body
                 // Note for now only containers are for 'Block'
-                ret[ind].body = ret.splice(ind + 1);
+                (ret[ind] as BlockToken).body = ret.splice(ind + 1);
                 ret[ind].type = TokenType.Block;
                 break;
 

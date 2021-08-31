@@ -29,13 +29,14 @@ function logWithToken(name: string, ctx: Context, token: LexerToken, fn: (ctx: C
 }
 
 // Get type name map
-const syntaxTypes = Object.entries(value.ValueType)
-    .reduce((acc, [k, v]) => ({ ...acc, [v] : k, }), {});
+const syntaxTypes: {[k: number] : string} =
+    Object.entries(value.ValueType)
+        .reduce((acc, [k, v]) => ({ ...acc, [v] : k, }), {});
 
 // Some operators for compile time debugging
 const debugOperators = {
     // Syntactic type for given value
-    ':type' : (ctx, token) => {
+    ':type' : (ctx: Context, token: LexerToken) => {
 
         // Return debug object with relevant info
         const v = ctx.pop();
@@ -45,18 +46,18 @@ const debugOperators = {
         return ret;
     },
 
-    ':ctrace' : (ctx, token) => new Error('').stack,
+    ':ctrace' : (ctx: Context, token: LexerToken) => new Error('').stack,
 
     // Debug context
-    ':module' : (ctx, token) => ctx.module,
-    ':scopes' : (ctx, token) => ctx.scopes,
-    ':globals' : (ctx, token) => ctx.globals,
-    ':context' : (ctx, token) => ctx,
+    ':module' : (ctx: Context, token: LexerToken) => ctx.module,
+    ':scopes' : (ctx: Context, token: LexerToken) => ctx.scopes,
+    ':globals' : (ctx: Context, token: LexerToken) => ctx.globals,
+    ':context' : (ctx: Context, token: LexerToken) => ctx,
 
     // View last item on stack
-    ':inspect' : (ctx, token) => ctx.pop(),
-    ':data' : (ctx, token) => {
-        const depict = v =>
+    ':inspect' : (ctx: Context, token: LexerToken) => ctx.pop(),
+    ':data' : (ctx: Context, token: LexerToken) => {
+        const depict = (v: value.Value): string =>
             v.type === value.ValueType.Data
                 ? v instanceof value.TupleValue
                     ? v.value.map(depict)
@@ -68,22 +69,22 @@ const debugOperators = {
     },
 
     // View entire stack
-    ':stack' : (ctx, token) => ctx.stack,
-    ':stacklen' : ctx => ctx.stack.length,
+    ':stack' : (ctx: Context, token: LexerToken) => ctx.stack,
+    ':stacklen' : (ctx: Context, token: LexerToken) => ctx.stack.length,
 
     // Prevent compile if value is false
-    ':assert' : (ctx, token) => {
+    ':assert' : (ctx: Context, token: LexerToken) => {
         const v = ctx.pop();
         if (!(v instanceof value.NumberValue) || !v.value.value)
             throw new error.SyntaxError('Assertion failed', token);
         return 'pass';
     },
 
-    ':targets' : ctx => ctx.exports,
-    ':compile' : async ctx => await ctx.outWast({}),
+    ':targets' : (ctx: Context, token: LexerToken) => ctx.exports,
+    ':compile' : async (ctx: Context, token: LexerToken) => await ctx.outWast({}),
 
-    ':wast' : async ctx => await ctx.outWast({ folding: true }),
-    ':wat' : async ctx => await ctx.outWast({ folding: false }),
+    ':wast' : async (ctx: Context, token: LexerToken) => await ctx.outWast({ folding: true }),
+    ':wat' : async (ctx: Context, token: LexerToken) => await ctx.outWast({ folding: false }),
 };
 
 // Export Macros because user shouldn't override

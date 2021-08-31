@@ -1,11 +1,30 @@
 
-
-
-{ # Intentionally naive factorial
+{ # Intentionally non-tail-recursive factorial
     $n =
-    { 1 } { n n 1 - fac * } $branch fun
+    { 1 } { n 1 - fac n * } $branch fun
     { n 2 < } { 1 } $branch fun
     branch
 } rec $fac =
 
+{ I32 I32 I32 } {
+    $v2 = $v =
+    { # Intentionally non-tail-recursive factorial
+        $n =
+        { 1 } { n 1 - fac n * } $branch fun
+        { n 2 < } { v v2 - } $branch fun
+        branch
+    } rec $fac =
+    fac
+} $nfac export
+
+{
+    $n =
+    { 1 } { n 1 - fib n 2 - fib + } $branch fun
+    { n 2 < } { 1 } $branch fun
+    branch
+} rec $fib =
+
+6 fib :data
+
 { I32 } { fac } $fac export
+{ I32 } { fib } $fib export

@@ -148,6 +148,13 @@ export class ClassType extends Type {
         }
         return ret;
     }
+
+    /**
+     * @override
+     */
+    isVoid() {
+        return this.getBaseType().isVoid();
+    }
 };
 
 /**
@@ -157,7 +164,7 @@ export class ClassType extends Type {
 export class UnionType extends Type {
     types: Type[];
 
-    constructor(token: LexerToken = undefined, types = []) {
+    constructor(token: LexerToken = undefined, types: Type[] = []) {
         super(token);
         this.types = types;
     }
@@ -271,7 +278,7 @@ export class PrimitiveType extends Type {
     name: string;
 
     // Map of WASM primitive types
-    static Types = {
+    static Types: { [k: string]: PrimitiveType } = {
         I32: new PrimitiveType('i32'),
         I64: new PrimitiveType('i64'),
         F32: new PrimitiveType('f32'),

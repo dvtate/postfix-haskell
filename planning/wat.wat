@@ -12,5 +12,15 @@
 
     ;; Function "test" that evals js code in string
     (func (export "main")
-        (call $eval_js (i32.const 19) (i32.const 0)))
+        (call $eval_js (i32.const 19) (call $def)))
+
+    (func $abc (param i32 f32 i64) (result i32)
+        i32.const 0)
+
+    (func $def (result i32)
+        i32.const 123
+        f32.const 12.33
+        i64.const 433
+        call $abc
+    )
 )

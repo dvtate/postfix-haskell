@@ -30,15 +30,16 @@ export default async function compileFile(
     fname = fs.realpathSync(fname);
 
     // Read file
-    let src;
+    let src: string;
     try {
         src = fs.readFileSync(fname).toString();
     } catch (e) {
-        console.error('could not read file ', fname)
+        console.error('could not read file ', fname);
+        throw e;
     }
 
     // Mock browser API - `performance.now()`
-    const performance = globalThis.performance || {
+    const performance: any = globalThis.performance || {
         _hrt: process.hrtime(),
         now() {
             return process.hrtime(this._hrt)[1] / 1000000;
