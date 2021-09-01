@@ -9,13 +9,12 @@ import wabtMod = require('wabt');
 const wabtProm = wabtMod();
 
 /**
- *
- * @param {string} src
- * @param {*} importObject
- * @param {*} options
- * @returns {WebAssembly.Instance}
+ * Compile source code and instantiate module
+ * @param src source code
+ * @param importObject bindings imported from js
+ * @param options unused for now
  */
-export async function compile(src, importObject = {}, options = {}) {
+export async function compile(src: string, importObject = {}, options = {}) {
     // TODO bindings
     const ctx = parse(lex(src, "inline"));
     if (!(ctx instanceof Context))
@@ -33,9 +32,9 @@ export async function compile(src, importObject = {}, options = {}) {
  * @param {string[]} src - phs source code
  * @param {Array} bindings - js entities to be included in the module
  */
-export async function phs(src, ...bindings) {
+export async function phs(src: TemplateStringsArray, ...bindings: string[]) {
     return await compile(
-        src.reduce((acc, part, i) => `${acc} "phs_js_bind ${i}" ${part}`),
+        src.reduce((acc: string, part: string, i: number) => `${acc} "phs_js_bind ${i}" ${part}`),
         bindings.reduce((acc, v, i) => ({ ...acc, [`phs_js_bind ${i}`]: v }), {}),
     );
 };
@@ -53,7 +52,7 @@ const m = await phs`
  * @param {*} importObject
  * @returns {WebAssembly.Instance}
  */
-export async function compileWat(src, importObject = {}) {
+export async function compileWat(src: string, importObject = {}) {
     const wabt = await wabtProm;
     const mod = wabt.parseWat("inline", src, {
         exceptions: true,

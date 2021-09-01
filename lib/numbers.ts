@@ -70,15 +70,13 @@ export default class WasmNumber {
 
     /**
      * Get value for the number
-     *
-     * @returns {Number}
      */
     get value(): number | bigint {
         switch(this.type) {
             // Float arrays
             case NumberType.F32:
             case NumberType.F64:
-                return this._repr[0];
+                return (this._repr as Float32Array)[0];
 
             // BigInt
             case NumberType.I32:
@@ -204,7 +202,7 @@ export default class WasmNumber {
     {
         return {
             type: this.type,
-            value: this.value[0] || this.value.toString(),
+            value: (<any>this.value)[0] || this.value.toString(),
         };
     }
 
@@ -222,8 +220,8 @@ export default class WasmNumber {
      */
     equals(other : WasmNumber): boolean {
         return this.type === other.type
-            && (this._repr[0] || this._repr)
-            === (other._repr[0] || other._repr);
+            && ((<any>this._repr)[0] || this._repr)
+            === ((<any>other._repr)[0] || other._repr);
     }
 
     /**
@@ -240,7 +238,7 @@ export default class WasmNumber {
             // Assume f32/64 numbers already reduced correctly
             case NumberType.F64:
             case NumberType.F32:
-                return this._repr[0];
+                return (this._repr as Float32Array)[0];
         }
     }
 

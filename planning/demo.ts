@@ -25,8 +25,7 @@ import * as util from '../tools/util';
         throw new Error("WebAssembly.validate() failed");
 
     // Invoke WASM exports
-    let mod;
-    mod = await WebAssembly.instantiate(wasm.buffer, {
+    const mod: any = await WebAssembly.instantiate(wasm.buffer, {
         js: {
             'console.log': console.log,
             logStr: (addr : number, len : number) => {
@@ -38,6 +37,11 @@ import * as util from '../tools/util';
             },
         },
     });
+
+    // const fac = mod.instance.exports.nfac as CallableFunction;
+    // for (let i = 0; i < 10; i++)
+    //     console.log(fac(i, 0, 1));
+
 
     const main = mod.instance.exports.main as CallableFunction;
     main(20);

@@ -1,9 +1,52 @@
+"./stdlib/prelude.phs" include use
+
+{ # Intentionally non-tail-recursive factorial
+    $n =
+    { true } { n 1 - fac n * } $branch fun
+    { n 2 < } { 1 } $branch fun
+    branch
+} rec $fac =
+
+{ # Fibbonacci
+    $n =
+    { true } { n 1 - fib n 2 - fib + } $branch fun
+    { n 2 < } { 1 } $branch fun
+    branch
+} rec $fib =
+
+# Notice that this is performed at compile time
+"Compile-time recursive constexpr" :data
+10 fac :data
+
 # Intentionally bad implementation of left-shift
 {
     $ret = $count =
-    { 1 } { ret } $branch fun
+    { true } { ret } $branch fun
     { count 0 > } { count 1 - ret 2 * lshift } $branch fun
     branch
 } rec $lshift =
 
+{
+    # These two variables have to be passed to helper
+    { $v1 $v2 } =
+
+    { # Recursive helper
+        # Capture argument
+        $n =
+
+        # Recursive case
+        { true } { n 1 - fac n * } $branch fun
+
+        # Base case subtract the two values
+        { n 2 < } { v1 v2 - } $branch fun
+
+        # Branch
+        branch
+    } rec $fac =
+    fac
+} $nfac =
+
+{ I32 } { fac } $fac export
+{ I32 } { fib } $fib export
+{ I32 I32 I32 } { nfac } $nfac export
 { I32 I32 } {lshift} $lshift export

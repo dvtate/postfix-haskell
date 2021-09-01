@@ -5,9 +5,14 @@
 
 import { Context } from "vm";
 import { LexerToken } from "./scan";
+import * as value from './value';
+import { Expr } from "./expr";
+import { Type } from "./datatypes";
+
+export class CompilerError extends Error {};
 
 // Base Class for parse-time errors
-export class ParseError extends Error {
+export class ParseError extends CompilerError {
     /**
      * @param message - Reason
      */
@@ -32,6 +37,21 @@ export class SyntaxError extends ParseError {
         super(message);
         this.tokens = tokens instanceof Array ? tokens : [tokens];
         this.ctx = ctx;
+    }
+};
+
+export class TypeError extends CompilerError {
+    tokens: LexerToken[];
+
+    constructor(
+        message: string,
+        tokens: LexerToken | LexerToken[],
+        public v: value.Value | Expr,
+        public expected: Type,
+        public ctx?: Context,
+    ) {
+        super(message);
+        this.tokens = tokens instanceof Array ? tokens : [tokens];
     }
 };
 

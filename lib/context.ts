@@ -139,12 +139,11 @@ export default class Context {
         return ret;
     }
 
-
     /**
      * Restore copied state
      * @param obj - state copy object from Context.copyState()
      */
-    restoreState(obj) {
+    restoreState(obj: any) {
         this.stack = obj.stack;
         this.scopes = obj.scopes;
         this.globals = obj.globals;
@@ -239,7 +238,7 @@ export default class Context {
      * @param {*} v
      * @returns TraceResultTracker or null
      */
-    _getTraceResults(v): TraceResultTracker {
+    _getTraceResults(v: value.Value): TraceResultTracker {
         // TODO also check takes datatypes and constexprs against stack
         for (let i = this.traceResults.length - 1; i >= 0; i--)
             if (this.traceResults[i].value === v)
@@ -298,7 +297,9 @@ export default class Context {
                 const ret = this.toError(v.value.action(this, token), token);
                 this.trace.pop();
                 return ret;
-            } catch (e) {
+            } catch (e: any) {
+                if (!e || e.value == undefined)
+                    throw e;
                 // If the function throws our value then we know it's recursive
                 if (e.value !== v.value) {
                     this.trace.pop();
@@ -343,11 +344,25 @@ export default class Context {
             const ios = this.traceIO(v, token);
             if (!(ios instanceof TraceResults))
                 return ios;
+            if (!ios.takes)
+                throw new Error("wtf?");
+
+            // If all inputs are constexprs, invoke at compile-time
+            if (!stack.slice(0, ios.takes.length).some(v => v.type === value.ValueType.Expr)) {
+                this.trace.push(v.value);
+                try {
+                    this.stack = stack;
+                    const ret = this.toError(v.value.action(this, token), token);
+                    this.trace.pop();
+                    return ret;
+                } catch (e) {
+                    this.trace.pop();
+                    throw e;
+                }
+            }
 
             // Link body inputs
             // Generate input locals
-            if (!ios.takes)
-                console.log(ios);
             body.takes = ios.takes as expr.DataExpr[];
             body.takeExprs = body.takes.map(e =>
                 e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : null);
@@ -379,11 +394,17 @@ export default class Context {
 
         } else if (tResults.result) { // Invoking an already traced recursive function
             // console.log('tail:', token.token);
-            // This is an invocation of a recursive function in it's body
+            // This is an invocation of a recursive function within it's body
             const { result, body } = tResults;
-            // Create recursive function call expression using data from tResults
+
+            // Get args to recursive call
             const args = this.popn(result.takes.length).reverse();
-            const callExpr = new expr.RecursiveCallExpr(token, body, args);
+            for (let i = 0; i < args.length; i++)
+                if (!args[i].out)
+                    // TODO this shouldn't suck so bad :(
+                    return new error.SyntaxError(`cannot pass abstract value ${args[i]} in recursive call`, token, this);
+
+            const callExpr = new expr.RecursiveCallExpr(token, body, args as expr.DataExpr[]);
             // Note that if they're used after this it woudln't be tail recursion and would be unreachable
 
             this.push(...callExpr.giveExprs);
@@ -406,7 +427,7 @@ export default class Context {
      * @param v - value to convert to error
      * @param token - location in code
      */
-    toError(v, token: LexerToken): error.SyntaxError | Context | null {
+    toError(v: any, token: LexerToken): error.SyntaxError | Context | null {
         // Success
         if (v === undefined)
             return this;
@@ -506,7 +527,7 @@ export default class Context {
         // Validate
         if (validate) {
             try {
-                const invalid = mod.validate();
+                const invalid: any = mod.validate();
                 if (invalid) {
                     console.error(invalid);
                     console.log(src);
@@ -522,7 +543,7 @@ export default class Context {
         //  NOTE this doesn't work
         //  Something wrong with binaryen.js ig
         if (optimize) {
-            const m2 = binaryen.readBinary(mod.toBinary({}));
+            const m2 = binaryen.readBinary(mod.toBinary({}).buffer);
             m2.optimize();
             m2.validate();
             return folding ? m2.emitText() : m2.emitStackIR();

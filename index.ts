@@ -5,7 +5,6 @@ import cp = require('child_process');
 import runShell from './tools/shell';
 import compileFile from './tools/file';
 
-
 yargs
     .scriptName('phc')
     .usage('$0 <command> [args]')
