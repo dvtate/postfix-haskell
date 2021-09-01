@@ -53,30 +53,33 @@ export default async function compileFile(
         console.log('lex:', performance.now() - start);
 
     try {
-    // Parse (weird meaning here, more like "interpret phase")
-    start = performance.now();
-    const ctx = parse(ptree, new Context(process.env.FAST ? 1 : 2, fname));
-    if (ctx instanceof error.SyntaxError) {
-        // console.log(ctx.tokens);
-        console.log(util.formatErrorPos([ctx]));
-        process.exit(0);
-    } else if (ctx === null) {
-        console.error('parse failed with null!');
-        return null;
-    }
-    if (trackTime)
-        console.log('parse:', performance.now() - start);
+        // Parse (weird meaning here, more like "interpret phase")
+        start = performance.now();
+        const ctx = parse(ptree, new Context(process.env.FAST ? 1 : 2, fname));
+        if (ctx instanceof error.SyntaxError) {
+            // console.log(ctx.tokens);
+            console.log(util.formatErrorPos([ctx]));
+            process.exit(0);
+        } else if (ctx === null) {
+            console.error('parse failed with null!');
+            return null;
+        }
+        if (trackTime)
+            console.log('parse:', performance.now() - start);
 
-    // Output assembly
-    start = performance.now();
-    const wast = await (ctx as Context).outWast({ folding, fast, optimize, });
-    console.log(wast);
-    if (trackTime)
-        console.log('compile:', performance.now() - start);
+        // Output assembly
+        start = performance.now();
+        const wast = await (ctx as Context).outWast({ folding, fast, optimize, });
+        console.log(wast);
+        if (trackTime)
+            console.log('compile:', performance.now() - start);
 
-    return wast;
+        return wast;
     } catch (e) {
-        console.log('error', e);
+        if (e instanceof error.SyntaxError) {
+            console.log(util.formatErrorPos([e]));
+            return null;
+        }
         throw e;
     }
 };

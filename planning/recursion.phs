@@ -15,8 +15,8 @@
 } rec $fib =
 
 # Notice that this is performed at compile time
-"Compile-time recursive constexpr" :data
-10 fac :data
+#"Compile-time recursive constexpr" :data
+#10 fac :data
 
 # Intentionally bad implementation of left-shift
 {
@@ -46,7 +46,7 @@
     fac
 } $nfac =
 
-{ I32 } { fac } $fac export
-{ I32 } { fib } $fib export
-{ I32 I32 I32 } { nfac } $nfac export
-{ I32 I32 } {lshift} $lshift export
+#{ I32 } { fac } $fac export
+#{ I32 } { fib } $fib export
+#{ I32 I32 I32 } { nfac } $nfac export
+#{ I32 I32 } { lshift } $lshift export

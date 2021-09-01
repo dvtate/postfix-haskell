@@ -4,17 +4,27 @@
 { { $a $b } = b a } $swap =	# swap values
 
 # Comparisons
-{ 1 } { == ! } $!= global fun	# Not equals
-{ 1 } { > ! } $<= global fun	# LE
-{ 1 } { < ! } $>= global fun	# GE
+{ true } { == ! } $!= global fun	# Not equals
+{ true } { > ! } $<= global fun	# LE
+{ true } { < ! } $>= global fun	# GE
 
 # Booleans
 1 $true  =
 0 $false =
 
 # Logic
-# TODO use WASM
-{ 1 } { 0 == } $! global fun	        # Not
-{ type I64 == } { 0L } $! global fun
-{ 1 } { * ! ! } $&& global fun	        # And
-{ 1 } { + ! ! } $|| global fun	        # Or
+# TODO use WASM lib
+{ true } { false == } $! global fun
+
+# And
+{ true } {	        # One of the conditions is false
+	pop pop false   # Therefore result is false
+} $&& global fun
+{ swap 0 != } {	# First condition is true
+	swap pop        # And result will be the other condition
+} $&& global fun
+
+# Or
+{ true } { pop pop false } $|| global fun
+{ swap pop } { swap pop } $|| global fun
+{ pop } { pop } $|| global fun

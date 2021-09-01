@@ -41,7 +41,7 @@ const debugOperators = {
         // Return debug object with relevant info
         const v = ctx.pop();
         const ret: any = { syntaxType: syntaxTypes[v.type] };
-        if (v instanceof value.DataValue)
+        if (v.datatype)
             ret.datatype = v.datatype;
         return ret;
     },

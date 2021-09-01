@@ -9,8 +9,6 @@ import scan, { BlockToken, LexerToken } from './scan';
 import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DataExpr } from './expr';
-import { fromDataValue } from './expr';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -452,7 +450,7 @@ const operators : MacroOperatorsSpec = {
                 }
 
                 // Make call
-                ctx.push(new expr.InstrExpr(token, type.value.outputTypes[0], `call ${importName} `, fromDataValue(inputs)));
+                ctx.push(new expr.InstrExpr(token, type.value.outputTypes[0], `call ${importName} `, expr.fromDataValue(inputs)));
             }), type.value));
         },
     },
@@ -562,6 +560,28 @@ const operators : MacroOperatorsSpec = {
             ctx.includedFiles[realpath] = ns.value;
         },
     },
+
+    // Is the value known at compile-time
+    'is_const' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Only expressions are
+            const arg = ctx.pop();
+            ctx.push(toBool(!(arg instanceof expr.Expr), token))
+        },
+    },
+
+    // Defer results of calculations invloving this value until runtime
+    'defer' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get value from stack
+            const arg = ctx.pop();
+            if (!(arg instanceof value.NumberValue))
+                return ['Currently only numbers can be deferred'];
+
+            // Wrap the number value in an expression
+            ctx.push(new expr.NumberExpr(arg.token, arg));
+        }
+    }
 };
 
 // Condition for two numeric types
@@ -608,19 +628,19 @@ const funs = {
                 ctx.push(new value.NumberValue(token, a.value.clone().add(b.value)));
             else if (exprs[0] === exprs[1])
                 // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.add`, fromDataValue([a, b])));
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.add`, expr.fromDataValue([a, b])));
             else if (!exprs[0])
                 // A is const, try to optimize
                 // adding zero is identity
                 ctx.push(a.value.value == 0
                     ? b
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, fromDataValue([a, b])));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, expr.fromDataValue([a, b])));
             else // if (!exprs[1])
                 // B is const, try to optimize
                 // Adding zero is identity
                 ctx.push(b.value.value == 0
                     ? a
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, fromDataValue([a, b])));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, expr.fromDataValue([a, b])));
         })),
         '+',
     )),
@@ -641,7 +661,7 @@ const funs = {
                 ctx.push(new value.NumberValue(token, a.value.clone().mul(b.value)));
             else if (exprs[0] === exprs[1]) {
                 // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, fromDataValue([a, b])));
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, expr.fromDataValue([a, b])));
             } else if (!exprs[0])
                 // A is const, try to optimize
                 // mul by 1 is identity
@@ -650,7 +670,7 @@ const funs = {
                     ? b
                     : a.value.value == 0
                         ? a
-                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, fromDataValue([a, b])));
+                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, expr.fromDataValue([a, b])));
             else // if (!exprs[1])
                 // B is const, try to optimize
                 // mul by 1 is identity
@@ -659,7 +679,7 @@ const funs = {
                     ? a
                     : b.value.value == 0
                         ? b
-                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, fromDataValue([a, b])));
+                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, expr.fromDataValue([a, b])));
         })),
         '*',
     )),
@@ -685,7 +705,7 @@ const funs = {
             } else {
                 // Neither is a constexpr
                 const type = a.datatype.getBaseType() as types.PrimitiveType;
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.rem${type.name[0] === 'f' ? '' : '_s'}`, fromDataValue([a, b])));
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.rem${type.name[0] === 'f' ? '' : '_s'}`, expr.fromDataValue([a, b])));
             }
         })),
         '%',
@@ -706,13 +726,13 @@ const funs = {
                 ctx.push(new value.NumberValue(token, a.value.clone().sub(b.value)));
             else if (exprs[1])
                 // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, fromDataValue([a, b])));
+                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, expr.fromDataValue([a, b])));
             else // if (!exprs[1] && exprs[0])
                 // B is const, try to optimize
                 // Subtracting zero is identity
                 ctx.push(b.value.value == 0
                     ? a
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, fromDataValue([a, b])));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, expr.fromDataValue([a, b])));
         })),
         '-',
     )),
@@ -742,7 +762,7 @@ const funs = {
                     token,
                     b.datatype,
                     `${type.name}.div${type.name[0] === 'f' ? "" : "_s"}`,
-                    fromDataValue([a, b]),
+                    expr.fromDataValue([a, b]),
                 ));
             } else { // if (!exprs[1] && exprs[0])
                 // B is const, try to optimize
@@ -750,7 +770,7 @@ const funs = {
                 const type = a.datatype.getBaseType() as types.PrimitiveType;
                 ctx.push(b.value.value == 1
                     ? a
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.div`, fromDataValue([a, b])));
+                    : new expr.InstrExpr(token, b.datatype, `${type.name}.div`, expr.fromDataValue([a, b])));
             }
         })),
         '/',
@@ -865,14 +885,14 @@ const funs = {
                                 token,
                                 types.PrimitiveType.Types.I32,
                                 `${bType.name}.eqz`,
-                                fromDataValue([b])
+                                expr.fromDataValue([b])
                             ));
                         } else {
                             ctx.push(new expr.InstrExpr(
                                 token,
                                 types.PrimitiveType.Types.I32,
                                 `${aType.name}.eq`,
-                                fromDataValue([a, b])
+                                expr.fromDataValue([a, b])
                             ));
                         }
                         return;
@@ -899,14 +919,14 @@ const funs = {
                             token,
                             types.PrimitiveType.Types.I32,
                             `${aType.name}.eqz`,
-                            fromDataValue([a])
+                            expr.fromDataValue([a])
                         ));
                     } else {
                         ctx.push(new expr.InstrExpr(
                             token,
                             types.PrimitiveType.Types.I32,
                             `${aType.name}.eq`,
-                            fromDataValue([a, b])
+                            expr.fromDataValue([a, b])
                         ));
                     }
                     return;
@@ -941,7 +961,7 @@ const funs = {
                     token,
                     types.PrimitiveType.Types.I32,
                     `${type}.lt${type[0] === 'i' ? '_s' : ''}`,
-                    fromDataValue([a, b]),
+                    expr.fromDataValue([a, b]),
                 ));
             }
         })),
@@ -967,7 +987,7 @@ const funs = {
                     token,
                     types.PrimitiveType.Types.I32,
                     `${type}.gt${type[0] === 'i' ? '_s' : ''}`,
-                    fromDataValue([a, b]),
+                    expr.fromDataValue([a, b]),
                 ));
             }
         })),

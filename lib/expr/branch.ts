@@ -99,8 +99,8 @@ export class BranchExpr extends Expr {
         let ret: string = (function compileIf(i): string {
             return i + 1 >= acts.length
                 ? acts[i]
-                : `(if (result ${retType})${conds[i]
-                    }\n\t(then ${acts[i]})\n\t(else ${compileIf(i + 1)}))`;
+                : `${conds[i]
+                }\n\t(if (result ${retType})\n\t(then ${acts[i]})\n\t(else ${compileIf(i + 1)}))`;
         })(0);
 
         ret += '\n\t' + results.map(r => `(local.set ${r.index})`).join();

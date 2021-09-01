@@ -116,7 +116,7 @@ export default class Fun {
         //      so that user can overload operators with diff # inputs
         const errs = conds.filter(c => c instanceof Array || c instanceof error.SyntaxError);
         if (errs.length) {
-            console.log('[warning] fn errs: ', errs);
+            console.warn(`[warning] ${this.name}: fn errs: `, errs);
             // TODO we need to make an error datatype that combines these into a single error
             // ctx.warn(...errs);
         }
@@ -135,7 +135,7 @@ export default class Fun {
         // No truthy condition found
         // TODO non-const-expr
         if (branches.length === 0) {
-            console.log(ctx.stack);
+            console.log("stack", ctx.stack);
             return new error.SyntaxError(`${this.name}: no matching function case`, [token], ctx);
         }
 
@@ -201,7 +201,7 @@ export default class Fun {
             (v instanceof value.DataValue || v instanceof expr.DataExpr)
             && !v.datatype.getBaseType().check(first[i].datatype)))
         ) {
-            console.log(ios);
+            console.log("ios", ios);
             return ['function must have consistent return types'];
         }
 
