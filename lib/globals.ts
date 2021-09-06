@@ -581,7 +581,27 @@ const operators : MacroOperatorsSpec = {
             // Wrap the number value in an expression
             ctx.push(new expr.NumberExpr(arg.token, arg));
         }
-    }
+    },
+
+    // ASM instruction
+    'asm' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get number of arguments and symbol
+            const nargs = ctx.pop();
+            if (!(nargs instanceof value.NumberValue))
+                return ['expected number of arguments to be a number'];
+            const symbolValue = ctx.pop();
+            if (!(nargs instanceof value.StrValue))
+                return ['expected a String literal instruction name'];
+
+            // Get args
+            const args = ctx.popn(nargs.value.value);
+
+            // ['i32', 'i64', 'f32', 'f64'].includes(symbolValue.value.split('.')[0])
+
+            // TODO handle when both are constexprs
+        },
+    },
 };
 
 // Condition for two numeric types
@@ -701,7 +721,7 @@ const funs = {
             // Compile vs run time
             if (!exprs.includes(true)) {
                 // Simplify constexprs
-                ctx.push(new value.NumberValue(token, a.value.clone().mod(b.value)));
+                ctx.push(new value.NumberValue(token, a.value.clone().rem(b.value)));
             } else {
                 // Neither is a constexpr
                 const type = a.datatype.getBaseType() as types.PrimitiveType;

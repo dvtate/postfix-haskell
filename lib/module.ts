@@ -147,7 +147,7 @@ export default class ModuleManager {
      * @param d data source
      * @returns data as array of bytes
      */
-    static toByteArray(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string | bigint): Uint8Array {
+    static toByteArray(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): Uint8Array {
         // No action
         if (d instanceof Uint8Array)
             return d;
@@ -157,32 +157,22 @@ export default class ModuleManager {
             return new TextEncoder().encode(d);
 
         // Convert other typed arrays
-        if (d instanceof Uint32Array)
-            return new Uint8Array(d.reduce((a, c) => [
-                ...a,
-                c & 0b11111111,
-                (c & 0b11111111_00000000) >> 8,
-                (c & 0b11111111_00000000_00000000) >> 16,
-                (c >> 24) & 0b11111111, // Note: Downshift to avoid i32 overflow
-            ], []));
-        if (d instanceof Uint16Array)
-            return new Uint8Array(d.reduce((a, c) => [
-                ...a,
-                c & 0b11111111,
-                c >> 8,
-            ], []));
+        if (d instanceof Uint32Array || d instanceof Uint16Array)
+            return new Uint8Array(d.buffer);
+
+        // Non-typed assumed to already be uint8's
         if (d instanceof Array)
             return new Uint8Array(d);
 
         // Convert bigint
-        if (typeof d == 'bigint') {
-            const ret = [];
-            while (d) {
-                ret.push(Number(d & 0b11111111n))
-                d >>= 8n;
-            }
-            return new Uint8Array(ret.reverse());
-        }
+        // if (typeof d == 'bigint') {
+        //     const ret = [];
+        //     while (d) {
+        //         ret.push(Number(d & 0b11111111n))
+        //         d >>= 8n;
+        //     }
+        //     return new Uint8Array(ret.reverse());
+        // }
     }
 
     /**
