@@ -9,6 +9,7 @@ import scan, { BlockToken, LexerToken } from './scan';
 import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
+import { invokeAsm } from './asm';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -587,19 +588,12 @@ const operators : MacroOperatorsSpec = {
     'asm' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get number of arguments and symbol
-            const nargs = ctx.pop();
-            if (!(nargs instanceof value.NumberValue))
-                return ['expected number of arguments to be a number'];
-            const symbolValue = ctx.pop();
-            if (!(nargs instanceof value.StrValue))
-                return ['expected a String literal instruction name'];
+            const cmd = ctx.pop();
+            if (!(cmd instanceof value.StrValue))
+                return ['expected a String literal instruction'];
 
-            // Get args
-            const args = ctx.popn(nargs.value.value);
-
-            // ['i32', 'i64', 'f32', 'f64'].includes(symbolValue.value.split('.')[0])
-
-            // TODO handle when both are constexprs
+            // Use wasm definitions
+            return invokeAsm(ctx, token, cmd.value);
         },
     },
 };

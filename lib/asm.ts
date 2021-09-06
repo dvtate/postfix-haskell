@@ -1,5 +1,8 @@
+import { LexerToken } from './scan';
 import Context from './context';
 import * as types from './datatypes'
+import * as expr from './expr';
+import * as value from './value';
 import WasmNumber, { NumberType } from './numbers';
 
 //
@@ -14,7 +17,7 @@ interface AssemblyDBEntry {
     result: types.PrimitiveType[];
 
     // Compile-time reduction of constant expressions
-    handler?: (ctx: Context, args: WasmNumber[]) => WasmNumber[] | Error;
+    handler?: (ctx: Context, args: WasmNumber[], instr: string) => WasmNumber[] | Error;
 }
 
 //
@@ -134,6 +137,33 @@ const instructions: AssemblyDBEntry[] = [
     // Conversions
     ...genConversions(),
 
+    // Literals
+    {
+        symbol: 'i32.const',
+        param: [],
+        result: [types.PrimitiveType.Types.I32],
+        handler: (ctx, _, instr) => [new WasmNumber(WasmNumber.Type.I32, BigInt(instr.split(' ')[1]))],
+    },
+    {
+        symbol: 'i64.const',
+        param: [],
+        result: [types.PrimitiveType.Types.I64],
+        handler: (ctx, _, instr) => [new WasmNumber(WasmNumber.Type.I64, BigInt(instr.split(' ')[1]))],
+    },
+    {
+        symbol: 'f32.const',
+        param: [],
+        result: [types.PrimitiveType.Types.F32],
+        handler: (ctx, _, instr) => [new WasmNumber(WasmNumber.Type.F32, Number(instr.split(' ')[1]))],
+    },
+    {
+        symbol: 'f64.const',
+        param: [],
+        result: [types.PrimitiveType.Types.F64],
+        handler: (ctx, _, instr) => [new WasmNumber(WasmNumber.Type.F64, Number(instr.split(' ')[1]))],
+    },
+
+
 ];
 
 /**
@@ -143,13 +173,13 @@ function genConversions(): AssemblyDBEntry[] {
     // Type maps
     const tm: { [s: string] : types.PrimitiveType } = {
         i32: types.PrimitiveType.Types.I32,
-        i63: types.PrimitiveType.Types.I64,
+        i64: types.PrimitiveType.Types.I64,
         f32: types.PrimitiveType.Types.F32,
         f64: types.PrimitiveType.Types.F64,
     };
     const ntMap: any = {
         i32: WasmNumber.Type.I32,
-        i63: WasmNumber.Type.I64,
+        i64: WasmNumber.Type.I64,
         f32: WasmNumber.Type.F32,
         f64: WasmNumber.Type.F64,
     };
@@ -250,4 +280,42 @@ function genFloatUnaries(): AssemblyDBEntry[] {
         result: [types.PrimitiveType.Types.F64],
         handler: (ctx: Context, [v]) => [(v.clone()[sym] as CallableFunction)()],
     }]).reduce((a, b) => a.concat(b));
+}
+
+
+const table: { [k: string]: AssemblyDBEntry }
+    = instructions.reduce((a, v) => ({ ...a, [v.symbol]: v }), {});
+
+/**
+ * Invoke a webassembly instruction specified by the user
+ * @param ctx compiler context
+ * @param token location in code for debugging and errors
+ * @param cmd assembly command to invoke
+ * @returns invoke result type
+ */
+export function invokeAsm(ctx: Context, token: LexerToken, cmd: string) {
+    // Get instruction database entry
+    const mnemonic = cmd.split(' ')[0];
+    const instr = table[mnemonic];
+    if (!instr)
+        return ['invalid/unsupported instruction ' + mnemonic];
+
+    // Get positional args
+    const args = ctx.popn(instr.param.length);
+    for (let i = 0; i < instr.param.length; i++)
+        if (!args[i].datatype || !instr.param[i].check(args[i].datatype)) {
+            return ['positional argument invalid: ' + i];
+        }
+
+    // Behavior different for if it's constexpr or not
+    if (args.some(e => !e.isConstExpr())) {
+        // Not constexpr, push a new expression
+        ctx.push(new expr.InstrExpr(token, instr.result[0], cmd, expr.fromDataValue(args)));
+    } else {
+        // Constexpr, use handler to reduce it
+        const ret = instr.handler(ctx, args.map(a => a.value).reverse(), cmd);
+        if (ret instanceof Error)
+            return ret;
+        ctx.push(...ret.map(e => new value.NumberValue(token, e)));
+    }
 }

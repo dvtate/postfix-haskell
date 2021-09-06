@@ -68,6 +68,7 @@ export default class WasmNumber {
      */
     set type(type: NumberType) {
         const v = this.value;
+            // typeof this._repr == 'bigint' ? this._repr : this._repr[0];
         this._type = type;
         this.value = v;
     }
@@ -318,6 +319,7 @@ export default class WasmNumber {
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
+        // TODO signed vs unsigned
         // @ts-ignore
         this.value /= b.value;
         this.wrap();
@@ -637,8 +639,9 @@ export default class WasmNumber {
             // F32 -> I32
             case NumberType.F32: {
                 const v = this._repr as Float32Array;
-                this._repr = BigInt(new Int32Array(v.buffer)[0]);
-                this.type = NumberType.I32;
+                const dv = new DataView(v.buffer);
+                this._repr = BigInt(dv.getInt32(0, true));
+                this._type = NumberType.I32;
                 return this;
             };
 
@@ -647,7 +650,7 @@ export default class WasmNumber {
                 const v = this._repr as Float64Array;
                 const dv = new DataView(v.buffer);
                 this._repr = dv.getBigInt64(0, true);
-                this.type = NumberType.I64;
+                this._type = NumberType.I64;
                 return this;
             };
 
@@ -656,7 +659,8 @@ export default class WasmNumber {
                 const v = this._repr as bigint;
                 this._repr = new Float32Array([0]);
                 const dv = new DataView(this._repr.buffer);
-                dv.setInt32(0, Number(v));
+                dv.setInt32(0, Number(v), true);
+                this._type = NumberType.F32;
                 return this;
             };
 
@@ -665,7 +669,8 @@ export default class WasmNumber {
                 const v = this._repr as bigint;
                 this._repr = new Float64Array([0]);
                 const dv = new DataView(this._repr.buffer);
-                dv.setBigInt64(0, v);
+                dv.setBigInt64(0, v, true);
+                this._type = NumberType.F64;
                 return this;
             };
 
