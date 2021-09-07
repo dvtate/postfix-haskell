@@ -1,32 +1,46 @@
 "./prelude.phs" include use
 
-# Average
-{ + 2.0 / } $avg =
+I32 I64 | $Int =
+F32 F64 | $Float =
+Int Float | $Num =
 
 # Absolute value
 { true } {} $abs fun
 { 0.0 < } { -1.0 * } $abs fun
+{ type F32 == } { "f32.abs" asm } $abs fun
+{ type F64 == } { "f64.abs" asm } $abs fun
 
-{ # Square route via newton's method
-	{ # Tail-recursive helper
-        $guess =
-        $x =
+# Use bigger of two values
+{ true } { pop } $max fun
+{ < } { { $a $b } = b } $max fun
+{ type F32 == } { "f32.max" asm } $max fun
+{ type F64 == } { "f64.max" asm } $max fun
 
-        # Do we have an acceptable margin of error?
-        { guess guess * x - abs x / 1.0e-15 < } $good_enough =
+# Use smaller of two values
+{ true } { pop } $min fun
+{ > } { { $a $b } = b } $min fun
+{ type F32 == } { "f32.min" asm } $min fun
+{ type F64 == } { "f64.min" asm } $min fun
 
-        # We can improve the value by averaging with quotient
-        { x x guess / guess avg iter } $improve =
+# Square route
+{ type F32 == } { "f32.sqrt" asm } $sqrt fun
+{ type F64 == } { "f64.sqrt" asm } $sqrt fun
 
-        # Improve value until it's good enough
-        { true } { improve } $cond fun
-        { good_enough } { guess } $cond fun
-        cond
-	} rec $iter =
+# Floor
+{ type F32 == } { "f32.floor" asm } $floor fun
+{ type F64 == } { "f64.floor" asm } $floor fun
 
-    # Start calculating with first guess being 1
-    1.0 iter
-} $sqrt =
+# Ceiling
+{ type F32 == } { "f32.ceil" asm } $ceil fun
+{ type F64 == } { "f64.ceil" asm } $ceil fun
+
+# Truncate float
+{ type F32 == } { "f32.trunc" asm } $trunc fun
+{ type F64 == } { "f64.trunc" asm } $trunc fun
+
+# Nearest int ties to even
+{ type F32 == } { "f32.nearest" asm } $nearest fun
+{ type F64 == } { "f64.nearest" asm } $nearest fun
 
 # Factorial
 { true } {
@@ -38,12 +52,4 @@
     } rec $iter =
     1 iter
 } $fac fun
-
-# Use bigger of two values
-{ true } { pop } $max fun
-{ < } { { $a $b } = b } $max fun
-
-# Use smaller of two values
-{ true } { pop } $min fun
-{ > } { { $a $b } = b } $min fun
 

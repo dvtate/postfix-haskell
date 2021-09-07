@@ -60,6 +60,13 @@ export class Value {
     }
 
     out?(ctx: ModuleManager, fun?: expr.FunExportExpr): string
+
+    /**
+     * Name for type of this value
+     */
+    typename() {
+        return ValueType[this.type];
+    }
 };
 
 /**

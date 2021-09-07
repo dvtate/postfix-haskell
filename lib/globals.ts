@@ -9,6 +9,7 @@ import scan, { BlockToken, LexerToken } from './scan';
 import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
+import { invokeAsm } from './asm';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -40,12 +41,11 @@ const operators : MacroOperatorsSpec = {
     // Bind identifier(s) to expression(s)
     '=' : {
         action: (ctx, token) => {
-            // Get identifier
+            // Get symbols to bind
             if (ctx.stack.length < 2)
                 return ['expected an expression and a binding identifier'];
-
-            // Get symbols to bind
             const sym = ctx.pop();
+
             let syms : value.IdValue[];
             if (sym instanceof value.MacroValue) {
                 // TODO verify there's enough items when {$a $b} =
@@ -57,6 +57,8 @@ const operators : MacroOperatorsSpec = {
                 // Take IdValue[]
                 if (tr.gives.some(sym => !(sym instanceof value.IdValue)))
                     return ["macro produced invalid results"];
+                if (ctx.stack.length < tr.gives.length)
+                    return ['not enough values to bind'];
                 syms = (tr.gives as value.IdValue[]).reverse().map(s => {
                     // Apply to current scope
                     s.scopes = ctx.scopes.slice();
@@ -246,6 +248,8 @@ const operators : MacroOperatorsSpec = {
         action: (ctx, token) => {
             // TODO Check base type compatible ?
             // Get type
+            if (ctx.stack.length < 2)
+                return ['not enough values']
             const t = ctx.pop();
             if (t.type !== value.ValueType.Type)
                 return ['expected a class to apply'];
@@ -272,6 +276,8 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['expected an expression to get type from'];
             const v = ctx.pop();
+            if (!v.datatype)
+                return ['value has undefined datatype'];
             ctx.push(v.datatype
                 ? new value.Value(token, value.ValueType.Type, v.datatype)
                 : new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, 0n)));
@@ -331,6 +337,8 @@ const operators : MacroOperatorsSpec = {
     'export' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
+            if (ctx.stack.length < 3)
+                return ['not enough values'];
             const sym = ctx.pop();
             if (sym.type !== value.ValueType.Id)
                 return ['expected a symbol'];
@@ -378,6 +386,8 @@ const operators : MacroOperatorsSpec = {
     'Arrow' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
+            if (ctx.stack.length < 2)
+                return ['not enough values'];
             const outputsMacro = ctx.pop();
             const inputsMacro = ctx.pop();
             if (!(outputsMacro instanceof value.MacroValue) || !(inputsMacro instanceof value.MacroValue))
@@ -416,6 +426,8 @@ const operators : MacroOperatorsSpec = {
     'import' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
+            if (ctx.stack.length < 2)
+                return ['not enough values'];
             const scopes = ctx.pop();
             const type = ctx.pop();
             if (!(scopes instanceof value.MacroValue))
@@ -458,6 +470,8 @@ const operators : MacroOperatorsSpec = {
     // Mark as recursive
     'rec' : {
         action: (ctx: Context, token: LexerToken) => {
+            if (ctx.stack.length === 0)
+                return ['missing value'];
             const arg = ctx.pop();
             if (arg.value instanceof Fun || arg.value instanceof LiteralMacro) {
                 arg.value.recursive = true;
@@ -472,6 +486,8 @@ const operators : MacroOperatorsSpec = {
     'namespace' : {
         action: (ctx: Context, token: LexerToken) => {
             // Pull macro
+            if (ctx.stack.length === 0)
+                return ['missing value'];
             const arg = ctx.pop();
             if (!(arg.value instanceof LiteralMacro))
                 return ['expected a macro literal'];
@@ -489,6 +505,8 @@ const operators : MacroOperatorsSpec = {
     'use' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get namespace
+            if (ctx.stack.length === 0)
+                return ['missing namespace'];
             const ns = ctx.pop();
             if (!(ns instanceof value.MacroValue && ns.value instanceof NamespaceMacro))
                 return ['expected a namespace'];
@@ -503,6 +521,8 @@ const operators : MacroOperatorsSpec = {
     'use_some' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get params
+            if (ctx.stack.length < 3)
+                return ['not enough values'];
             const exclude = ctx.pop();
             if (!(exclude instanceof value.StrValue))
                 return ['expected a string containing regex for symbols to exclude'];
@@ -522,6 +542,8 @@ const operators : MacroOperatorsSpec = {
     'include' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get argument
+            if (ctx.stack.length === 0)
+                return ['no value'];
             const arg = ctx.pop();
             if (!(arg instanceof value.StrValue))
                 return ['expected a string path'];
@@ -565,8 +587,20 @@ const operators : MacroOperatorsSpec = {
     'is_const' : {
         action: (ctx: Context, token: LexerToken) => {
             // Only expressions are
+            if (ctx.stack.length === 0)
+                return ['missing value'];
             const arg = ctx.pop();
             ctx.push(toBool(!(arg instanceof expr.Expr), token))
+        },
+    },
+
+    // Does the value have a datatype?
+    'has_type': {
+        action: (ctx, token) => {
+            if (ctx.stack.length === 0)
+                return ['missing value'];
+            const arg = ctx.pop();
+            ctx.push(toBool(!!arg.datatype, token));
         },
     },
 
@@ -574,12 +608,39 @@ const operators : MacroOperatorsSpec = {
     'defer' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get value from stack
+            if (ctx.stack.length === 0)
+                return ['missing value']
             const arg = ctx.pop();
             if (!(arg instanceof value.NumberValue))
                 return ['Currently only numbers can be deferred'];
 
             // Wrap the number value in an expression
             ctx.push(new expr.NumberExpr(arg.token, arg));
+        }
+    },
+
+    // ASM instruction
+    'asm' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get number of arguments and symbol
+            if (ctx.stack.length === 0)
+                return ['missing value']
+            const cmd = ctx.pop();
+            if (!(cmd instanceof value.StrValue))
+                return ['expected a String literal instruction'];
+
+            // Use wasm definitions
+            return invokeAsm(ctx, token, cmd.value);
+        },
+    },
+
+    // Moving typechecking behavior from == to here
+    'typecheck' : {
+        action: (ctx, token) => {
+            if (ctx.stack.length < 2)
+                return ['missing values'];
+            const [a, b] = ctx.popn(2);
+            ctx.push(toBool(b.value.check(a.value), token));
         }
     }
 };
@@ -609,173 +670,6 @@ const numberCheck = new value.MacroValue(null, new CompilerMacro((ctx, token) =>
 
 // Global functions that the user can overload
 const funs = {
-    // TODO exprs
-    '+' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        numberCheck,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-            // Get args
-            const b = ctx.pop();
-            const a = ctx.pop();
-
-            const type = a.datatype.getBaseType();
-            if (!(type instanceof types.PrimitiveType))
-                return ['builtin plus only accepts primitives']
-
-            const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
-            if (!exprs.includes(true))
-                // Simplify constexprs
-                ctx.push(new value.NumberValue(token, a.value.clone().add(b.value)));
-            else if (exprs[0] === exprs[1])
-                // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.add`, expr.fromDataValue([a, b])));
-            else if (!exprs[0])
-                // A is const, try to optimize
-                // adding zero is identity
-                ctx.push(a.value.value == 0
-                    ? b
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, expr.fromDataValue([a, b])));
-            else // if (!exprs[1])
-                // B is const, try to optimize
-                // Adding zero is identity
-                ctx.push(b.value.value == 0
-                    ? a
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.add`, expr.fromDataValue([a, b])));
-        })),
-        '+',
-    )),
-    '*' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        numberCheck,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-            const b = ctx.pop();
-            const a = ctx.pop();
-
-            const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
-            const type = a.datatype.getBaseType();
-            if (!(type instanceof types.PrimitiveType))
-                return ['builtin * only accepts primitives'];
-
-            if (!exprs.includes(true))
-                // Simplify constexprs
-                ctx.push(new value.NumberValue(token, a.value.clone().mul(b.value)));
-            else if (exprs[0] === exprs[1]) {
-                // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, expr.fromDataValue([a, b])));
-            } else if (!exprs[0])
-                // A is const, try to optimize
-                // mul by 1 is identity
-                // mul by 0 is 0
-                ctx.push(a.value.value == 1
-                    ? b
-                    : a.value.value == 0
-                        ? a
-                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, expr.fromDataValue([a, b])));
-            else // if (!exprs[1])
-                // B is const, try to optimize
-                // mul by 1 is identity
-                // mul by 0 is 0
-                ctx.push(b.value.value == 1
-                    ? a
-                    : b.value.value == 0
-                        ? b
-                        : new expr.InstrExpr(token, b.datatype, `${type.name}.mul`, expr.fromDataValue([a, b])));
-        })),
-        '*',
-    )),
-    '%' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        numberCheck,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-            // Pull args
-            const b = ctx.pop();
-            const a = ctx.pop();
-
-            // Check constexprs
-            const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
-
-            // Check ct mod 0
-            if (!exprs[1] && b.value.value == 0)
-                return ['divide by zero (remainder)'];
-
-            // Compile vs run time
-            if (!exprs.includes(true)) {
-                // Simplify constexprs
-                ctx.push(new value.NumberValue(token, a.value.clone().mod(b.value)));
-            } else {
-                // Neither is a constexpr
-                const type = a.datatype.getBaseType() as types.PrimitiveType;
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.rem${type.name[0] === 'f' ? '' : '_s'}`, expr.fromDataValue([a, b])));
-            }
-        })),
-        '%',
-    )),
-    '-' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        numberCheck,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-            // Get args
-            const b = ctx.pop();
-            const a = ctx.pop();
-
-            // Check constexprs
-            const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
-            const type = a.datatype.getBaseType() as types.PrimitiveType;
-            if (!exprs.includes(true))
-                // Simplify constexprs
-                ctx.push(new value.NumberValue(token, a.value.clone().sub(b.value)));
-            else if (exprs[1])
-                // Neither is a constexpr
-                ctx.push(new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, expr.fromDataValue([a, b])));
-            else // if (!exprs[1] && exprs[0])
-                // B is const, try to optimize
-                // Subtracting zero is identity
-                ctx.push(b.value.value == 0
-                    ? a
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.sub`, expr.fromDataValue([a, b])));
-        })),
-        '-',
-    )),
-    '/' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        numberCheck,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-            // Get args
-            const b = ctx.pop();
-            const a = ctx.pop();
-
-            // Check constexprs
-            const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
-
-            // Check ct div 0
-            if (!exprs[1] && b.value.value == 0)
-                return ['divide by zero'];
-
-            // Compile vs Runtime
-            if (!exprs.includes(true)) {
-                // Simplify constexprs
-                ctx.push(new value.NumberValue(token, a.value.clone().div(b.value)));
-            } else if (exprs[1]) {
-                // Neither is a constexpr
-                const type = a.datatype.getBaseType() as types.PrimitiveType;
-                ctx.push(new expr.InstrExpr(
-                    token,
-                    b.datatype,
-                    `${type.name}.div${type.name[0] === 'f' ? "" : "_s"}`,
-                    expr.fromDataValue([a, b]),
-                ));
-            } else { // if (!exprs[1] && exprs[0])
-                // B is const, try to optimize
-                // Divide by 1 is identity
-                const type = a.datatype.getBaseType() as types.PrimitiveType;
-                ctx.push(b.value.value == 1
-                    ? a
-                    : new expr.InstrExpr(token, b.datatype, `${type.name}.div`, expr.fromDataValue([a, b])));
-            }
-        })),
-        '/',
-    )),
-
     // Invoke operator: dreference/unescape a symbol
     '@' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
@@ -829,12 +723,13 @@ const funs = {
             const isData = ![a, b].some(v =>
                 !(v instanceof value.DataValue || v instanceof expr.DataExpr));
             if (a.type !== b.type && !isData) {
+                console.log('==: syntax err', {a, b});
                 return ['invalid syntax'];
             }
 
             // Check datatypes
             if (isData && !b.datatype.check(a.datatype)) {
-                console.log({a, b});
+                console.log('==: incompatible', {a, b});
                 return ['incompatible types'];
             }
 
@@ -939,63 +834,6 @@ const funs = {
         })),
         '==',
     )),
-
-    // TODO _s _u signedness????
-    '<' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        numberCheck,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-            // Get args
-            const b = ctx.pop();
-            const a = ctx.pop();
-
-            // Check constexprs
-            const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
-            if (!exprs.includes(true))
-                // Simplify constexprs
-                ctx.push(toBool(a.value.lt(b.value), token));
-            else {
-                // Result unknown at compile time (probably)
-                const type = a.datatype.getWasmTypeName();
-                ctx.push(new expr.InstrExpr(
-                    token,
-                    types.PrimitiveType.Types.I32,
-                    `${type}.lt${type[0] === 'i' ? '_s' : ''}`,
-                    expr.fromDataValue([a, b]),
-                ));
-            }
-        })),
-        '<',
-    )),
-    '>' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        numberCheck,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-            // Get args
-            const b = ctx.pop();
-            const a = ctx.pop();
-
-            // Check constexprs
-            const exprs = [a, b].map(v => v.type === value.ValueType.Expr);
-            if (!exprs.includes(true))
-                // Simplify constexprs
-                ctx.push(toBool(a.value.gt(b.value), token));
-            else {
-                // Result unknown at compile time (probably)
-                const type = a.datatype.getWasmTypeName();
-                ctx.push(new expr.InstrExpr(
-                    token,
-                    types.PrimitiveType.Types.I32,
-                    `${type}.gt${type[0] === 'i' ? '_s' : ''}`,
-                    expr.fromDataValue([a, b]),
-                ));
-            }
-        })),
-        '>',
-    )),
-    // TODO comparisons: < >
-    // TODO type-casting
-    // TODO import, import from js/env
 
     // TODO maybe use make instead?
     'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
