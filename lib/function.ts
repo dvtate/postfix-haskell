@@ -75,12 +75,14 @@ export default class Fun {
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
         ctx.stack = ctx.stack.map(v =>
-            // @ts-ignore typescript doesn't understand `.constructor`
-            v instanceof expr.DataExpr && v.constructor.expensive
-                ? new expr.TeeExpr(v.token, v)
-                : v);
+            v instanceof expr.DataExpr
+                // @ts-ignore typescript doesn't understand `.constructor`
+                && v.constructor.expensive
+                    ? new expr.TeeExpr(v.token, v)
+                    : v);
 
         // Pick which branch to follow
+        // TODO stop at first else statement
         const conds = this.conditions.map(cond => {
             // Copy stack
             // Note mss only important for actions as conditions could
