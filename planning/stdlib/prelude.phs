@@ -1,12 +1,12 @@
 # Stack
 { $_ = } $pop =				# Pop value
 { $v = v v } $dup =			# Duplicate value
-{ { $a $b } = b a } $swap =	# swap values
+{ { $a $b } = $b ~ $a ~ } $swap = # swap values
 
 # Comparisons
 { true } { == ! } $!= global fun	# Not equals
-{ true } { > ! } $<= global fun	# LE
-{ true } { < ! } $>= global fun	# GE
+{ true } { > ! } $<= global fun		# LE
+{ true } { < ! } $>= global fun		# GE
 
 # Booleans
 1 $true  =
@@ -20,11 +20,101 @@
 { true } {	        # One of the conditions is false
 	pop pop false   # Therefore result is false
 } $&& global fun
-{ swap 0 != } {	# First condition is true
-	swap pop        # And result will be the other condition
+{ swap } {		# First condition is true
+	swap pop @		# And result will be the other condition
 } $&& global fun
 
 # Or
 { true } { pop pop false } $|| global fun
-{ swap pop } { swap pop } $|| global fun
-{ pop } { pop } $|| global fun
+{ swap pop } { swap pop @ } $|| global fun
+{ pop } { pop @ } $|| global fun
+
+# Equality check operator
+{ { $ta $tb } =
+	{ $a $b } =
+		a has_type
+		b has_type &&
+		{ a type ta == } &&
+		{ b type tb == } &&
+} $_2_with_types =
+{ I32 I64 _2_with_types } { swap I64 cast swap == } $== global fun
+{ I64 I32 _2_with_types } { I64 cast == } $== global fun
+{ F32 F64 _2_with_types } { swap F64 cast swap == } $== global fun
+{ F64 F32 _2_with_types } { F64 cast == } $== global fun
+
+#{ I32 I32 _2_with_types } { "i32.eq" asm } $== global fun
+#{ I64 I64 _2_with_types } { "i64.eq" asm } $== global fun
+#{ F32 F32 _2_with_types } { "f32.eq" asm } $== global fun
+#{ F64 F64 _2_with_types } { "f64.eq" asm } $== global fun
+
+
+##
+# cast a value of one type to another type
+# <value> <type> cast
+##
+
+# No need to cast if already same type as target (Maybe remove classes?)
+{ swap type == } { pop } $cast fun
+
+# Boilerplate for conditions
+{ { $from $to } =
+	{ $val $t } =
+	val has_type
+	{ t from == val type to == && } &&
+} $_is_from_to =
+
+# Cast to I32
+{ I32 I64 _is_from_to } { pop "i32.wrap_i64_s" asm } $cast fun
+{ I32 F32 _is_from_to } { pop "i32.convert_f32_s" asm } $cast fun
+{ I32 F64 _is_from_to } { pop "i32.convert_f64_s" asm } $cast fun
+
+# Cast to I64
+{ I64 I32 _is_from_to } { pop "i64.extend_i32_s" asm } $cast fun
+{ I64 F32 _is_from_to } { pop "i64.convert_f32_s" asm } $cast fun
+{ I64 F64 _is_from_to } { pop "i64.convert_f64_s" asm } $cast fun
+
+# Cast to F32
+{ F32 I32 _is_from_to } { pop "f32.convert_i32_s" asm } $cast fun
+{ F32 I64 _is_from_to } { pop "f32.convert_i64_s" asm } $cast fun
+{ F32 F64 _is_from_to } { pop "f32.demote_f64" asm } $cast fun
+
+# Cast to F64
+{ F64 I32 _is_from_to } { pop "f64.convert_i32_s" asm } $cast fun
+{ F64 I64 _is_from_to } { pop "f64.convert_i64_s" asm } $cast fun
+{ F64 F32 _is_from_to } { pop "f64.promote_f32" asm } $cast fun
+
+##
+# Add: Implementation for the operator +
+##
+# Add values of same type
+{ I32 I32 _2_with_types } { "i32.add" asm } $add fun
+{ I64 I64 _2_with_types } { "i64.add" asm } $add fun
+{ F32 F32 _2_with_types } { "f32.add" asm } $add fun
+{ F64 F64 _2_with_types } { "f64.add" asm } $add fun
+
+# Add values of different types
+{ I64 F64 _2_with_types } { swap F64 cast swap add } $add fun
+{ F64 I64 _2_with_types } { F64 cast add } $add fun
+{ I64 F32 _2_with_types } { swap F32 cast swap add } $add fun
+{ F32 I64 _2_with_types	} { F32 cast add } $add fun
+{ I32 I64 _2_with_types } { swap I64 cast swap add } $add fun
+{ I64 I32 _2_with_types } { I64 cast add } $add fun
+{ I32 F32 _2_with_types } { swap F32 cast swap add } $add fun
+{ F32 I32 _2_with_types } { F32 cast add } $add fun
+{ F32 F64 _2_with_types } { swap F64 cast swap add } $add fun
+{ F64 F32 _2_with_types } { F64 cast add } $add fun
+{ I32 F64 _2_with_types } { swap F64 cast swap add } $add fun
+{ F64 I32 _2_with_types } { F64 cast add } $add fun
+
+# Optimization when one of the values is known to be zero the result is the other value
+{ $v =
+	v type I32 == { v 0    == } &&
+	v type I64 == { v 0L   == } && ||
+	v type F32 == { v 0.0f == } && ||
+	v type F64 == { v 0.0l == } && ||
+} $_is_zero =
+{ pop $a = a is_const { a _is_zero } && } { swap pop } $add fun
+{ $b = b is_const { b _is_zero } && } { pop } $add fun
+
+# Wrap the funcion in a macro for no reason really
+{ add } $+ global =

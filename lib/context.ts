@@ -279,38 +279,21 @@ export default class Context {
         // Try to invoke normally
         // TODO handle constexprs specially
         if (!v.value.recursive || isTrace) {
-            const stack = this.stack.slice();
-            const mss = this.minStackSize;
-            try  {
-                // console.log('non rec', token.token, v.type);
-                this.trace.push(v.value);
-                if (this.trace.length > 1000) {
-                    console.warn('1000 invocations reached, you probably forgot to use `rec`');
-                    // const toks = this.trace.map(t => t && t.token?.token);
-                    // console.info('Tokens: ',
-                    //     toks.slice(0, 20).join(', '),
-                    //     ' ... ', toks.slice(-20).join(', '));
-                    // const trace = this.trace.slice(0, 10).map(v => v.token)
-                    //     .concat(this.trace.slice(-10).map(v => v.token));
-                    return new error.SyntaxError('Max call stack exceeded', token, this);
-                }
-                const ret = this.toError(v.value.action(this, token), token);
-                this.trace.pop();
-                return ret;
-            } catch (e: any) {
-                if (!e || e.value == undefined)
-                    throw e;
-                // If the function throws our value then we know it's recursive
-                if (e.value !== v.value) {
-                    this.trace.pop();
-                    throw e;
-                }
-
-                this.stack = stack;
-                this.minStackSize = mss;
-                console.log('caught recursive');
-                // recursive = true;
+            // console.log('non rec', token.token, v.type);
+            this.trace.push(v.value);
+            if (this.trace.length > 1000) {
+                console.warn('1000 invocations reached, you probably forgot to use `rec`');
+                // const toks = this.trace.map(t => t && t.token?.token);
+                // console.info('Tokens: ',
+                //     toks.slice(0, 20).join(', '),
+                //     ' ... ', toks.slice(-20).join(', '));
+                // const trace = this.trace.slice(0, 10).map(v => v.token)
+                //     .concat(this.trace.slice(-10).map(v => v.token));
+                throw new error.SyntaxError('Max call stack exceeded', this.trace.map(v => v.token), this);
             }
+            const ret = this.toError(v.value.action(this, token), token);
+            this.trace.pop();
+            return ret;
         }
 
         // It's recursive and we didn't see it yet

@@ -61,4 +61,6 @@ math $. use
 "math" import $math =
 math "^[^.]" "^(sin|cos|tan)h?$" use_some
 
-
+{ "./stdlib/math.phs" include use
+	$sqrt ~ $fac ~
+} @ { $sqrt $fac } =

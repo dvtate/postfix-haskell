@@ -3,9 +3,9 @@ import Context from './context';
 import * as types from './datatypes'
 import * as expr from './expr';
 import * as value from './value';
-import WasmNumber, { NumberType } from './numbers';
+import WasmNumber from './numbers';
 
-//
+// Describes an instruction
 interface AssemblyDBEntry {
     // Mnemonic for the instruction
     symbol: string;

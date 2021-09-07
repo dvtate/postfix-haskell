@@ -114,11 +114,17 @@ export default class Fun {
         // Check for errors
         // TODO should prob ignore errors if one of conditions is truthy
         //      so that user can overload operators with diff # inputs
-        const errs = conds.filter(c => c instanceof Array || c instanceof error.SyntaxError);
+        const errs: any[] = conds.filter(c => c instanceof Array || c instanceof error.SyntaxError);
         if (errs.length) {
-            console.warn(`[warning] ${this.name}: fn errs: `, errs);
+            // console.warn(`[warning] ${this.name}: fn errs: `, ...errs.map(e => {
+            //     const ret: any = { msg: e.message || e };
+            //     if (e.tokens)
+            //         ret.tokens = e.tokens.map((t: LexerToken) => ({t: t.token, f: t.file, p: t.position }));
+            //     return ret;
+            // }));
             // TODO we need to make an error datatype that combines these into a single error
-            // ctx.warn(...errs);
+            console.log(`[warn] ${this.name}: fn errs: ${errs.map(e => e.message || e).join('\n')} `);
+            // return errs.reverse()[0];
         }
 
         // Create a list of pairs containing possibly truthy branch conditions
