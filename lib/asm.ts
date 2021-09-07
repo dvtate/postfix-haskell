@@ -29,6 +29,7 @@ interface BMathOptions {
     noInts?: boolean;
     signed?: boolean;
     noFloats?: boolean;
+    bool?: boolean;
 }
 
 function binaryMath(
@@ -51,19 +52,19 @@ function binaryMath(
         }, {
             symbol: `i64.${name}${options.signed ? '_u' : ''}`,
             param: [types.PrimitiveType.Types.I64, types.PrimitiveType.Types.I64],
-            result: [types.PrimitiveType.Types.I64],
+            result: [options.bool ? types.PrimitiveType.Types.I32 : types.PrimitiveType.Types.I64],
             handler,
         }]),
 
         ...(options.noFloats ? [] : [{
             symbol: `f32.${name}`,
             param: [types.PrimitiveType.Types.F32, types.PrimitiveType.Types.F32],
-            result: [types.PrimitiveType.Types.F32],
+            result: [options.bool ? types.PrimitiveType.Types.I32 : types.PrimitiveType.Types.F32],
             handler,
         }, {
             symbol: `f64.${name}`,
             param: [types.PrimitiveType.Types.F64, types.PrimitiveType.Types.F64],
-            result: [types.PrimitiveType.Types.F64],
+            result: [options.bool ? types.PrimitiveType.Types.I32 : types.PrimitiveType.Types.F64],
             handler,
         }]),
 
@@ -71,12 +72,12 @@ function binaryMath(
         ...(options.signed ? [{
                 symbol: `i32.${name}_s`,
                 param: [types.PrimitiveType.Types.I32, types.PrimitiveType.Types.I32],
-                result: [types.PrimitiveType.Types.I32],
+                result: [options.bool ? types.PrimitiveType.Types.I32 : types.PrimitiveType.Types.I32],
                 handler,
         }, {
             symbol: `i64.${name}_s`,
             param: [types.PrimitiveType.Types.I64, types.PrimitiveType.Types.I64],
-            result: [types.PrimitiveType.Types.I64],
+            result: [options.bool ? types.PrimitiveType.Types.I32 : types.PrimitiveType.Types.I64],
             handler,
         }] : []),
     ];
@@ -97,12 +98,12 @@ const instructions: AssemblyDBEntry[] = [
     ...binaryMath('rem', { signed: true, noFloats: true }),
 
     // Comparisons
-    ...binaryMath('eq'),
-    ...binaryMath('ne'),
-    ...binaryMath('lt', { signed: true }),
-    ...binaryMath('gt', { signed: true }),
-    ...binaryMath('le', { signed: true }),
-    ...binaryMath('ge', { signed: true }),
+    ...binaryMath('eq', { bool: true }),
+    ...binaryMath('ne', { bool: true }),
+    ...binaryMath('lt', { signed: true, bool: true }),
+    ...binaryMath('gt', { signed: true, bool: true }),
+    ...binaryMath('le', { signed: true, bool: true }),
+    ...binaryMath('ge', { signed: true, bool: true }),
 
     // Bitwise
     ...binaryMath('and', { noFloats: true }),
