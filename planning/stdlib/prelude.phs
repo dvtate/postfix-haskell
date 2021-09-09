@@ -11,20 +11,17 @@
 # TODO use WASM lib
 { true } { false == } $! global fun
 
-# And
-{ true } {	        # One of the conditions is false
-	pop pop false   # Therefore result is false
-} $&& global fun
-{ swap } {		# First condition is true
-	swap pop @		# And result will be the other condition
-} $&& global fun
+# And - this definition might be too clever...
+# Notice the @ for lazy evaluation
+{ true } { pop pop false } $&& global fun
+{ swap } { swap pop @ } $&& global fun
 
 # Or
 { true } { pop pop false } $|| global fun
 { swap pop } { swap pop @ } $|| global fun
 { pop } { pop @ } $|| global fun
 
-# Equality check operator
+# Boilerplate for when 2 values have same type
 { { $ta $tb } =
 	{ $a $b } =
 	a has_type
@@ -32,10 +29,21 @@
 	{ a type ta == } &&
 	{ b type tb == } &&
 } $_2_with_types =
-{ I32 I64 _2_with_types } { swap I64 cast swap == } $== global fun
-{ I64 I32 _2_with_types } { I64 cast == } $== global fun
-{ F32 F64 _2_with_types } { swap F64 cast swap == } $== global fun
-{ F64 F32 _2_with_types } { F64 cast == } $== global fun
+
+# Keeping these commented out because they slow things down a lot
+#{ { $a $b } =
+#	a b I32 I32 _2_with_types
+#	b is_const &&
+#	{ b 0 ==} &&
+#} { pop "i32.eqz" asm } $== global fun
+#{ { $a $b } =
+#	a b I32 I32 _2_with_types
+#	a _is_0
+#} { swap pop "i32.eqz" asm } $== global fun
+# { I32 I64 _2_with_types } { swap I64 cast swap == } $== global fun
+# { I64 I32 _2_with_types } { I64 cast == } $== global fun
+# { F32 F64 _2_with_types } { swap F64 cast swap == } $== global fun
+# { F64 F32 _2_with_types } { F64 cast == } $== global fun
 
 ##
 # cast a value of one type to another type
@@ -114,13 +122,16 @@ I32 I64 | F32 F64 | | $_Scalar =
 
 # Optimization when one of the values is known to be zero the result is the other value
 { $v =
-	v type I32 == { v 0    == } &&
-	v type I64 == { v 0L   == } && ||
-	v type F32 == { v 0.0f == } && ||
-	v type F64 == { v 0.0l == } && ||
+	v is_const
+	{
+		v type I32 == { v 0    == } &&
+		v type I64 == { v 0L   == } && ||
+		v type F32 == { v 0.0f == } && ||
+		v type F64 == { v 0.0l == } && ||
+	} &&
 } $_is_0 =
-{ pop $a = a is_const { a _is_0 } && } { swap pop } $+ global fun
-{ $b = b is_const { b _is_0 } && } { pop } $+ global fun
+{ pop $a = a _is_0 } { swap pop } $+ global fun
+{ $b = b _is_0 } { pop } $+ global fun
 
 ##
 # Operator -
@@ -142,8 +153,8 @@ I32 I64 | F32 F64 | | $_Scalar =
 { _can_promote } { _promote - } $- global fun
 
 # Optimization when one of the values is known to be zero
-{ pop $a = a is_const { a _is_0 } && } { swap pop neg } $- global fun
-{ $b = b is_const { b _is_0 } && } { pop } $- global fun
+{ pop $a = a _is_0 } { swap pop neg } $- global fun
+{ $b = b _is_0 } { pop } $- global fun
 
 ##
 # Operator *
@@ -160,17 +171,20 @@ I32 I64 | F32 F64 | | $_Scalar =
 
 # Optimization for identity property of multiplication
 { $v =
-	v type I32 == { v 1    == } &&
-	v type I64 == { v 1L   == } && ||
-	v type F32 == { v 1.0f == } && ||
-	v type F64 == { v 1.0l == } && ||
+	v is_const
+	{
+		v type I32 == { v 1    == } &&
+		v type I64 == { v 1L   == } && ||
+		v type F32 == { v 1.0f == } && ||
+		v type F64 == { v 1.0l == } && ||
+	} &&
 } $_is_1 =
-{ pop $a = a is_const { a _is_1 } && } { swap pop } $* global fun
-{ $b = b is_const { b _is_1 } && } { pop } $* global fun
+{ pop $a = a _is_1 } { swap pop } $* global fun
+{ $b = b _is_1 } { pop } $* global fun
 
 # Optimization for zero property of multiplication
-{ pop $a = a is_const { a _is_0 } && } { pop pop 0 } $* global fun
-{ $b = b is_const { b _is_0 } && } { pop pop 0 } $* global fun
+{ pop $a = a _is_0 } { pop pop 0 } $* global fun
+{ $b = b _is_0 } { pop pop 0 } $* global fun
 
 ##
 # Operator /
@@ -186,11 +200,10 @@ I32 I64 | F32 F64 | | $_Scalar =
 { _can_promote } { _promote / } $/ global fun
 
 # Divide by 1 is identity
-{ $b = b is_const { b _is_1 } && } { pop } $/ global fun
+{ $b = b _is_1 } { pop } $/ global fun
 
 # 0 divided by anything is 0
-{ pop $a = a is_const { a _is_0 } && } { pop pop 0 } $/ global fun
-
+{ pop $a = a _is_0 } { pop pop 0 } $/ global fun
 
 ##
 # Operator %
