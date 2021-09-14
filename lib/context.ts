@@ -22,8 +22,13 @@ const wabtProm = wabtMod();
 
 // Return Types for Context.traceIO() method
 export class TraceResults {
+    // Consumed by operation
     takes: value.Value[];
+
+    // Results of operation
     gives: value.Value[];
+
+    // Difference in lengths
     delta: number;
 
     constructor(takes: value.Value[], gives: value.Value[], delta: number) {

@@ -15,8 +15,10 @@
     { true } { print } $fb fun
     { 3 % 0 == } { pop fizz print } $fb fun
     { 5 % 0 == } { pop buzz print } $fb fun
-    { $n =  n 3 % 0 ==  n 5 % 0 == && }
-        { pop fizzbuzz print } $fb fun
+    { $n =
+        n 3 % 0 ==
+        n 5 % 0 == &&
+    } { pop fizzbuzz print } $fb fun
 
     # from 1 - n do fizzbuzz
     {

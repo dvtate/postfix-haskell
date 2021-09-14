@@ -10,6 +10,7 @@ import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
 import { invokeAsm } from './asm';
+import { fromDataValue } from './expr';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -397,6 +398,7 @@ const operators : MacroOperatorsSpec = {
             const ev = ctx.traceIO(inputsMacro, token);
             if (!(ev instanceof Context.TraceResults))
                 return ev;
+            ev.gives = ev.gives.slice(0, Math.abs(ev.delta));
             if (ev.gives.some(v => v.type !== value.ValueType.Type))
                 return ['expected all input types to be types'];
             const inputs : types.Type[] = ev.gives.map(t => t.value);
@@ -405,6 +407,7 @@ const operators : MacroOperatorsSpec = {
             const ev2 = ctx.traceIO(outputsMacro, token);
             if (!(ev2 instanceof Context.TraceResults))
                 return ev2;
+            ev2.gives = ev2.gives.slice(0, Math.abs(ev2.delta));
             if (ev2.gives.some(v => v.type !== value.ValueType.Type))
                 return ['expected all output types to be types'];
             const outputs : types.Type[] = ev2.gives.map(t => t.value);
@@ -631,6 +634,37 @@ const operators : MacroOperatorsSpec = {
 
             // Use wasm definitions
             return invokeAsm(ctx, token, cmd.value);
+        },
+    },
+
+    // Unsafe, custom inline assembly
+    '_asm' : {
+        action: (ctx: Context, token: LexerToken) => {
+            // Get args
+            if (ctx.stack.length < 2)
+                return ['expected type signature and mnemonic for instruction'];
+            const mnemonic = ctx.pop();
+            const sig = ctx.pop();
+            if (!(mnemonic instanceof value.StrValue))
+                return ['expected mnemonic to be a string literal'];
+            if (sig.type !== value.ValueType.Type || !(sig.value instanceof types.ArrowType))
+                return ['expected type signature to be an arrow type'];
+
+            // Get inputs
+            const { inputTypes, outputTypes } = sig.value;
+            if (ctx.stack.length < inputTypes.length)
+                return ['not enough inputs given'];
+            const inputs = ctx.popn(inputTypes.length).reverse();
+            if (!inputs.reduce((r, v, i) => r && inputTypes[i].check(v.datatype), true))
+                return ['invalid input types received'];
+
+            // Create expression
+            if (outputTypes.length > 1) {
+                const e = new expr.MultiInstrExpr(token, mnemonic.value, fromDataValue(inputs), outputTypes);
+                ctx.push(...e.results);
+            } else {
+                ctx.push(new expr.InstrExpr(token, outputTypes[0], mnemonic.value, fromDataValue(inputs)));
+            }
         },
     },
 

@@ -33,7 +33,10 @@ interface BMathOptions {
 }
 
 function binaryMath(
+    // Operation to perform
     name: keyof WasmNumberKeys,
+
+    //
     options: BMathOptions = {},
 
     // Type agnostic handler

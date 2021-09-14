@@ -199,7 +199,7 @@ export class FunExportExpr extends Expr {
         const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
         const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
-        return `(func (export "${this.name}") ${
+        return `(func $${this.name} ${
             paramTypes ? `(param ${paramTypes})` : ''
         } ${
             resultTypes ? `(result ${resultTypes})` : ''
@@ -207,7 +207,7 @@ export class FunExportExpr extends Expr {
             this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
         }\n\t${
             outs.join('\n\t')
-        })`;
+        })\n(export "${this.name}" (func $${this.name}))`;
     }
 };
 
@@ -359,3 +359,52 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>): DataExpr[] {
         [],
     );
 }
+
+/**
+ * Similar to InstrExpr but with multi-returns captured into dependent locals
+ * ... probably not needed
+ * @deprecated
+ */
+export class MultiInstrExpr extends Expr {
+    // WASM instruction mnemonic
+    instr: string;
+
+    // Arguments passed
+    args: DataExpr[];
+
+    // Resulting values
+    results: DependentLocalExpr[];
+
+    constructor(token: LexerToken, instr: string, args: DataExpr[], resultTypes: types.Type[]) {
+        super(token);
+        this.instr = instr;
+        this.args = args;
+        this.results = resultTypes.map(t => new DependentLocalExpr(token, t, this));
+    }
+
+    /**
+     * @override
+     */
+    out(ctx: ModuleManager, fun: FunExportExpr) {
+        //
+        this.results.forEach(e => {
+            if (!e.datatype.isVoid())
+                e.index = fun.addLocal(e.datatype);
+        });
+
+        const inds = this.results.map(e => e.index).filter(i => i !== -1);
+
+        return `(${this.instr} ${
+            this.args.map(e => e.out(ctx, fun)).join(' ')
+        })\n${
+            inds.map(i => `(local.set ${i})`)
+        }`;
+    }
+
+    static expensive = true;
+
+    children() {
+        return this.args;
+    }
+
+};

@@ -45,7 +45,7 @@ export function formatErrorPos(errors: CompileError[]): string {
             + `\t\t${wss}\x1B[1m\x1b[31m^${'~'.repeat(Math.max(t.token.length -1, 0))}\x1B[0m`;
     }
     return errors.map(e =>
-        `\x1B[1mError: ${e.message}:\x1b[0m\n${
+        `\x1B[1m${e instanceof Error ? 'Error: ' : ' '}${e.message}:\x1b[0m\n${
             e.tokens.length > 35
                 ? `${e.tokens.slice(0, 15).map(ppToken).join('\n')
                     }\n\n...\n\n${e.tokens.slice(-15).map(ppToken).join('\n')}`

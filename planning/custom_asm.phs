@@ -1,0 +1,25 @@
+"./stdlib/prelude.phs" include use
+"./stdlib/monad.phs" include use
+
+# Cucked linear memory monad
+$Monad ~ class $LM =
+
+# Store value in position zero of linear memory
+{ $value =
+    0 value
+    { Void LM I32 I32 } { Void LM } Arrow "i32.store" _asm
+} $set =
+
+# Get value from position zero in linear memory
+{
+    0
+    { Void LM I32 } { Void LM I32 } Arrow "i32.load" _asm
+} $get =
+
+# Export to JS
+{ Void LM I32 } { set } $set export
+{ Void LM } { get } $get export
+{ Void LM } {
+    # {} {I32} Arrow "call $get" _asm
+    get 1 + set
+} $incr export
