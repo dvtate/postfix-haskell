@@ -5,6 +5,7 @@ import * as expr from './expr';
 import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
 import { inflateRawSync } from 'zlib';
+import { DependentLocalExpr, fromDataValue } from './expr';
 
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
@@ -218,9 +219,22 @@ export default class Fun {
 
         // Push branch expr
         // TODO remove `as` here
-        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => t.gives) as expr.DataExpr[][]);
-        const results = first.map(o => new expr.DependentLocalExpr(token, o.datatype, branch));
+        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => fromDataValue(t.gives)));
+        const results: DependentLocalExpr[] = [];
+        const ret: value.Value[] = [];
+        first.forEach(o => {
+            if (o instanceof value.TupleValue) {
+                const dles = o.value.map((v: value.Value) =>
+                    new DependentLocalExpr(token, v.datatype, branch));
+                results.push(...dles);
+                ret.push(new value.TupleValue(token, dles, o.datatype));
+            } else {
+                const v = new expr.DependentLocalExpr(token, o.datatype, branch);
+                results.push(v);
+                ret.push(v);
+            }
+        });
         branch.results = results;
-        ctx.push(...results);
+        ctx.push(...ret);
     }
 };

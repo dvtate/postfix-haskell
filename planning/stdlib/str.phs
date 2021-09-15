@@ -11,8 +11,7 @@
     { lit } pack Str make
 } $as global fun
 
-
 {
     $lit =
     { lit } pack Str make
-} $to_Str =
+} $Str.new =

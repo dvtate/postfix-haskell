@@ -4,7 +4,7 @@
 "stdlib/str.phs"   include use #"Str|to_Str"      ""  use_some
 
 # Lazy evaluated IO action
-{ "Testing" to_Str print }
+{ "Testing" Str.new print }
 { 888.5 print } >> $action =
 
 # Export that performs IO
@@ -13,7 +13,7 @@
     action
 
     # Print string
-    "Hello, world!" to_Str print
+    "Hello, world!" Str.new print
 
     # Print an i32
     123456 print

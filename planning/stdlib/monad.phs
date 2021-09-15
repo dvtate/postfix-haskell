@@ -7,9 +7,9 @@
 
 # These operators exist only such that we can do operations involving various monad types
 # TODO should probably check if they're truthy
-{ true } { { $a  $b } = { a b } }
-   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
-$>> global fun
-{ true } { { $a  $b } = { a b } }
-   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
-$>>= global fun
+#{ true } { { $a  $b } = { a b } }
+#   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
+#$>> global fun
+#{ true } { { $a  $b } = { a b } }
+#   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
+#$>>= global fun

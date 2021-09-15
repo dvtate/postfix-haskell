@@ -150,8 +150,10 @@ export class IdValue extends Value {
  */
 export class TupleValue extends DataValue {
     value: Value[];
-    constructor(token: LexerToken, values: Value[]) {
-        const type = new types.TupleType(token, values.map(v => v.datatype || null));
+    datatype: types.TupleType;
+
+    constructor(token: LexerToken, values: Value[], datatype?: types.TupleType) {
+        const type = datatype || new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
     }
 

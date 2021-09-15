@@ -103,7 +103,7 @@ export class BranchExpr extends Expr {
                 }\n\t(if (result ${retType})\n\t(then ${acts[i]})\n\t(else ${compileIf(i + 1)}))`;
         })(0);
 
-        ret += '\n\t' + results.map(r => `(local.set ${r.index})`).join();
+        ret += '\n\t' + results.map(r => `(local.set ${r.index})`).join('');
 
         // console.log('BranchExpr', ret);
         return ret;

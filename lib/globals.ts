@@ -229,13 +229,15 @@ const operators : MacroOperatorsSpec = {
                 // Push values onto the stack
                 v.value.forEach(val => ctx.push(val));
             } else if (v.type === value.ValueType.Expr) {
+
                 // Verify it's a tuple expr
                 if (v.value instanceof value.TupleValue)
                     v.value.value.forEach(val => ctx.push(val));
 
                 // TODO probably more ways to have tuple exprs...
-                else
+                else {console.log(v);
                     return ['unexpected runtime-expr'];
+                }
             } else {
                 return ['expected a tuple to unpack'];
             }
@@ -457,12 +459,17 @@ const operators : MacroOperatorsSpec = {
             ctx.push(new value.MacroValue(token, new CompilerMacro((ctx, token) => {
                 // Verify matching input types
                 const inputs: value.Value[] = [];
+                if (ctx.stack.length < type.value.inputTypes.length)
+                    return ['not enough values'];
                 for (let i = type.value.inputTypes.length - 1; i >= 0; i--) {
                     const v = ctx.pop();
-                    if (!v.datatype || !type.value.inputTypes[i].check(v.datatype))
-                        return ['incompatible value passed to imported function call: ', v] as string[];
+                    if (!v.datatype || !type.value.inputTypes[i].check(v.datatype)) {
+                        console.log(v, type.value.inputTypes[i]);
+                        return ['incompatible value passed to imported function call'];
+                    }
                     inputs.push(v);
                 }
+                inputs.reverse();
 
                 // Make call
                 ctx.push(new expr.InstrExpr(token, type.value.outputTypes[0], `call ${importName} `, expr.fromDataValue(inputs)));

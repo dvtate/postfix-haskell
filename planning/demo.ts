@@ -24,7 +24,7 @@ import * as util from '../tools/util';
     if (!valid)
         throw new Error("WebAssembly.validate() failed");
 
-    // Invoke WASM exports
+    // Get WASM Module
     const mod: any = await WebAssembly.instantiate(wasm.buffer, {
         js: {
             'console.log': console.log,

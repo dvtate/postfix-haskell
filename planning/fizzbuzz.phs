@@ -7,9 +7,9 @@
     $n =
 
     # Some strings
-    "fizz" to_Str $fizz =
-    "buzz" to_Str $buzz =
-    "fizzbuzz" to_Str $fizzbuzz =
+    "fizz" Str.new $fizz =
+    "buzz" Str.new $buzz =
+    "fizzbuzz" Str.new $fizzbuzz =
 
     # fizzbuzz logic
     { true } { print } $fb fun

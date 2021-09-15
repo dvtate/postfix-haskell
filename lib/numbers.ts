@@ -151,7 +151,7 @@ export default class WasmNumber {
         }
 
         let isFloat = false;
-        if ('Ff'.includes(s[s.length -1])) {
+        if ('Ff'.includes(s[s.length -1]) && !s.includes('x')) {
             s = s.slice(0, -1);
             isFloat = true;
         }
@@ -457,13 +457,13 @@ export default class WasmNumber {
      * @param b other
      * @param signed do we used signed vs unsigned bitshift operation
      */
-    shr(b: WasmNumber, signed: boolean = false) {
+    shr(b: WasmNumber, signed: boolean = true) {
         // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
         // @ts-ignore
-        this.value = signed ? this.value >> b.value : this.value >>> b.value;
+        this.value = signed ? this.value >> b.value : this.value >> b.value;
         return this;
     }
 

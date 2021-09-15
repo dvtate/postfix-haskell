@@ -13,7 +13,7 @@ $Monad ~ class $LM =
 # Get value from position zero in linear memory
 {
     0
-    { Void LM I32 } { Void LM I32 } Arrow "i32.load" _asm
+    { I32 } { I32 } Arrow "i32.load" _asm
 } $get =
 
 # Export to JS
