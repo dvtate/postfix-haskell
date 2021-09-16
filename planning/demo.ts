@@ -42,13 +42,16 @@ import * as util from '../tools/util';
     // for (let i = 0; i < 10; i++)
     //     console.log(fac(i, 0, 1));
 
-    const { get, set, incr }
-        = mod.instance.exports as any;
-    console.log(get());
-    set(20);
-    console.log(get());
-    incr();
-    console.log(get());
-    incr();
-    console.log(get());
+    // const { get, set, incr }
+    //     = mod.instance.exports as any;
+    // console.log(get());
+    // set(20);
+    // console.log(get());
+    // incr();
+    // console.log(get());
+    // incr();
+    // console.log(get());
+
+    const w = mod.instance.exports as any;
+    w.main(20);
 })();

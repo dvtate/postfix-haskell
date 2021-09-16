@@ -31,6 +31,8 @@ export class BranchExpr extends Expr {
     // Where results are delivered
     results: DependentLocalExpr[];
 
+    args?: Array<value.Value>;
+
     /**
      * @param token - location in code
      * @param conditions - conditions for branches
@@ -55,12 +57,23 @@ export class BranchExpr extends Expr {
         // Prevent multiple compilations
         this._isCompiled = true;
 
-        const conds = this.conditions.map(c => c.out(ctx, fun)).reverse();
-        const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
-        const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
-        const results = this.results.filter(r => !r.datatype.getBaseType().isVoid());
+        // Compile body
+        const conds = new Array(this.conditions.length);
+        const acts = new Array(this.actions.length);
+        for (let i = this.conditions.length - 1; i >= 0; i--) {
+            const invIdx = (this.conditions.length - i) - 1;
+            conds[invIdx] = this.conditions[i].out(ctx, fun);
+            acts[invIdx] = this.actions[i].map(a => a.out(ctx, fun)).join(' ');
+        }
 
-        // Add result datatypes
+        // const conds = this.conditions.map(c => c.out(ctx, fun)).reverse();
+        // const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
+
+        // Generate result type signature
+        const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
+
+        // Set up dependent locals
+        const results = this.results.filter(r => !r.datatype.getBaseType().isVoid());
         results.forEach(r => {
             if (r.datatype instanceof types.PrimitiveType)
                 r.index = fun.addLocal(r.datatype);
@@ -73,27 +86,29 @@ export class BranchExpr extends Expr {
             throw new error.SyntaxError("no else case for fun branch", this.tokens);
         }
 
-        // // n+1 blocks
-        // let ret = "";
-        // ret += `(block $branch (result ${retType}) `;
-        // for (let i = 0; i < conds.length; i++)
-        //     ret += '(block ';
+        /*
+        // n+1 blocks
+        let ret = "";
+        ret += `(block $branch (result ${retType}) `;
+        for (let i = 0; i < conds.length; i++)
+            ret += '(block ';
 
-        // // add conds
-        // conds.forEach((c, i) => {
-        //    ret += ` ${c}`;
-        //    ret += ` (br_if ${i})`;
-        // });
+        // add conds
+        conds.forEach((c, i) => {
+           ret += ` ${c}`;
+           ret += ` (br_if ${i})`;
+        });
 
-        // acts.forEach((a, i) => {
-        //     ret += ')';
-        //     ret += ` ${a}`;
-        //     if (conds.length - i - 1 > 0)
-        //         ret += `(br $branch)`;
-        // });
+        acts.forEach((a, i) => {
+            ret += ')';
+            ret += ` ${a}`;
+            if (conds.length - i - 1 > 0)
+                ret += `(br $branch)`;
+        });
 
-        // ret += ')';
-        // return ret;
+        ret += ')';
+        return ret;
+        */
 
         // Compile to (if (...) (result ...) (then ...) (else ...))
         let ret: string = (function compileIf(i): string {

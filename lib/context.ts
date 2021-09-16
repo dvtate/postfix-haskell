@@ -90,7 +90,7 @@ export default class Context {
     constructor(optLevel: number = 1, private entryPoint?: string) {
         // Initialize Module Manager
         this.optLevel = optLevel;
-        this.module = new ModuleManager(this.optLevel);
+        this.module = new ModuleManager(this);
 
         // Initialize globals
         this.globals = {

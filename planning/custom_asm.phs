@@ -2,24 +2,47 @@
 "./stdlib/monad.phs" include use
 
 # Cucked linear memory monad
-$Monad ~ class $LM =
+Void class $World =
+
+# console.log
+{ World I32 I32 } { World } Arrow { "js" "console.log" } import $log_2_i32 =
 
 # Store value in position zero of linear memory
 { $value =
-    0 value
-    { Void LM I32 I32 } { Void LM } Arrow "i32.store" _asm
+    { { World I32 I32 } { World } Arrow "i32.store" _asm } $i32_store =
+    unpack { $x $v } =
+    0 x i32_store
+    4 v i32_store
 } $set =
 
 # Get value from position zero in linear memory
 {
-    0
-    { I32 } { I32 } Arrow "i32.load" _asm
+    { { I32 } { I32 } Arrow "i32.load" _asm } $i32_load =
+    {
+        0 i32_load
+        4 i32_load
+    } pack
 } $get =
 
+
+5 $width =
+3 $speed =
+
+{
+    unpack { $x $v } =
+    { true } { { x v } pack } $branch fun
+    { x 0 > x v + 100 width - < && } { { x v + v } pack } $branch fun
+    branch
+} $move =
+
+
 # Export to JS
-{ Void LM I32 } { set } $set export
-{ Void LM } { get } $get export
-{ Void LM } {
+{ World I32 } { set } $set export
+{ World } { get } $get export
+{ World } {
     # {} {I32} Arrow "call $get" _asm
     get 1 + set
 } $incr export
+
+
+

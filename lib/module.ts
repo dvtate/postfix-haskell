@@ -1,3 +1,4 @@
+import Context from "./context";
 import * as types from "./datatypes";
 import * as expr from './expr';
 
@@ -46,8 +47,13 @@ export default class ModuleManager {
 
     /**
      * @param optLevel - optimization level for the compilation
+     * @param ctx - parser context object
      */
-    constructor(public optLevel: number = 1) { }
+    constructor(
+        public ctx?: Context,
+        public optLevel: number = ctx ? ctx.optLevel : 1
+    ) {
+    }
 
     /**
      * Add an import
@@ -131,7 +137,7 @@ export default class ModuleManager {
      * Make a copy
      */
     clone(): ModuleManager {
-        const ret = new ModuleManager(this.optLevel);
+        const ret = new ModuleManager(this.ctx, this.optLevel);
         // Slice exports
         ret.functions = { ...this.functions };
 

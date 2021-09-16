@@ -75,6 +75,7 @@ export default class Fun {
      */
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
+        const oldStack = ctx.stack.slice();
         ctx.stack = ctx.stack.map(v =>
             v instanceof expr.DataExpr
                 // @ts-ignore typescript doesn't understand `.constructor`
@@ -215,8 +216,20 @@ export default class Fun {
         }
 
         // Drop inputs from stack
-        ctx.popn(maxTakes.length);
+        const inputs = ctx.popn(maxTakes.length);
 
+        // No pointless tee expressions
+        ctx.stack = oldStack.slice(0, ctx.stack.length);
+
+        // Make branch expr
+        // TODO remove `as` here
+        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => t.gives) as expr.DataExpr[][]);
+        const results = first.map(o => new expr.DependentLocalExpr(token, o.datatype, branch));
+        branch.results = results;
+        branch.args = inputs;
+        ctx.push(...results);
+
+        /*
         // Push branch expr
         // TODO remove `as` here
         const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => fromDataValue(t.gives)));
@@ -235,6 +248,8 @@ export default class Fun {
             }
         });
         branch.results = results;
+        branch.args = inputs;
         ctx.push(...ret);
+        */
     }
 };

@@ -314,7 +314,7 @@ export function invokeAsm(ctx: Context, token: LexerToken, cmd: string) {
     // Behavior different for if it's constexpr or not
     if (args.some(e => !e.isConstExpr())) {
         // Not constexpr, push a new expression
-        ctx.push(new expr.InstrExpr(token, instr.result[0], cmd, expr.fromDataValue(args)));
+        ctx.push(new expr.InstrExpr(token, instr.result[0], cmd, expr.fromDataValue(args).reverse()));
     } else {
         // Constexpr, use handler to reduce it
         const ret = instr.handler(ctx, args.map(a => a.value).reverse(), cmd);

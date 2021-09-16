@@ -1,6 +1,7 @@
 import { CompilerMacro } from "./macro";
 import * as value from "./value";
 import * as error from "./error";
+import * as expr from './expr';
 import { Context } from "vm";
 import { LexerToken } from "./scan";
 import { formatErrorPos } from "../tools/util";
@@ -77,6 +78,13 @@ const debugOperators = {
                         : 'unknown'
                 : v.value;
         return depict(ctx.pop());
+    },
+
+    ':eval' : (ctx: Context, token: LexerToken) => {
+        const str = ctx.pop();
+        if (!(str instanceof value.StrValue))
+            throw new error.SyntaxError(':eval expected a string containing js code', token, ctx);
+        return eval(str.value);
     },
 
     // View entire stack
