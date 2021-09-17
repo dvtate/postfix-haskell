@@ -262,6 +262,7 @@ export default class Context {
         // TODO this algorithm is extrememly complicated and confusing and inefficient
         //  there must be a simpler way... time spent to create: ~1 month
 
+        // When invoked static strings get their address and length pushed onto the stack
         if (v instanceof value.StrValue) {
             this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, v.value.length)));
             this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, this.module.addStaticData(v.value))));

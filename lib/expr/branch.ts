@@ -41,7 +41,8 @@ export class BranchExpr extends Expr {
     constructor(
         tokens: LexerToken[],
         conditions: Array<DataExpr|value.DataValue>,
-        actions: Array<DataExpr|value.DataValue>[]
+        actions: Array<DataExpr|value.DataValue>[],
+        public name?:string,
     ) {
         super(tokens[0]);
         this.tokens = tokens;
@@ -58,14 +59,14 @@ export class BranchExpr extends Expr {
         this._isCompiled = true;
 
         // Compile body
+        // Notice order of compilation from top to bottom so that locals are assigned before use
         const conds = new Array(this.conditions.length);
         const acts = new Array(this.actions.length);
         for (let i = this.conditions.length - 1; i >= 0; i--) {
             const invIdx = (this.conditions.length - i) - 1;
             conds[invIdx] = this.conditions[i].out(ctx, fun);
-            acts[invIdx] = this.actions[i].map(a => a.out(ctx, fun)).join(' ');
+            acts[invIdx] = this.actions[i].reverse().map(a => a.out(ctx, fun)).join(' ');
         }
-
         // const conds = this.conditions.map(c => c.out(ctx, fun)).reverse();
         // const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
 
@@ -111,14 +112,21 @@ export class BranchExpr extends Expr {
         */
 
         // Compile to (if (...) (result ...) (then ...) (else ...))
+        // Note that there's some BS done here to work around multi-return if statements not being allowed :(
+        const retSet = results.map(r => `(local.set ${r.index})`).join('');
         let ret: string = (function compileIf(i): string {
             return i + 1 >= acts.length
-                ? acts[i]
-                : `${conds[i]
-                }\n\t(if (result ${retType})\n\t(then ${acts[i]})\n\t(else ${compileIf(i + 1)}))`;
+                ? acts[i] + retSet
+                : `${conds[i]}\n\t(if ${
+                    retType.length === 1 ? `(result ${retType})` : ''
+                }\n\t(then ${
+                    acts[i] + retSet
+                })\n\t(else ${
+                    compileIf(i + 1)
+                }))`;
         })(0);
-
-        ret += '\n\t' + results.map(r => `(local.set ${r.index})`).join('');
+        if (retType.length === 1)
+            ret += '\n\t' + retSet;
 
         // console.log('BranchExpr', ret);
         return ret;

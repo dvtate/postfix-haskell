@@ -662,8 +662,10 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length < inputTypes.length)
                 return ['not enough inputs given'];
             const inputs = ctx.popn(inputTypes.length).reverse();
-            if (!inputs.reduce((r, v, i) => r && inputTypes[i].check(v.datatype), true))
+            if (!inputs.reduce((r, v, i) => r && inputTypes[i].check(v.datatype), true)) {
+                console.error(inputs.map(i => i.datatype), 'vs', inputTypes);
                 return ['invalid input types received'];
+            }
 
             // Create expression
             if (outputTypes.length > 1) {
@@ -808,7 +810,7 @@ const funs = {
                     if (!(bType instanceof types.PrimitiveType))
                         return ['builtin == only accepts primitives (overload $== global fun)'];
 
-                        // Compile-time check
+                    // Compile-time check
                     if (b.type === value.ValueType.Data) {
                         ctx.push(toBool(a.value.equals(b.value), token));
                         return;
@@ -850,7 +852,7 @@ const funs = {
                     if (!(bType instanceof types.PrimitiveType))
                         return ['builtin == only accepts primitives (overload $== global fun)'];
 
-                    if (b.type === value.ValueType.Data && a.value.value === BigInt(0)) {
+                    if (b.type === value.ValueType.Data && b.value.value === BigInt(0)) {
                         ctx.push(new expr.InstrExpr(
                             token,
                             types.PrimitiveType.Types.I32,

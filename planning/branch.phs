@@ -1,4 +1,5 @@
 "./stdlib/prelude.phs" include use
+"./stdlib/math.phs" include use
 
 #{ I32 } {!} $not export
 
@@ -17,4 +18,34 @@ fizz buzz + $fizzbuzz =
 { true } { pop } $abc fun
 { 0 > } { { $t $n } = { t unpack n * } pack } $abc fun
 #{ 0 < } { { $t $n } = { t unpack swap n + swap n - } pack } $abc fun
-{ I32 } { $n = { 4 5 } pack n abc } $test export
+# { I32 } { $n = { 4 5 } pack n abc } $test export
+
+Void class $Cuck =
+{
+    { $v0 $v1 $v2 $v3 } =
+    0 v0 { Cuck I32 I32 } { Cuck } Arrow "i32.store" _asm
+    4 v1 { Cuck I32 I32 } { Cuck } Arrow "i32.store" _asm
+    8 v2 { Cuck I32 I32 } { Cuck } Arrow "i32.store" _asm
+    12 v3 { Cuck I32 F32 } { Cuck } Arrow "f32.store" _asm
+} $save =
+
+{
+    0 { I32 } { I32 } Arrow "i32.load" _asm
+    4 { I32 } { I32 } Arrow "i32.load" _asm
+    8 { I32 } { I32 } Arrow "i32.load" _asm
+    12 { I32 } { F32 } Arrow "F32.load" _asm
+} $load =
+
+{ Cuck I32 } {
+    $v =
+    load
+    { $n $a $b $c } =
+    { true } { 1 2 3 1.0f } $branch fun
+    { v 1 == } { 1 2 3 1.0f } $branch fun
+    { v 2 == } { 1 2 3 1.0f } $branch fun
+    { v 3 == } { 1 2 3 1.0f } $branch fun
+    { v 4 == } { 1 2 3 1.0f } $branch fun
+    branch
+    #:stack
+    save
+} $test export

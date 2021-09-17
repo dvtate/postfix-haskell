@@ -53,5 +53,8 @@ import * as util from '../tools/util';
     // console.log(get());
 
     const w = mod.instance.exports as any;
-    w.main(20);
+    for (let i = 0; i < 5; i++) {
+        w.test(1);
+        console.log([...new Uint32Array(mod.instance.exports.memory.buffer)].slice(0,4));
+    }
 })();

@@ -53,7 +53,7 @@
           i32.load
         else
           i32.const 10
-          i32.const 0
+          i32.const 0 ;; ball . x
           i32.load
           i32.add
           i32.const 375

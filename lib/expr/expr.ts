@@ -323,7 +323,7 @@ export class TeeExpr extends DataExpr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        // return this.value.out(ctx, fun);
+        return this.value.out(ctx, fun);
 
         if (this.local === null) {
             this.local = fun.addLocal(this.datatype);

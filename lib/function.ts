@@ -223,7 +223,7 @@ export default class Fun {
 
         // Make branch expr
         // TODO remove `as` here
-        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => t.gives) as expr.DataExpr[][]);
+        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => t.gives) as expr.DataExpr[][], this.name);
         const results = first.map(o => new expr.DependentLocalExpr(token, o.datatype, branch));
         branch.results = results;
         branch.args = inputs;
