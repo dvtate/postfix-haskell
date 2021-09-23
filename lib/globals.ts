@@ -678,14 +678,48 @@ const operators : MacroOperatorsSpec = {
     },
 
     // Moving typechecking behavior from == to here
-    'typecheck' : {
+    // 'typecheck' : {
+    //     action: (ctx, token) => {
+    //         if (ctx.stack.length < 2)
+    //             return ['missing values'];
+    //         const [a, b] = ctx.popn(2).reverse();
+    //         ctx.push(toBool(b.value.check(a.value), token));
+    //     }
+    // },
+
+    'static_region' : {
         action: (ctx, token) => {
+            if (ctx.stack.length === 0)
+                return ['missing number of bytes to mark'];
+            const len = ctx.pop();
+            if (!(len.value instanceof WasmNumber))
+                return ['length must be a constexpr number'];
+
+            // Fill region with zeros and return address
+            const data = new Uint8Array(Number(len.value.value));
+            const ret = new WasmNumber(
+                WasmNumber.Type.I32,
+                ctx.module.addStaticData(data)
+            );
+            ctx.push(new value.NumberValue(token, ret));
+        },
+    },
+
+    'static_init' : {
+        action: (ctx, token) => {
+            // Get args
             if (ctx.stack.length < 2)
-                return ['missing values'];
-            const [a, b] = ctx.popn(2);
-            ctx.push(toBool(b.value.check(a.value), token));
-        }
-    }
+                return ['missing value'];
+            const [v, ptr] = ctx.popn(2).reverse();
+            if (!(v.value instanceof WasmNumber))
+                return ['value must be constexpr int'];
+            if (!(ptr.value instanceof WasmNumber))
+                return ['value must be constexpr byte'];
+
+            // Set static
+            ctx.module.setStaticData(Number(ptr.value.value), Number(v.value.value));
+        },
+    },
 };
 
 // Condition for two numeric types
@@ -796,7 +830,7 @@ const funs = {
                     ctx.push(toBool(b.value.check(a.value), token));
                     break;
 
-                // Value comparison
+                // Partial Evaluation comparison
                 case value.ValueType.Data: {
                     // Cannot compare incompatible datatypes
                     if (!b.datatype.check(a.datatype))
@@ -839,6 +873,7 @@ const funs = {
                 }
 
                 // TODO expr
+                // Runtime comparison
                 case value.ValueType.Expr: {
                     // Cannot compare incompatible datatypes
                     if (!b.datatype.check(a.datatype))
@@ -870,8 +905,17 @@ const funs = {
                     return;
                 }
 
+                // String comparison
+                case value.ValueType.Str:
+                    // // Sanity check
+                    // if (!(a instanceof value.StrValue) || !(b instanceof value.StrValue))
+                    //     return ['wtf'];
+                    ctx.push(toBool(a.value === b.value, token));
+                    return;
+
                 // Invalid syntax type passed
                 default:
+                    // console.log(a.typename(), b.typename());
                     return ['syntax error'];
             }
         })),

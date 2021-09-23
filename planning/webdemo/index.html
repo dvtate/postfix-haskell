@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Postfix-Haskell WASM Demo</title>
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+            }
+
+            body {
+                background: black;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            canvas {
+                border: 1px solid white;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas width="400" height="500" id="game"></canvas>
+
+        <script>
+            (async () => {
+                // Get canvas 2d context
+                const canvas = document.getElementById('game');
+                const context = canvas.getContext('2d');
+                context.fillStyle = 'white';
+
+                // Instantiate wasm
+                const resp = await fetch('index.wasm');
+                const wasm = await resp.arrayBuffer();
+
+                const mod = await WebAssembly.instantiate(wasm, {
+                    js: {
+                        'console.log': console.log,
+                        'Math.random': Math.random,
+
+                        setFill(r, g, b) {
+                            context.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                        },
+
+                        contextFillRect: context.fillRect.bind(context),
+                        contextClearRect: context.clearRect.bind(context),
+
+                        nextFrame() {
+                            console.log('tick');
+                            requestAnimationFrame(mod.instance.exports.loop);
+                        },
+                    },
+                });
+
+                // Debugging
+                window.mod = mod;
+                window.context = context;
+
+                (function loop() {
+                    mod.instance.exports.draw();
+                    mod.instance.exports.update();
+                    requestAnimationFrame(loop);
+                })();
+
+                // Get exports
+                // mod.instance.exports.loop();
+
+            })();
+
+        </script>
+    </body>
+</html>

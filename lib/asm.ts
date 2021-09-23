@@ -4,6 +4,7 @@ import * as types from './datatypes'
 import * as expr from './expr';
 import * as value from './value';
 import WasmNumber from './numbers';
+import { fromDataValue } from './expr';
 
 // Describes an instruction
 interface AssemblyDBEntry {
@@ -167,7 +168,15 @@ const instructions: AssemblyDBEntry[] = [
         handler: (ctx, _, instr) => [new WasmNumber(WasmNumber.Type.F64, Number(instr.split(' ')[1]))],
     },
 
+    // Memory commands
+    ...genMemory(),
 
+    {
+        symbol: 'nop',
+        param: [],
+        result: [],
+        handler: () => [],
+    },
 ];
 
 /**
@@ -286,8 +295,68 @@ function genFloatUnaries(): AssemblyDBEntry[] {
     }]).reduce((a, b) => a.concat(b));
 }
 
+/**
+ * Memory instructions
+ */
+function genMemory() {
+    // Some basic load instructions
+    const ret = Object.values(types.PrimitiveType.Types)
+        .filter(v => typeof v !== 'number')
+        .map(t => ({
+            symbol: `${t.name}.load`,
+            param: [types.PrimitiveType.Types.I32],
+            result: [t],
+        }));
 
-const table: { [k: string]: AssemblyDBEntry }
+    // TODO load8_8 load8_s ... etc.
+
+    // Get current linear memory size
+    ret.push({
+        symbol: 'memory.size',
+        param: [],
+        result: [types.PrimitiveType.Types.I32],
+    });
+
+    return ret;
+}
+
+// These aren't as simple to describe as they have polymorphism and stuff so we treat them as special operators
+const opInstrs: { [k : string] : (ctx: Context, token: LexerToken, cmd: string) => any } = {
+    'select' : (ctx, token, cmd) => {
+        // Get args
+        if (ctx.stack.length < 3)
+            return ['expected 3 arguments for select instruction'];
+        const [trueVal, falseVal, cond] = ctx.popn(3);
+
+        // Handle constexpr
+        // NOTE here we're being leaniant
+        if (cond.isConstExpr()) {
+            if (!(cond.value instanceof WasmNumber) || cond.value.type !== WasmNumber.Type.I32)
+                return ['expected an I32 condition'];
+            ctx.push(cond.value.value ? trueVal : falseVal);
+            return;
+        }
+
+        // Validate inputs
+        if (![value.ValueType.Data, value.ValueType.Expr].includes(trueVal.type) || trueVal.type != falseVal.type)
+            return ['syntax error'];
+        if (!trueVal.datatype.check(falseVal.datatype) || !falseVal.datatype.check(trueVal.datatype))
+            return ['incompatible datatypes for different branches of select'];
+        if (trueVal.datatype.isVoid())
+            return ['void datatype not allowed in select instruciton'];
+
+        // Create select instruction
+        ctx.push(new expr.InstrExpr(
+            token,
+            trueVal.datatype,
+            cmd,
+            fromDataValue([trueVal, falseVal, cond])
+        ));
+    },
+};
+
+
+const instructionDict: { [k: string]: AssemblyDBEntry }
     = instructions.reduce((a, v) => ({ ...a, [v.symbol]: v }), {});
 
 /**
@@ -300,7 +369,10 @@ const table: { [k: string]: AssemblyDBEntry }
 export function invokeAsm(ctx: Context, token: LexerToken, cmd: string) {
     // Get instruction database entry
     const mnemonic = cmd.split(' ')[0];
-    const instr = table[mnemonic];
+    if (opInstrs[mnemonic])
+        return opInstrs[mnemonic](ctx, token, cmd);
+
+    const instr = instructionDict[mnemonic];
     if (!instr)
         return ['invalid/unsupported instruction ' + mnemonic];
 
@@ -312,7 +384,7 @@ export function invokeAsm(ctx: Context, token: LexerToken, cmd: string) {
         }
 
     // Behavior different for if it's constexpr or not
-    if (args.some(e => !e.isConstExpr())) {
+    if (args.some(e => !e.isConstExpr()) || !instr.handler) {
         // Not constexpr, push a new expression
         ctx.push(new expr.InstrExpr(token, instr.result[0], cmd, expr.fromDataValue(args).reverse()));
     } else {

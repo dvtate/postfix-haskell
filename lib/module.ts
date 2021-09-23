@@ -184,14 +184,15 @@ export default class ModuleManager {
     /**
      * Store static data
      * @param data - data to save statically
-     * @returns - memory address
+     * @param isConst - if true we can check to see if it's already in data section and simply point to it
+     * @returns - memory address for start of region
      */
-    addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): number {
+    addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string, isConst = false): number {
         // Convert data to byte array
         const bytes = ModuleManager.toByteArray(data);
 
         // Check to see if same value already exists
-        if (this.optLevel >= 1)
+        if (isConst && this.optLevel >= 1)
             for (let i = 0; i < this.staticData.length; i++) {
                 let j = 0;
                 for (; j < bytes.length; j++)
@@ -210,6 +211,15 @@ export default class ModuleManager {
     }
 
     /**
+     * Initialize static data to a specific value
+     * @param address address of static data to set
+     * @param value value to set static data to
+     */
+    setStaticData(address: number, value: number) {
+        this.staticData[address] = value;
+    }
+
+    /**
      * Generates a hexstring that initializes the start of linear memory
      * @returns
      */
@@ -222,8 +232,8 @@ export default class ModuleManager {
         function byteToHexEsc(b: number): string {
             const hexChrs = '0123456789ABCDEF';
             return '\\'
-                + hexChrs[(b & (((1 << 4) - 1) << 4)) >> 4]
-                + hexChrs[b & ((1 << 4) - 1)];
+                + hexChrs[(b & 0xf0) >> 4]
+                + hexChrs[b & 0xf];
         }
 
         // Static data as a hex string

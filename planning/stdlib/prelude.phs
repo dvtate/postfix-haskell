@@ -2,6 +2,7 @@
 { $_ = } $pop =				# Pop value
 { $v = v v } $dup =			# Duplicate value
 { { $a $b } = $b ~ $a ~ } $swap = # swap values
+{ $v = $v ~ } $touch =		# Bad sign if this needed...
 
 # Booleans
 1 $true  =
@@ -62,13 +63,13 @@
 
 # Cast to I32
 { I32 I64 _is_from_to } { pop "i32.wrap_i64_s" asm } $cast fun
-{ I32 F32 _is_from_to } { pop "i32.convert_f32_s" asm } $cast fun
-{ I32 F64 _is_from_to } { pop "i32.convert_f64_s" asm } $cast fun
+{ I32 F32 _is_from_to } { pop "i32.trunc_f32_s" asm } $cast fun
+{ I32 F64 _is_from_to } { pop "i32.trunc_f64_s" asm } $cast fun
 
 # Cast to I64
 { I64 I32 _is_from_to } { pop "i64.extend_i32_s" asm } $cast fun
-{ I64 F32 _is_from_to } { pop "i64.convert_f32_s" asm } $cast fun
-{ I64 F64 _is_from_to } { pop "i64.convert_f64_s" asm } $cast fun
+{ I64 F32 _is_from_to } { pop "i64.trunc_f32_s" asm } $cast fun
+{ I64 F64 _is_from_to } { pop "i64.trunc_f64_s" asm } $cast fun
 
 # Cast to F32
 { F32 I32 _is_from_to } { pop "f32.convert_i32_s" asm } $cast fun

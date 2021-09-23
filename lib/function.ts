@@ -216,7 +216,7 @@ export default class Fun {
         }
 
         // Drop inputs from stack
-        const inputs = ctx.popn(maxTakes.length);
+        const inputs = ctx.popn(maxTakes.length).reverse();
 
         // No pointless tee expressions
         ctx.stack = oldStack.slice(0, ctx.stack.length);

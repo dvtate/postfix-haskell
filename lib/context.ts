@@ -265,7 +265,7 @@ export default class Context {
         // When invoked static strings get their address and length pushed onto the stack
         if (v instanceof value.StrValue) {
             this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, v.value.length)));
-            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, this.module.addStaticData(v.value))));
+            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, this.module.addStaticData(v.value, true))));
             return this;
         }
 
@@ -491,6 +491,7 @@ export default class Context {
         if (fast)
             return src;
 
+        // Verify syntax and pp
         let mod;
         try {
             const wabt = await wabtProm;

@@ -76,7 +76,7 @@ const debugOperators = {
                     : v instanceof value.NumberValue
                         ? v.value.value
                         : 'unknown'
-                : v.value;
+                : v.value || v;
         return depict(ctx.pop());
     },
 

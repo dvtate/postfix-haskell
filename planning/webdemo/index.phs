@@ -1,0 +1,109 @@
+"../stdlib/prelude.phs" include use
+"../stdlib/bits.phs" include use
+"../stdlib/math.phs" include use
+
+{   { $v $addr } =
+    # NOTE little endian
+    v 0xff and
+        addr static_init
+    v 8 >> 0xff and
+        addr 1 + static_init
+    v 16 >> 0xff and
+        addr 2 + static_init
+    v 24 >> 0xff and
+        addr 3 + static_init
+} $init_i32 =
+{
+    swap "i32.reinterpret_f32" asm swap
+    init_i32
+} $init_f32 =
+
+# Allocate static memory regions
+4 static_region $x_addr =
+4 static_region $y_addr =
+4 static_region $dx_addr =
+4 static_region $dy_addr =
+
+# Initialize static memory regions
+50 x_addr init_i32
+20 y_addr init_i32
+1 dx_addr init_i32
+1 dy_addr init_i32
+
+# Store value in memory
+# <void> <addr> <value> store
+{ type I32 == } { { Void I32 I32 } { Void } Arrow "i32.store" _asm } $store fun
+{ type F32 == } { { Void I32 F32 } { Void } Arrow "f32.store" _asm } $store fun
+{ type I64 == } { { Void I32 I64 } { Void } Arrow "i64.store" _asm } $store fun
+{ type F64 == } { { Void I32 F64 } { Void } Arrow "f64.store" _asm } $store fun
+
+# Setters
+{ # dup type I32 == :assert
+    x_addr swap store } $set_x =
+{ # dup type I32 == :assert
+    y_addr swap store } $set_y =
+{ dx_addr swap store } $set_dx =
+{ dy_addr swap store } $set_dy =
+
+# Getters
+{ x_addr "i32.load" asm } $get_x =
+{ y_addr "i32.load" asm } $get_y =
+{ dx_addr "i32.load" asm } $get_dx =
+{ dy_addr "i32.load" asm } $get_dy =
+
+500 $width =
+400 $height =
+4 $ball_dim =
+
+{ # Generate random int from 1-10
+    { } { F32 } Arrow { "js" "Math.random" } import @
+    10.0f * I32 cast 1 +
+} $rng_1_10 =
+
+{ # Update
+    # These will get tee'd
+    get_x $x = get_y $y =
+    get_dx $dx = get_dy $dy =
+
+    # Collisions
+    { true } { dx } $x_cc fun
+    { x dx <= } { rng_1_10 } $x_cc fun
+    { x dx + width ball_dim - >= } { 0 rng_1_10 - } $x_cc fun
+    x_cc set_dx
+
+    { true } { dy } $y_cc fun
+    { y dy <= } { rng_1_10 } $y_cc fun
+    { y dy + height ball_dim - >= } { 0 rng_1_10 - } $y_cc fun
+    y_cc set_dy
+
+    # Update
+    x get_dx + I32 cast set_x
+    y get_dy + I32 cast set_y
+} $update =
+
+{
+    # Clear scene
+    #0 0 width height
+    #{ Void I32 I32 I32 I32 } { Void } Arrow
+    #{ "js" "contextClearRect" } import @
+
+    # Draw rectangle
+    get_y get_x ball_dim ball_dim
+    { Void I32 I32 I32 I32 } { Void } Arrow
+    { "js" "contextFillRect" } import @
+
+    # Debugging
+    get_x get_y get_dx get_dy
+    { Void I32 I32 I32 I32 } { Void } Arrow
+    { "js" "console.log" } import @
+} $draw =
+
+{ Void } { draw } $draw export
+{ Void } { update } $update export
+{ Void } {
+    update
+    draw
+
+    # Await next frame
+    { Void } { Void } Arrow { "js" "nextFrame" } import @
+} $loop export

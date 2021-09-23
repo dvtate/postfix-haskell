@@ -6,9 +6,10 @@ The all examples can be run in an interactive shell like below. Note that this i
 ```
 $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell
-$ tsc
-$ node dist/tools/shell.js
-1 2 + :data
+$ npm install --global
+$ phc shell
+> "./planning/stdlib/prelude.phs" include use
+> 1 2 + :data
 :data - 3n
 ```
 
@@ -36,6 +37,7 @@ The shell is probably the best way to learn the language, allowing you to run sh
 
 ```
 [postfix-haskell]$ npm start
+> "./planning/stdlib/prelude.phs" include use
 > 1 2 + :data
 :data - 3n
 
@@ -88,7 +90,7 @@ Compile given file using `tools/file.ts` and then pass it's output through `wasm
 ```
 
 ### Inline
-You can embed the language in JavaScript. See a demo in `planning/inline.ts`.
+You can embed the language in JavaScript or TypeScript. See a demo in `planning/inline.ts`.
 
 # Quick intro to language
 - functional: immutable variables defined via `=` operator

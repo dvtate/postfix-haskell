@@ -5,8 +5,8 @@ F32 F64 | $Float =
 Int Float | $Num =
 
 # Absolute value
-{ true } {} $abs fun
-{ 0.0 < } { -1.0 * } $abs fun
+{ true } { touch } $abs fun
+{ 0.0 < } { 0 swap - } $abs fun
 { type F32 == } { "f32.abs" asm } $abs fun
 { type F64 == } { "f64.abs" asm } $abs fun
 
