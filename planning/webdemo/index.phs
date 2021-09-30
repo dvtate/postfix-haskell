@@ -5,13 +5,13 @@
 {   { $v $addr } =
     # NOTE little endian
     v 0xff and
-        addr static_init
+        addr static_init_byte
     v 8 >> 0xff and
-        addr 1 + static_init
+        addr 1 + static_init_byte
     v 16 >> 0xff and
-        addr 2 + static_init
+        addr 2 + static_init_byte
     v 24 >> 0xff and
-        addr 3 + static_init
+        addr 3 + static_init_byte
 } $init_i32 =
 {
     swap "i32.reinterpret_f32" asm swap
@@ -83,7 +83,7 @@
 
 {
     # Clear scene
-    #0 0 width height
+    #0 0 height width
     #{ Void I32 I32 I32 I32 } { Void } Arrow
     #{ "js" "contextClearRect" } import @
 
@@ -93,9 +93,9 @@
     { "js" "contextFillRect" } import @
 
     # Debugging
-    get_x get_y get_dx get_dy
-    { Void I32 I32 I32 I32 } { Void } Arrow
-    { "js" "console.log" } import @
+    # get_x get_y get_dx get_dy
+    # { Void I32 I32 I32 I32 } { Void } Arrow
+    # { "js" "console.log" } import @
 } $draw =
 
 { Void } { draw } $draw export

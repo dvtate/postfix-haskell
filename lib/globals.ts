@@ -471,8 +471,25 @@ const operators : MacroOperatorsSpec = {
                 }
                 inputs.reverse();
 
-                // Make call
-                ctx.push(new expr.InstrExpr(token, type.value.outputTypes[0], `call ${importName} `, expr.fromDataValue(inputs)));
+                // Make call expr
+                // TODO this is sketchy
+                if (type.value.outputTypes.length == 1) {
+                    ctx.push(new expr.InstrExpr(
+                        token,
+                        type.value.outputTypes[0],
+                        `call ${importName} `,
+                        expr.fromDataValue(inputs)));
+                    return;
+                }
+
+                const instrExpr = new expr.MultiInstrExpr(
+                    token,
+                    `call ${importName}`,
+                    expr.fromDataValue(inputs),
+                    type.value.outputTypes,
+                );
+                ctx.push(...instrExpr.results);
+
             }), type.value));
         },
     },
@@ -705,7 +722,7 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    'static_init' : {
+    'static_init_byte' : {
         action: (ctx, token) => {
             // Get args
             if (ctx.stack.length < 2)

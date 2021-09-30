@@ -66,7 +66,7 @@ export default class ModuleManager {
         const scopesKey = scopes.join('\0');
 
         // Imports currently limited to single return
-        if (type.outputTypes.length > 1)
+        if (type.outputTypes.filter(t => !t.isVoid()).length > 1)
             return '';
 
         // Look to see if we've seen it before

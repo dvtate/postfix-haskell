@@ -13,6 +13,7 @@ import debugMacros from './debug_macros';
 import globalOps from './globals';
 import ModuleManager from "./module";
 import { NamespaceMacro } from "./macro";
+import { formatErrorPos } from '../tools/util';
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
@@ -476,7 +477,13 @@ export default class Context {
      * @param msg - what's wrong
      */
     warn(token: LexerToken, msg: string) {
-        console.warn("WARNING: ", msg, token);
+        // console.warn("WARNING: ", msg, token);
+        console.warn(formatErrorPos([{
+            name: 'Warning',
+            message: `Warning: ${msg}`,
+            tokens: [token],
+            stack: new Error().stack
+        }]));
         this.warnings.push({ token, msg });
     }
 

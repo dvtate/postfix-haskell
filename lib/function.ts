@@ -75,6 +75,8 @@ export default class Fun {
      */
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
+        // FIXME: once we know inputs and shit we then need to store them into the Branch expr so that
+        //  the value they're capturing is captured before branch body and only accessed via relevant local
         const oldStack = ctx.stack.slice();
         ctx.stack = ctx.stack.map(v =>
             v instanceof expr.DataExpr
@@ -111,7 +113,7 @@ export default class Fun {
             && (![value.ValueType.Data, value.ValueType.Expr].includes(rv.type)
                 || !types.PrimitiveType.Types.I32.check(rv.datatype) && rv));
         if (typeErr) {
-            console.log("typerror: ", typeErr);
+            console.error("typerror: ", typeErr);
             return ['function conditions must put an I32 on top of stack'];
         }
 
@@ -127,7 +129,7 @@ export default class Fun {
             //     return ret;
             // }));
             // TODO we need to make an error datatype that combines these into a single error
-            console.log(`[warn] ${this.name}: fn errs: ${errs.map(e => e.message || e).join('\n')} `);
+            console.warn(`[warn] ${this.name}: fn errs: ${errs.map(e => e.message || e).join('\n')} `);
             // return errs.reverse()[0];
         }
 
@@ -145,7 +147,7 @@ export default class Fun {
         // No truthy condition found
         // TODO non-const-expr
         if (branches.length === 0) {
-            console.log("stack", ctx.stack);
+            console.error("stack", ctx.stack);
             return new error.SyntaxError(`${this.name}: no matching function case`, [token], ctx);
         }
 
@@ -211,7 +213,7 @@ export default class Fun {
             (v instanceof value.DataValue || v instanceof expr.DataExpr)
             && !v.datatype.getBaseType().check(first[i].datatype)))
         ) {
-            console.log("ios", ios);
+            console.error("ios", ios);
             return ['function must have consistent return types'];
         }
 

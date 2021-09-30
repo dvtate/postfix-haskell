@@ -1,0 +1,73 @@
+"./prelude.phs" include use
+"./bits.phs" include use
+
+{   { $v $addr } =
+    # NOTE little endian
+    v 0xff and
+        addr static_init_byte
+    v 8 >> 0xff and
+        addr 1 + static_init_byte
+    v 16 >> 0xff and
+        addr 2 + static_init_byte
+    v 24 >> 0xff and
+        addr 3 + static_init_byte
+} $init_i32 =
+{
+    swap "i32.reinterpret_f32" asm swap
+    init_i32
+} $init_f32 =
+
+{ pop type F32 == } {
+    swap "i32.reinterpret_f32" asm swap
+    static_init
+} $static_init fun
+{ pop type F64 == } {
+    swap "i64.reinterpret_f64" asm swap
+    static_init
+} $static_init fun
+{ pop type I64 == } {
+    { $v $addr } =
+    v 0xffffffff and "i32.warp_i64" static_init
+    v 32 >> addr
+} $static_init fun
+{ pop type I32 == } {
+    { $v $addr } =
+    # NOTE little endian
+    v 0xff and
+        addr static_init_byte
+    v 8 >> 0xff and
+        addr 1 + static_init_byte
+    v 16 >> 0xff and
+        addr 2 + static_init_byte
+    v 24 >> 0xff and
+        addr 3 + static_init_byte
+} $static_init fun
+
+# Store value in memory
+# <void> <addr> <value> store
+{ pop type I32 == } {
+    swap { Void I32 I32 } { Void } Arrow "i32.store" _asm
+} $store fun
+{ pop type F32 == } {
+    swap { Void I32 F32 } { Void } Arrow "f32.store" _asm
+} $store fun
+{ pop type I64 == } {
+    swap { Void I32 I64 } { Void } Arrow "i64.store" _asm
+} $store fun
+{ pop type F64 == } {
+    swap { Void I32 F64 } { Void } Arrow "f64.store" _asm
+} $store fun
+
+# Load value from memory
+# <void> <I32 addr> <TYPE> load
+{ I32 == } { pop "i32.load" asm } $load fun
+{ I64 == } { pop "i64.load" asm } $load fun
+{ F32 == } { pop "f32.load" asm } $load fun
+{ F64 == } { pop "f64.load" asm } $load fun
+
+# Byte width of type
+# ... this prob should be part of compiler...
+{ I32 == } { pop 4 } $sizeof fun
+{ F32 == } { pop 4 } $sizeof fun
+{ I64 == } { pop 8 } $sizeof fun
+{ F64 == } { pop 8 } $sizeof fun

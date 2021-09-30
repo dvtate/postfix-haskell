@@ -109,7 +109,10 @@ export abstract class DataExpr extends Expr {
  * used to handle multi-returns so that they don't get used out of order
  */
 export class DependentLocalExpr extends DataExpr {
+    // Expression produces the output captured by this one
     source: Expr;
+
+    // Local variable index to which this value is stored
     index: number;
 
     constructor(token: LexerToken, datatype: types.Type, source: Expr) {
@@ -119,13 +122,15 @@ export class DependentLocalExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        // source.out() will update our index to be valid
-
-        return `${
+        // source.out() will update our index to be valid and capture relevant values
+        // into our local
+        const ret = `${
             !this.source._isCompiled ? this.source.out(ctx, fun) : ''
         } ${
             this.datatype.getBaseType().isVoid() ? '' : `(local.get ${this.index})`
         }`;
+        this.source._isCompiled = true;
+        return ret;
     }
 
     children() {
@@ -364,8 +369,8 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>): DataExpr[] {
 
 /**
  * Similar to InstrExpr but with multi-returns captured into dependent locals
- * ... probably not needed
- * @deprecated
+ *
+ * @deprecated - this is mostly used like a tee expression
  */
 export class MultiInstrExpr extends Expr {
     // WASM instruction mnemonic
@@ -388,14 +393,16 @@ export class MultiInstrExpr extends Expr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        //
+        this._isCompiled = true;
+
+        // Get locals
         this.results.forEach(e => {
             if (!e.datatype.isVoid())
                 e.index = fun.addLocal(e.datatype);
         });
-
         const inds = this.results.map(e => e.index).filter(i => i !== -1);
 
+        // Instruction + capture results
         return `(${this.instr} ${
             this.args.map(e => e.out(ctx, fun)).join(' ')
         })\n${
