@@ -13,6 +13,56 @@ import {
     fromDataValue,
 } from './expr';
 
+
+/**
+ * Describes expensive expressions which were on the stack before a branch was invoked
+ *
+ * These expressions are stored into local variables to reduce duplication within branch
+ */
+export class BranchInputExpr extends DataExpr {
+    // Id for local variable into which it should be stored
+    index: number = -1;
+
+    // Expression that this should capture
+    value: DataExpr;
+
+    constructor(token: LexerToken, value: DataExpr) {
+        super(token, value.datatype);
+        this.value = value;
+    }
+
+    /**
+     *
+     * @param ctx
+     * @param fun
+     * @returns
+     */
+    capture(ctx: ModuleManager, fun: FunExportExpr) {
+        // if (this.index !== -1)
+        //     return '';
+        // If it's void no need to capture it
+        if (this.datatype.isVoid())
+            return this.value.out(ctx, fun);
+
+        //
+        this.index = fun.addLocal(this.value.datatype);
+        return `${this.value.out(ctx, fun)}\n(local.set ${this.index})`;
+    }
+
+    /**
+     * @override
+     */
+    out(ctx: ModuleManager, fun: FunExportExpr) {
+        if (!this.datatype.isVoid() && this.index == -1) {
+            console.log(this.value);
+            console.log(new Error('bt'));
+        }
+        return this.datatype.isVoid() ? '' : `(local.get ${this.index})`;
+    }
+
+    static expensive = false;
+};
+
 /**
  * Describes branching action
  *
@@ -31,6 +81,10 @@ export class BranchExpr extends Expr {
     // Where results are delivered
     results: DependentLocalExpr[];
 
+    //
+    inputExprs: BranchInputExpr[];
+
+    //
     args?: Array<value.Value>;
 
     /**
@@ -40,14 +94,16 @@ export class BranchExpr extends Expr {
      */
     constructor(
         tokens: LexerToken[],
-        conditions: Array<DataExpr|value.DataValue>,
-        actions: Array<DataExpr|value.DataValue>[],
+        conditions: Array<DataExpr>,
+        actions: Array<DataExpr>[],
+        inputExprs: BranchInputExpr[],
         public name?:string,
     ) {
         super(tokens[0]);
         this.tokens = tokens;
-        this.conditions = fromDataValue(conditions);
-        this.actions = actions.map(fromDataValue);
+        this.conditions = conditions;
+        this.actions = actions;
+        this.inputExprs = inputExprs;
         this.results = [];
     }
 
@@ -57,6 +113,7 @@ export class BranchExpr extends Expr {
     out(ctx: ModuleManager, fun: FunExportExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
+        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n');
 
         // Compile body
         // Notice order of compilation from top to bottom so that locals are assigned before use
@@ -114,7 +171,7 @@ export class BranchExpr extends Expr {
         // Compile to (if (...) (result ...) (then ...) (else ...))
         // Note that there's some BS done here to work around multi-return if statements not being allowed :(
         const retSet = results.map(r => `(local.set ${r.index})`).join('');
-        let ret: string = (function compileIf(i): string {
+        let ret: string = inputs + (function compileIf(i): string {
             return i + 1 >= acts.length
                 ? acts[i] + retSet
                 : `${conds[i]}\n\t(if ${

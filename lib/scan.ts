@@ -1,3 +1,4 @@
+import { formatErrorPos } from "../tools/util";
 import WasmNumber from "./numbers";
 
 // This handles Context-free grammar
@@ -36,6 +37,14 @@ export class LexerToken {
     ) { }
 
     // TODO toString()
+
+    locationString() {
+        return formatErrorPos([{
+            name: this.constructor.name + ' token',
+            message: this.constructor.name + ' token',
+            tokens: [this],
+        }]);
+    }
 };
 
 // Number literal

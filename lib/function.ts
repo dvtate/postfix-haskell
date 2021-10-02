@@ -82,7 +82,7 @@ export default class Fun {
             v instanceof expr.DataExpr
                 // @ts-ignore typescript doesn't understand `.constructor`
                 && v.constructor.expensive
-                    ? new expr.TeeExpr(v.token, v)
+                    ? new expr.BranchInputExpr(v.token, v)
                     : v);
 
         // Pick which branch to follow
@@ -167,8 +167,10 @@ export default class Fun {
             i = 0;
 
         // Branch is known at compile-time: invoke corresponding action
-        if (isConstExpr)
+        if (isConstExpr) {
+            ctx.stack = oldStack;
             return ctx.toError(branches[i][1].value.action(ctx, token), token);
+        }
 
         // Runtime checks... fmllll
         // Unfortunately we have to trace in order to construct the branch expression
@@ -224,8 +226,13 @@ export default class Fun {
         ctx.stack = oldStack.slice(0, ctx.stack.length);
 
         // Make branch expr
-        // TODO remove `as` here
-        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => t.gives) as expr.DataExpr[][], this.name);
+        const branch = new expr.BranchExpr(
+            this.tokens,
+            fromDataValue(branches.map(b => b[0])),
+            ios.map(t => fromDataValue(t.gives)),
+            inputs.filter(e => e instanceof expr.BranchInputExpr) as expr.BranchInputExpr[],
+            this.name,
+        );
         const results = first.map(o => new expr.DependentLocalExpr(token, o.datatype, branch));
         branch.results = results;
         branch.args = inputs;

@@ -12,48 +12,7 @@
     call 0)
   (export "draw" (func 3))
   (func $update
-    (local i32 i32)
-    i32.const 8
-    i32.const 0
-    i32.load
-    i32.const 8
-    i32.load
-    i32.add
-    i32.const 496
-    i32.ge_s
-    if  ;; label = @1
-      i32.const 0
-      call 1
-      f32.const 0x1.4p+3 (;=10;)
-      f32.mul
-      i32.trunc_f32_s
-      i32.const 1
-      i32.add
-      i32.sub
-      local.set 0
-    else
-      i32.const 0
-      i32.load
-      i32.const 8
-      i32.load
-      i32.le_s
-      if  ;; label = @2
-        call 1
-        f32.const 0x1.4p+3 (;=10;)
-        f32.mul
-        i32.trunc_f32_s
-        i32.const 1
-        i32.add
-        local.set 0
-      else
-        i32.const 8
-        i32.load
-        local.set 0
-      end
-    end
-    local.get 0
-    i32.store
-    i32.const 12
+    (local f32 f32 f32 f32)
     i32.const 4
     i32.load
     i32.const 12
@@ -63,14 +22,58 @@
     i32.ge_s
     if  ;; label = @1
       i32.const 0
+      i32.load
+      i32.const 8
+      i32.load
+      i32.add
+      i32.const 496
+      i32.ge_s
+      if  ;; label = @2
+        i32.const 8
+        i32.const 0
+        call 1
+        local.tee 0
+        f32.const 0x1.4p+3 (;=10;)
+        f32.mul
+        i32.trunc_f32_s
+        i32.const 1
+        i32.add
+        i32.sub
+        i32.store
+      else
+        i32.const 0
+        i32.load
+        i32.const 8
+        i32.load
+        i32.le_s
+        if  ;; label = @3
+          i32.const 8
+          call 1
+          local.tee 1
+          f32.const 0x1.4p+3 (;=10;)
+          f32.mul
+          i32.trunc_f32_s
+          i32.const 1
+          i32.add
+          i32.store
+        else
+          i32.const 8
+          i32.const 8
+          i32.load
+          i32.store
+        end
+      end
+      i32.const 12
+      i32.const 0
       call 1
+      local.tee 2
       f32.const 0x1.4p+3 (;=10;)
       f32.mul
       i32.trunc_f32_s
       i32.const 1
       i32.add
       i32.sub
-      local.set 1
+      i32.store
     else
       i32.const 4
       i32.load
@@ -78,21 +81,22 @@
       i32.load
       i32.le_s
       if  ;; label = @2
+        i32.const 12
         call 1
+        local.tee 3
         f32.const 0x1.4p+3 (;=10;)
         f32.mul
         i32.trunc_f32_s
         i32.const 1
         i32.add
-        local.set 1
+        i32.store
       else
         i32.const 12
+        i32.const 12
         i32.load
-        local.set 1
+        i32.store
       end
     end
-    local.get 1
-    i32.store
     i32.const 0
     i32.const 0
     i32.load
@@ -109,48 +113,7 @@
     i32.store)
   (export "update" (func 4))
   (func $loop
-    (local i32 i32)
-    i32.const 8
-    i32.const 0
-    i32.load
-    i32.const 8
-    i32.load
-    i32.add
-    i32.const 496
-    i32.ge_s
-    if  ;; label = @1
-      i32.const 0
-      call 1
-      f32.const 0x1.4p+3 (;=10;)
-      f32.mul
-      i32.trunc_f32_s
-      i32.const 1
-      i32.add
-      i32.sub
-      local.set 0
-    else
-      i32.const 0
-      i32.load
-      i32.const 8
-      i32.load
-      i32.le_s
-      if  ;; label = @2
-        call 1
-        f32.const 0x1.4p+3 (;=10;)
-        f32.mul
-        i32.trunc_f32_s
-        i32.const 1
-        i32.add
-        local.set 0
-      else
-        i32.const 8
-        i32.load
-        local.set 0
-      end
-    end
-    local.get 0
-    i32.store
-    i32.const 12
+    (local f32 f32 f32 f32)
     i32.const 4
     i32.load
     i32.const 12
@@ -160,14 +123,58 @@
     i32.ge_s
     if  ;; label = @1
       i32.const 0
+      i32.load
+      i32.const 8
+      i32.load
+      i32.add
+      i32.const 496
+      i32.ge_s
+      if  ;; label = @2
+        i32.const 8
+        i32.const 0
+        call 1
+        local.tee 0
+        f32.const 0x1.4p+3 (;=10;)
+        f32.mul
+        i32.trunc_f32_s
+        i32.const 1
+        i32.add
+        i32.sub
+        i32.store
+      else
+        i32.const 0
+        i32.load
+        i32.const 8
+        i32.load
+        i32.le_s
+        if  ;; label = @3
+          i32.const 8
+          call 1
+          local.tee 1
+          f32.const 0x1.4p+3 (;=10;)
+          f32.mul
+          i32.trunc_f32_s
+          i32.const 1
+          i32.add
+          i32.store
+        else
+          i32.const 8
+          i32.const 8
+          i32.load
+          i32.store
+        end
+      end
+      i32.const 12
+      i32.const 0
       call 1
+      local.tee 2
       f32.const 0x1.4p+3 (;=10;)
       f32.mul
       i32.trunc_f32_s
       i32.const 1
       i32.add
       i32.sub
-      local.set 1
+      i32.store
     else
       i32.const 4
       i32.load
@@ -175,21 +182,22 @@
       i32.load
       i32.le_s
       if  ;; label = @2
+        i32.const 12
         call 1
+        local.tee 3
         f32.const 0x1.4p+3 (;=10;)
         f32.mul
         i32.trunc_f32_s
         i32.const 1
         i32.add
-        local.set 1
+        i32.store
       else
         i32.const 12
+        i32.const 12
         i32.load
-        local.set 1
+        i32.store
       end
     end
-    local.get 1
-    i32.store
     i32.const 0
     i32.const 0
     i32.load

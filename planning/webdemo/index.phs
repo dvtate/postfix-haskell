@@ -66,15 +66,15 @@
     get_dx $dx = get_dy $dy =
 
     # Collisions
-    { true } { dx } $x_cc fun
-    { x dx <= } { rng_1_10 } $x_cc fun
-    { x dx + width ball_dim - >= } { 0 rng_1_10 - } $x_cc fun
-    x_cc set_dx
+    { true } { } $x_cc fun
+    { x dx <= } { rng_1_10 set_dx} $x_cc fun
+    { x dx + width ball_dim - >= } { 0 rng_1_10 - set_dx} $x_cc fun
+    x_cc
 
-    { true } { dy } $y_cc fun
-    { y dy <= } { rng_1_10 } $y_cc fun
-    { y dy + height ball_dim - >= } { 0 rng_1_10 - } $y_cc fun
-    y_cc set_dy
+    { true } { } $y_cc fun
+    { y dy <= } { rng_1_10 set_dy } $y_cc fun
+    { y dy + height ball_dim - >= } { 0 rng_1_10 - set_dy } $y_cc fun
+    y_cc
 
     # Update
     x get_dx + I32 cast set_x

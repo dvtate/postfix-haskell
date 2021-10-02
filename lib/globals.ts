@@ -474,11 +474,11 @@ const operators : MacroOperatorsSpec = {
                 // Make call expr
                 // TODO this is sketchy
                 if (type.value.outputTypes.length == 1) {
-                    ctx.push(new expr.InstrExpr(
+                    ctx.push(new expr.TeeExpr(token, new expr.InstrExpr(
                         token,
                         type.value.outputTypes[0],
                         `call ${importName} `,
-                        expr.fromDataValue(inputs)));
+                        expr.fromDataValue(inputs))));
                     return;
                 }
 
