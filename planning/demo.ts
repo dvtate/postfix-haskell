@@ -14,7 +14,7 @@ import * as util from '../tools/util';
     // Compile program
     const ctx = parse(lex(src, fname));
     if (ctx instanceof error.SyntaxError)
-        console.log(util.formatErrorPos([ctx]));
+        console.error(util.formatErrorPos([ctx]));
     if (!(ctx instanceof Context))
         throw ctx;
 

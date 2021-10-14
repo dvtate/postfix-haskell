@@ -18,14 +18,13 @@ import { Expr } from './expr';
  */
 // TODO should probably use Classes/Inheritance instead of this
 export enum ValueType {
-    Macro  = 0, // Macro Literal
+    Macro  = 0, // Macro literal with unknown signature/inlined
     Data   = 1, // Physically representable data known at compile time
     Type   = 2, // DataType/schema
     Id     = 3, // Escaped identifier
     Expr   = 4, // Data that's only known at runtime
     Fxn    = 5, // Function/Branch
     Str    = 6, // String literal, (note not directly usable)
-    // TODO make tuples a distinct ValueType
 };
 
 // TODO should be abstract

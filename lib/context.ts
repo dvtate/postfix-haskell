@@ -338,7 +338,14 @@ export default class Context {
                 throw new Error("wtf?");
 
             // If all inputs are constexprs, invoke at compile-time
-            if (!stack.slice(0, ios.takes.length).some(v => v.type === value.ValueType.Expr)) {
+            const isConstExpr = !stack
+                .slice(stack.length - ios.takes.length)
+                .some(v =>
+                    v.type === value.ValueType.Expr
+                    // && !(v.datatype && v.datatype.isVoid())
+                    );
+            if (isConstExpr) {
+                this.warn(token, 'expanding constexpr');
                 this.trace.push(v.value);
                 try {
                     this.stack = stack;
