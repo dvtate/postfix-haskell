@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint . --ext .ts"
   },
   "repository": {
     "type": "git",
@@ -34,6 +34,9 @@
   },
   "devDependencies": {
     "@types/node": "^14.0.27",
-    "@types/yargs": "^17.0.0"
+    "@types/yargs": "^17.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.1"
   }
 }
