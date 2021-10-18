@@ -1,5 +1,3 @@
-
-import * as error from '../lib/error';
 import lex from '../lib/scan';
 import parse from '../lib/parse';
 import Context from '../lib/context';
@@ -24,7 +22,7 @@ export async function compile(src: string, importObject = {}, options = {}) {
     if (!valid)
         throw new Error("WebAssembly.validate() failed");
     return await WebAssembly.instantiate(wasm.buffer, importObject);
-};
+}
 
 // Tagged template string literal
 /**
@@ -37,7 +35,7 @@ export async function phs(src: TemplateStringsArray, ...bindings: string[]) {
         src.reduce((acc: string, part: string, i: number) => `${acc} "phs_js_bind ${i}" ${part}`),
         bindings.reduce((acc, v, i) => ({ ...acc, [`phs_js_bind ${i}`]: v }), {}),
     );
-};
+}
 
 /*
 Bindings: in this example it prompts user at compile time for this
@@ -78,4 +76,4 @@ export async function compileWat(src: string, importObject = {}) {
         return console.error("wasm invalid!", valid);
 
     return await WebAssembly.instantiate(bin.buffer, importObject);
-};
+}

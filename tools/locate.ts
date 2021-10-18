@@ -1,4 +1,3 @@
-import { positional } from "yargs";
 import { LexerToken } from "../lib/scan";
 import { formatErrorPos, fileLocate } from "./util";
 

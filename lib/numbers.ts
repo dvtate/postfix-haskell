@@ -29,7 +29,7 @@ export enum NumberType {
 
     F32 = 5,
     F64 = 6,
-};
+}
 
 // Emulate WASM number types
 export default class WasmNumber {
@@ -251,9 +251,10 @@ export default class WasmNumber {
             // Wrap bits
             case NumberType.I32: case NumberType.U32:
                 this._repr = BigInt.asIntN(32, this._repr as bigint);
+                break;
             case NumberType.I64: case NumberType.U64:
                 this._repr = BigInt.asIntN(64, this._repr as bigint);
-
+                break;
             // f32/64 numbers should already be reduced correctly by containers
         }
     }
@@ -454,7 +455,7 @@ export default class WasmNumber {
      * @param b other
      * @param signed do we used signed vs unsigned bitshift operation
      */
-    shr(b: WasmNumber, signed: boolean = true) {
+    shr(b: WasmNumber, signed = true) {
         // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
@@ -640,7 +641,7 @@ export default class WasmNumber {
                 this._repr = BigInt(dv.getInt32(0, true));
                 this._type = NumberType.I32;
                 return this;
-            };
+            }
 
             // F64 -> I64
             case NumberType.F64: {
@@ -649,7 +650,7 @@ export default class WasmNumber {
                 this._repr = dv.getBigInt64(0, true);
                 this._type = NumberType.I64;
                 return this;
-            };
+            }
 
             // I32 -> F32
             case NumberType.I32: {
@@ -659,7 +660,7 @@ export default class WasmNumber {
                 dv.setInt32(0, Number(v), true);
                 this._type = NumberType.F32;
                 return this;
-            };
+            }
 
             // I64 -> F64
             case NumberType.I64: {
@@ -669,7 +670,7 @@ export default class WasmNumber {
                 dv.setBigInt64(0, v, true);
                 this._type = NumberType.F64;
                 return this;
-            };
+            }
 
             default:
                 throw new Error("fuck");
@@ -691,4 +692,4 @@ export default class WasmNumber {
 
         return this;
     }
-};
+}

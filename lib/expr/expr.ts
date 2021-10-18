@@ -15,7 +15,7 @@ import ModuleManager from '../module';
  */
 export abstract class Expr extends value.Value {
     // State variable to prevent duplicated compilation
-    _isCompiled: boolean = false;
+    _isCompiled = false;
 
     /**
      * @constructor
@@ -81,7 +81,7 @@ export abstract class Expr extends value.Value {
 
         return [...ret];
     }
-};
+}
 
 /**
  * Data Expressions
@@ -101,7 +101,7 @@ export abstract class DataExpr extends Expr {
     }
 
     static expensive = false;
-};
+}
 
 /**
  * For when the output of an expression is stored in a local variable
@@ -136,8 +136,7 @@ export class DependentLocalExpr extends DataExpr {
     children() {
         return this.source.children();
     }
-
-};
+}
 
 /**
  * Function Export expression
@@ -165,7 +164,7 @@ export class FunExportExpr extends Expr {
         super(token);
         this.name = name;
         this.inputTypes = inputTypes.filter(t => !t.getBaseType().isVoid());
-        this._locals = inputTypes.filter(t => !t.getBaseType().isVoid()).map(t => null);
+        this._locals = inputTypes.filter(t => !t.getBaseType().isVoid()).map(() => null);
     }
 
     /**
@@ -215,7 +214,7 @@ export class FunExportExpr extends Expr {
             outs.join('\n\t')
         })\n(export "${this.name}" (func $${this.name}))`;
     }
-};
+}
 
 /**
  * Function parameters expression
@@ -244,7 +243,7 @@ export class ParamExpr extends DataExpr {
             return '';
         return `(local.get ${this.position})`;
     }
-};
+}
 
 /**
  * Constant value that we're treating as an Expr
@@ -275,7 +274,7 @@ export class NumberExpr extends DataExpr {
     children(): Expr[] {
         return [];
     }
-};
+}
 
 /**
  * Passes stack arguments to desired WASM instruction
@@ -305,7 +304,7 @@ export class InstrExpr extends DataExpr {
     children() {
         return this.args;
     }
-};
+}
 
 /**
  * Used for repeated expressions
@@ -340,7 +339,7 @@ export class TeeExpr extends DataExpr {
 
     // Prevent this from getting re-tee'd
     static expensive = false;
-};
+}
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -414,5 +413,4 @@ export class MultiInstrExpr extends Expr {
     children() {
         return this.args;
     }
-
-};
+}

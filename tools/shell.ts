@@ -10,7 +10,7 @@ import Context from '../lib/context';
  * @param lexFlag - should we debug the lexer?
  * @param verboseFlag - did user pass verbose flag?
  */
-export default function runShell(lexFlag: boolean = false, verboseFlag: boolean = true) {
+export default function runShell(lexFlag = false, verboseFlag = true) {
     // Create line reader
     const rl = readline.createInterface ({
         input: process.stdin,

@@ -16,14 +16,14 @@ export enum TokenType {
     ContainerClose = 3, // Container close (temp)
     Identifier = 4,     // Identifier
     Block = 5,          // Macro
-};
+}
 
 // Internal
 export enum ContainerType {
     Curly = 0,      // {}
     Bracket = 1,    // []
     Paren = 2,      // ()
-};
+}
 
 // Generic token
 export class LexerToken {
@@ -45,7 +45,7 @@ export class LexerToken {
             tokens: [this],
         }]);
     }
-};
+}
 
 // Number literal
 export class NumberToken extends LexerToken {
@@ -55,7 +55,7 @@ export class NumberToken extends LexerToken {
         super(token, TokenType.Number, position, file);
         this.value = new WasmNumber().fromString(token);
     }
-};
+}
 
 /**
  * The Token is initialized as a container open/close token
@@ -74,7 +74,7 @@ export class BlockToken extends LexerToken {
             ContainerType.Paren, ContainerType.Paren,
         ]['{}[]()'.indexOf(token)];
     }
-};
+}
 
 /**
  * Describes tokenized string
@@ -114,8 +114,8 @@ function toToken(token: string, position: number, file: string): LexerToken {
  * @returns - List of tokens
  */
 export function lex(src: string, file?: string): LexerToken[] {
-    let i: number = 0,
-        prev: number = 0;
+    let i = 0,
+        prev = 0;
     const ret: LexerToken[] = [];
 
     // Add token to return
@@ -178,7 +178,7 @@ export function lex(src: string, file?: string): LexerToken[] {
 
     // Return list of token objects
     return ret.filter(Boolean);
-};
+}
 
 /**
  * Throw syntax error
@@ -191,6 +191,7 @@ function throwParseError(message: string, tokens: LexerToken[], file?: string) {
     // TODO convert to constructor
     throw {
         type: 'SyntaxError',
+        name: 'LexerError',
         message,
         tokens,
         stack: new Error(),
@@ -206,42 +207,35 @@ function throwParseError(message: string, tokens: LexerToken[], file?: string) {
  * @param file - file name/path
  */
 export default function scan(code: string, file?: string): LexerToken[] {
-
-    const tokens = lex(code, file);
-    let ret: LexerToken[] = [];
-
     // Parse tokens
+    const tokens = lex(code, file);
+    const ret: LexerToken[] = [];
     tokens.forEach(tok => {
-        switch (tok.type) {
-            // Collapse containers
-            case TokenType.ContainerClose:
-                // Index of most recent container
-                // TODO use .reverse+findIndex?
-                let ind: number;
-                for (ind = ret.length - 1; ind >= 0; ind--)
-                    if (ret[ind].type === TokenType.ContainerOpen)
-                        break;
+        // Collapse containers
+        if (tok.type == TokenType.ContainerClose) {
+            // Index of most recent container
+            // TODO use .reverse+findIndex?
+            let ind: number;
+            for (ind = ret.length - 1; ind >= 0; ind--)
+                if (ret[ind].type === TokenType.ContainerOpen)
+                    break;
 
-                // No openers
-                if (ind === -1)
-                    throwParseError('Unexpected symbol ' + tok.token, [tok]);
+            // No openers
+            if (ind === -1)
+                throwParseError('Unexpected symbol ' + tok.token, [tok]);
 
-                // Not matching
-                // @ts-ignore
-                if (ret[ind].subtype !== tok.subtype)
-                    throwParseError(`Container mismatch ${ret[ind].token} vs. ${tok.token}`, [ret[ind], tok]);
+            // Not matching
+            // @ts-ignore
+            if (ret[ind].subtype !== tok.subtype)
+                throwParseError(`Container mismatch ${ret[ind].token} vs. ${tok.token}`, [ret[ind], tok]);
 
-                // Collapse body
-                // Note for now only containers are for 'Block'
-                (ret[ind] as BlockToken).body = ret.splice(ind + 1);
-                ret[ind].type = TokenType.Block;
-                break;
-
-            // Handle basic tokens
-            default:
-                ret.push(tok);
-                break;
+            // Collapse body
+            // Note for now only containers are for 'Block'
+            (ret[ind] as BlockToken).body = ret.splice(ind + 1);
+            ret[ind].type = TokenType.Block;
+        } else {
+            ret.push(tok);
         }
     });
     return ret;
-};
+}

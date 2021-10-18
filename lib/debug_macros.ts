@@ -48,7 +48,7 @@ const syntaxTypes: {[k: number] : string} =
 // Some operators for compile time debugging
 const debugOperators = {
     // Syntactic type for given value
-    ':type' : (ctx: Context, token: LexerToken) => {
+    ':type' : (ctx: Context) => {
 
         // Return debug object with relevant info
         const v = ctx.pop();
@@ -59,17 +59,17 @@ const debugOperators = {
     },
 
     // Debug js stack trace
-    ':ctrace' : (ctx: Context, token: LexerToken) => new Error('').stack,
+    ':ctrace' : (ctx: Context) => new Error('').stack,
 
     // Debug context
-    ':module' : (ctx: Context, token: LexerToken) => ctx.module,
-    ':scopes' : (ctx: Context, token: LexerToken) => ctx.scopes,
-    ':globals' : (ctx: Context, token: LexerToken) => ctx.globals,
-    ':context' : (ctx: Context, token: LexerToken) => ctx,
+    ':module' : (ctx: Context) => ctx.module,
+    ':scopes' : (ctx: Context) => ctx.scopes,
+    ':globals' : (ctx: Context) => ctx.globals,
+    ':context' : (ctx: Context) => ctx,
 
     // View last item on stack
-    ':inspect' : (ctx: Context, token: LexerToken) => ctx.pop(),
-    ':data' : (ctx: Context, token: LexerToken) => {
+    ':inspect' : (ctx: Context) => ctx.pop(),
+    ':data' : (ctx: Context) => {
         const depict = (v: value.Value): string =>
             v.type === value.ValueType.Data
                 ? v instanceof value.TupleValue
@@ -90,8 +90,8 @@ const debugOperators = {
     },
 
     // View entire stack
-    ':stack' : (ctx: Context, token: LexerToken) => ctx.stack,
-    ':stacklen' : (ctx: Context, token: LexerToken) => ctx.stack.length,
+    ':stack' : (ctx: Context) => ctx.stack,
+    ':stacklen' : (ctx: Context) => ctx.stack.length,
 
     // Prevent compile if value is false
     ':assert' : (ctx: Context, token: LexerToken) => {
@@ -116,10 +116,10 @@ const debugOperators = {
     },
 
     // Compilation and stuff
-    ':targets' : (ctx: Context, token: LexerToken) => ctx.exports,
-    ':compile' : async (ctx: Context, token: LexerToken) => await ctx.outWast({}),
-    ':wast' : async (ctx: Context, token: LexerToken) => await ctx.outWast({ folding: true }),
-    ':wat' : async (ctx: Context, token: LexerToken) => await ctx.outWast({ folding: false }),
+    ':targets' : (ctx: Context) => ctx.exports,
+    ':compile' : async (ctx: Context) => await ctx.outWast({}),
+    ':wast' : async (ctx: Context) => await ctx.outWast({ folding: true }),
+    ':wat' : async (ctx: Context) => await ctx.outWast({ folding: false }),
 };
 
 // Export Macros because user shouldn't override

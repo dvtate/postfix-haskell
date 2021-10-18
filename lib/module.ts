@@ -43,7 +43,7 @@ export default class ModuleManager {
     /**
      * Used to generate unique importIds
      */
-    private static uid: number = 0;
+    private static uid = 0;
 
     /**
      * @param optLevel - optimization level for the compilation
@@ -248,4 +248,4 @@ export default class ModuleManager {
         // Start out with enough pages for static data + 1
         return Math.floor(this.staticData.length / 64000 + 1);
     }
-};
+}

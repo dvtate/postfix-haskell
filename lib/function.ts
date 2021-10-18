@@ -4,8 +4,7 @@ import * as error from './error';
 import * as expr from './expr';
 import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
-import { inflateRawSync } from 'zlib';
-import { DependentLocalExpr, fromDataValue } from './expr';
+import { fromDataValue } from './expr';
 
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
@@ -43,7 +42,7 @@ export default class Fun {
     /**
      * Is the function marked as recursive?
      */
-    recursive: boolean = false;
+    recursive = false;
 
     /**
      * @param [token] - token for first def
@@ -278,4 +277,4 @@ export default class Fun {
         ctx.push(...ret);
         */
     }
-};
+}

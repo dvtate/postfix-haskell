@@ -53,12 +53,12 @@ export abstract class Type {
         // Default behavior is to act as a wildcard
         return type != null;
     }
-};
+}
 
 /**
  * Type which matches any other type
  */
-export class AnyType extends Type {};
+export class AnyType extends Type {}
 
 /**
  * More specific than types, used for applying methods and stuff
@@ -137,9 +137,9 @@ export class ClassType extends Type {
     }
 
     /**
-     * @returns {Number[]} - list of class ids for this type
+     * @returns - list of class ids for this type
      */
-    getClassIds(): Number[] {
+    getClassIds(): number[] {
         const ret = [this.id];
         let type = this.type;
         while (type instanceof ClassType) {
@@ -155,7 +155,7 @@ export class ClassType extends Type {
     isVoid() {
         return this.getBaseType().isVoid();
     }
-};
+}
 
 /**
  * When need to be able to handle more than one type
@@ -204,7 +204,7 @@ export class UnionType extends Type {
     getWasmTypeName(name?: string) {
         return 'invalid union type';
     }
-};
+}
 
 /**
  * When need to store more than one piece of data in a single value
@@ -269,7 +269,7 @@ export class TupleType extends Type {
                 return false;
         return true;
     }
-};
+}
 
 /**
  * Type that's a component of compilation target
@@ -324,7 +324,7 @@ export class PrimitiveType extends Type {
     flatPrimitiveList(): PrimitiveType[] {
         return [this]
     }
-};
+}
 
 /**
  * Datatype to describe function/macros
@@ -357,6 +357,6 @@ export class ArrowType extends Type {
         return !(this.inputTypes.some((t, i) => t.check(type.inputTypes[i]))
             || this.outputTypes.some((t, i) => t.check(type.outputTypes[i])));
     }
-};
+}
 
 // TODO add ValueTypes as classes?

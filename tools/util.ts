@@ -6,7 +6,7 @@ interface FileSnapshot {
     line: string;
     lineNumber: number;
     lineOffset: number;
-};
+}
 
 /**
  * Get a snapshot of a token
@@ -22,13 +22,13 @@ export function fileLocate(file: string, pos: number): FileSnapshot {
         else
             cur += 1 + lines[lineNumber].length;
     return null;
-};
+}
 
 
 interface CompileError extends Error {
     message: string;
     tokens: Array<lex.LexerToken>;
-};
+}
 
 /**
  * Make a pretty error string
@@ -51,4 +51,4 @@ export function formatErrorPos(errors: CompileError[]): string {
                     }\n\n...\n\n${e.tokens.slice(-15).map(ppToken).join('\n')}`
                 : e.tokens.map(ppToken).join('\n')
         }`).join('\n\n');
-};
+}

@@ -25,7 +25,7 @@ export enum ValueType {
     Expr   = 4, // Data that's only known at runtime
     Fxn    = 5, // Function/Branch
     Str    = 6, // String literal, (note not directly usable)
-};
+}
 
 // TODO should be abstract
 /**
@@ -66,7 +66,7 @@ export class Value {
     typename() {
         return ValueType[this.type];
     }
-};
+}
 
 /**
  * Data with a user-level type, this includes unions, structs and aliases
@@ -78,7 +78,7 @@ export class DataValue extends Value {
     constructor(token: LexerToken, type: types.Type, value: any) {
         super(token, ValueType.Data, value, type);
     }
-};
+}
 
 /**
  * Invokable block of code
@@ -91,7 +91,7 @@ export class MacroValue <T extends Macro = Macro> extends Value{
     constructor(token: LexerToken, value: Macro, type: types.ArrowType = null) {
         super(token, ValueType.Macro, value, type);
     }
-};
+}
 
 /**
  * Primitive data, native wasm types
@@ -122,7 +122,7 @@ export class NumberValue extends DataValue {
     children(): Expr[] {
         return [];
     }
-};
+}
 
 /**
  * Escaped Identifier
@@ -142,7 +142,7 @@ export class IdValue extends Value {
     deref(ctx: Context) {
         return ctx.getId(this.value.slice(1), this.scopes || ctx.scopes);
     }
-};
+}
 
 /**
  * Packed values
@@ -159,7 +159,7 @@ export class TupleValue extends DataValue {
     out(ctx: ModuleManager, fun?: expr.FunExportExpr) {
         return this.value.map(v => v.out(ctx, fun)).join('');
     }
-};
+}
 
 // Note that there is no need for a UnionValue class because there are no instances of unions
 // unions will only be needed as types for opaque?-expressions
@@ -172,4 +172,4 @@ export class StrValue extends Value {
     constructor(token: LexerToken) {
         super(token, ValueType.Str, token.token);
     }
-};
+}

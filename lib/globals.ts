@@ -77,7 +77,7 @@ const operators : MacroOperatorsSpec = {
             // Bind idenfiers
             syms.forEach(sym => {
                 // Verify no reassign
-                let id = sym.value.slice(1);
+                const id = sym.value.slice(1);
                 const [scope] = sym.scopes.slice(-1);
                 if (scope[id])
                     ctx.warn(token, `${id} is already defined in current scope`);
@@ -96,8 +96,8 @@ const operators : MacroOperatorsSpec = {
             // Get input
             if (ctx.stack.length < 2)
                 return ['expected 2 operands'];
-            let b = ctx.pop();
-            let a = ctx.pop();
+            const b = ctx.pop();
+            const a = ctx.pop();
             if (a.type != b.type)
                 return ['invalid syntax'];
             if (a.type !== value.ValueType.Type)
@@ -163,7 +163,7 @@ const operators : MacroOperatorsSpec = {
             let v = ctx.pop();
             if (v.type == value.ValueType.Type) {
                 const cpy = v;
-                v = new value.MacroValue(token, new CompilerMacro((ctx, token) => void ctx.push(cpy)));
+                v = new value.MacroValue(token, new CompilerMacro((ctx) => void ctx.push(cpy)));
             }
 
             // Validate input
@@ -180,7 +180,7 @@ const operators : MacroOperatorsSpec = {
                 // TODO i think scoping is fucked :/
                 // Invoke v
                 const oldStack = ctx.stack.slice();
-                const ev = v.value.action(ctx, token);
+                const ev = v.value.action(ctx, tok);
                 if (typeof ev === 'object' && !(ev instanceof Context))
                     return ev;
                 // console.log('ev', ev);
@@ -196,8 +196,8 @@ const operators : MacroOperatorsSpec = {
 
                 // Use class wrapper
                 ctx.push(
-                    new value.Value(token, value.ValueType.Type,
-                        new types.ClassType(token, t.value, id)));
+                    new value.Value(tok, value.ValueType.Type,
+                        new types.ClassType(tok, t.value, id)));
             };
 
             // Push
@@ -289,7 +289,7 @@ const operators : MacroOperatorsSpec = {
 
     // Make variable reference global
     'global' : {
-        action: (ctx: Context, token: LexerToken) => {
+        action: (ctx: Context) => {
             // Change reference at back of stack to use global scope
             if (ctx.stack.length === 0)
                 return ['expected a reference to globalize'];
@@ -496,7 +496,7 @@ const operators : MacroOperatorsSpec = {
 
     // Mark as recursive
     'rec' : {
-        action: (ctx: Context, token: LexerToken) => {
+        action: (ctx: Context) => {
             if (ctx.stack.length === 0)
                 return ['missing value'];
             const arg = ctx.pop();

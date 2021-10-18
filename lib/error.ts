@@ -11,7 +11,7 @@ import { Type } from "./datatypes";
 
 // TODO Only a few of these are used atm ...
 
-export class CompilerError extends Error {};
+export class CompilerError extends Error {}
 
 // Base Class for parse-time errors
 export class ParseError extends CompilerError {
@@ -23,7 +23,7 @@ export class ParseError extends CompilerError {
     }
 
     // TODO toString or sth
-};
+}
 
 // Reference specific section(s) of code
 export class SyntaxError extends ParseError {
@@ -40,7 +40,7 @@ export class SyntaxError extends ParseError {
         this.tokens = tokens instanceof Array ? tokens : [tokens];
         this.ctx = ctx;
     }
-};
+}
 
 export class TypeError extends CompilerError {
     tokens: LexerToken[];
@@ -55,19 +55,19 @@ export class TypeError extends CompilerError {
         super(message);
         this.tokens = tokens instanceof Array ? tokens : [tokens];
     }
-};
+}
 
 // Invalid Expression
-class ValueError extends SyntaxError {};
+class ValueError extends SyntaxError {}
 
 // Invalid Data Expression
-class DataError extends SyntaxError {};
+class DataError extends SyntaxError {}
 
 // Unexpected Expression Syntactic Type
-class ValueTypeError extends ValueError {};
+class ValueTypeError extends ValueError {}
 
 // Received a DataValue as expected but it's wrong .datatype
-class DataTypeError extends SyntaxError {};
+class DataTypeError extends SyntaxError {}
 
 // Unexpected
-class DataValueError extends SyntaxError {};
+class DataValueError extends SyntaxError {}

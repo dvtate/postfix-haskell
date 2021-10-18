@@ -3,7 +3,8 @@ import Context from './context';
 import * as types from './datatypes'
 import * as expr from './expr';
 import * as value from './value';
-import WasmNumber from './numbers';
+import * as error from './error';
+import WasmNumber, { NumberType } from './numbers';
 import { fromDataValue } from './expr';
 
 // Describes an instruction
@@ -42,7 +43,7 @@ function binaryMath(
 
     // Type agnostic handler
     handler = (ctx: Context, args: WasmNumber[]): WasmNumber[] | Error =>
-        [(args[0].clone()[name] as any)(...args.slice(1))]
+        [(args[0].clone()[name] as CallableFunction)(...args.slice(1))]
 ): AssemblyDBEntry[] {
 
     // Versions for each type
@@ -193,7 +194,7 @@ function genConversions(): AssemblyDBEntry[] {
         f32: types.PrimitiveType.Types.F32,
         f64: types.PrimitiveType.Types.F64,
     };
-    const ntMap: any = {
+    const ntMap: { [k: string ] : NumberType } = {
         i32: WasmNumber.Type.I32,
         i64: WasmNumber.Type.I64,
         f32: WasmNumber.Type.F32,
@@ -324,7 +325,7 @@ function genMemory() {
 }
 
 // These aren't as simple to describe as they have polymorphism and stuff so we treat them as special operators
-const opInstrs: { [k : string] : (ctx: Context, token: LexerToken, cmd: string) => any } = {
+const opInstrs: { [k : string] : (ctx: Context, token: LexerToken, cmd: string) => string[] | null | void | error.SyntaxError } = {
     'select' : (ctx, token, cmd) => {
         // Get args
         if (ctx.stack.length < 3)

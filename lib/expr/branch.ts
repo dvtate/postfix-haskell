@@ -9,8 +9,6 @@ import {
     Expr,
     FunExportExpr,
     DependentLocalExpr,
-    NumberExpr,
-    fromDataValue,
 } from './expr';
 
 
@@ -23,7 +21,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * Id for local variable into which it should be stored
      */
-    index: number = -1;
+    index = -1;
 
     /**
      * Expression that this should capture
@@ -65,7 +63,7 @@ export class BranchInputExpr extends DataExpr {
     }
 
     static expensive = false;
-};
+}
 
 /**
  * Describes branching action
@@ -208,4 +206,4 @@ export class BranchExpr extends Expr {
     children(): Expr[] {
         return this.conditions.concat(this.actions.reduce((a, v)=>a.concat(v)));
     }
-};
+}

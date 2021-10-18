@@ -18,7 +18,7 @@ export abstract class Macro {
     /**
      * Did the user flag this macro as recursive?
      */
-    recursive: boolean = false;
+    recursive = false;
 
     /**
      * Invoke macro
@@ -27,7 +27,7 @@ export abstract class Macro {
      * @param token - token of invokee
      * @returns - Macro return
      */
-    action(ctx: Context, token: LexerToken): ActionRet {}
+    abstract action(ctx: Context, token: LexerToken): ActionRet;
 }
 
 /**
@@ -55,7 +55,7 @@ export class CompilerMacro extends Macro {
     toString(){
         return `CompilerMacro { ${this.name} }`;
     }
-};
+}
 
 
 /**
@@ -142,7 +142,7 @@ export class LiteralMacro extends Macro {
     toString() {
         return `LiteralMacro { ${this.token.file || this.token.position} }`;
     }
-};
+}
 
 /**
  * Macro Value that when given an id returns corresponding id in namespace
@@ -204,4 +204,4 @@ export class LiteralMacro extends Macro {
             curScope[id] = v;
         });
     }
-};
+}

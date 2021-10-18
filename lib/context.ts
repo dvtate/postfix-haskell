@@ -37,14 +37,14 @@ export class TraceResults {
         this.gives = gives;
         this.delta = delta;
     }
-};
+}
 
 interface TraceResultTracker {
     token: LexerToken,
     value: value.Value,
     result?: TraceResults,
     body?: expr.RecursiveBodyExpr,
-};
+}
 
 
 /**
@@ -67,8 +67,8 @@ export default class Context {
     globals: { [k: string] : value.Value };
 
     // Stack tracing cunters
-    initialStackSize: number = 0;
-    minStackSize: number = 0;
+    initialStackSize = 0;
+    minStackSize = 0;
 
     // Warnings
     warnings: Array<{ token: LexerToken, msg: string }> = [];
@@ -88,7 +88,7 @@ export default class Context {
     includedFiles: { [k: string]: NamespaceMacro } = {};
 
     // Default constructor
-    constructor(optLevel: number = 1, private entryPoint?: string) {
+    constructor(optLevel = 1, private entryPoint?: string) {
         // Initialize Module Manager
         this.optLevel = optLevel;
         this.module = new ModuleManager(this);
@@ -185,7 +185,7 @@ export default class Context {
      * @deprecated
      */
     cmpStack(old: value.Value[]) {
-        let i: number = 0;
+        let i = 0;
         for (; i < old.length; i++)
             if (this.stack[i] !== old[i])
                 return i;
@@ -259,7 +259,7 @@ export default class Context {
      * @param isTrace - is this a trace invoke? or normal?
      * @returns - null if recursive trace, error.SyntaxError on error, this on success
      */
-    invoke(v : value.Value, token: LexerToken, isTrace : boolean = false): Context | error.SyntaxError | null {
+    invoke(v : value.Value, token: LexerToken, isTrace = false): Context | error.SyntaxError | null {
         // TODO this algorithm is extrememly complicated and confusing and inefficient
         //  there must be a simpler way... time spent to create: ~1 month
 
@@ -424,7 +424,7 @@ export default class Context {
      * @param v - value to convert to error
      * @param token - location in code
      */
-    toError(v: any, token: LexerToken): error.SyntaxError | Context | null {
+    toError(v: unknown, token: LexerToken): error.SyntaxError | Context | null {
         // Success
         if (v === undefined)
             return this;
@@ -436,7 +436,9 @@ export default class Context {
             v = new error.SyntaxError(v.map(e => `${token.token}: ${e}`).join('; '), token, this);
         if (v instanceof error.SyntaxError)
             v.tokens.push(token);
-        return v;
+
+        console.error('wtf?', v);
+        throw new Error('unknown value recieved');
     }
 
     /**
@@ -531,7 +533,7 @@ export default class Context {
         // Validate
         if (validate) {
             try {
-                const invalid: any = mod.validate();
+                const invalid = Boolean(mod.validate());
                 if (invalid) {
                     console.error(invalid);
                     console.log(src);
@@ -594,8 +596,7 @@ export default class Context {
         });
 
         // Generate wasm binary
-        const invalid = mod.validate();
+        mod.validate();
         return mod.toBinary({log: true});
     }
-
-};
+}

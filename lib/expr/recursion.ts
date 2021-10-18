@@ -1,6 +1,5 @@
 import * as value from '../value';
 import * as types from '../datatypes';
-import * as error from '../error';
 import { LexerToken } from '../scan';
 import ModuleManager from '../module';
 
@@ -36,7 +35,7 @@ export class RecursiveTakesExpr extends DataExpr {
     out(ctx: ModuleManager, fun: FunExportExpr) {
         return this.value.out(ctx, fun);
     }
-};
+}
 
 /**
  * The body of the inlined, TCO'd recursive function
@@ -62,7 +61,7 @@ export class RecursiveBodyExpr extends Expr {
     // Used to make unique label
     static _uid = 0;
 
-    isTailRecursive: boolean = false;
+    isTailRecursive = false;
 
     /**
      * Recursive helper function
@@ -87,10 +86,10 @@ export class RecursiveBodyExpr extends Expr {
             return this.outFn(ctx, fun);
 
         // Select non void types
-        const voidTakes: Array<DependentLocalExpr | false>
-            = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
-        const voidGives: Array<DependentLocalExpr | false>
-            = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+        // const voidTakes: Array<DependentLocalExpr | false>
+        //     = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+        // const voidGives: Array<DependentLocalExpr | false>
+        //     = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
 
         // Store inputs in locals
         this.takeExprs.forEach(e => {
@@ -160,15 +159,13 @@ export class RecursiveBodyExpr extends Expr {
         });
 
         // Invoke helper function and capture return values into dependent locals
-        let ret = `${
+        return `${
             this.takes.map(e => e.out(ctx, fun)).join('')
         }${
             captureExprs.map(e => e.out(ctx, fun)).join('')
         }\n\t(call ${this.label})${
             this.giveExprs.map(e => e.datatype.isVoid() ? '' : `(local.set ${e.index})`).join('')
         }`;
-
-        return ret;
     }
 
     children() {
@@ -187,9 +184,9 @@ export class RecursiveBodyExpr extends Expr {
         if (this.gives.some(c => c instanceof RecursiveResultExpr))
             return true;
 
-        function isSameBodyCall(e: Expr): boolean {
-            return false
-        }
+        // function isSameBodyCall(e: Expr): boolean {
+        //     return false
+        // }
 
         // If body not a branch result DependentLocalExpr, return false
         // Go through branch conditions, if any of them calls self say no
@@ -202,7 +199,7 @@ export class RecursiveBodyExpr extends Expr {
         // TODO actually detect tail-recursion lol
         return false;
     }
-};
+}
 
 // TODO swap extension order with FunExportExpr
 /**
@@ -273,7 +270,7 @@ export class RecFunExpr extends FunExportExpr {
         });
         return ret;
     }
-};
+}
 
 /**
  * Recursive calls within function body
@@ -317,7 +314,7 @@ export class RecursiveCallExpr extends Expr {
         // Call helper function
         // Note this will always be in the body of the helper function and thus a recursive call
         return `\n\t${
-            this.takeExprs.map((e, i) => e.out(ctx, fun)).join(' ')
+            this.takeExprs.map(e => e.out(ctx, fun)).join(' ')
         } ${
             this.body.helper.copiedParams.map(p => p.out(ctx, fun)).join('')
         } (call ${this.body.label})`;
@@ -329,7 +326,7 @@ export class RecursiveCallExpr extends Expr {
     children(): Expr[] {
         return this.body.children().concat(this.takeExprs).concat(this.giveExprs);
     }
-};
+}
 
 /**
  * Unused Result of an expression that can have multiple return values
@@ -354,7 +351,7 @@ export class RecursiveResultExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        let ret: string = '';
+        let ret = '';
         if (!this.source._isCompiled)
             ret += this.source.out(ctx, fun);
 
@@ -368,4 +365,4 @@ export class RecursiveResultExpr extends DataExpr {
     children() {
         return [this.source];
     }
-};
+}

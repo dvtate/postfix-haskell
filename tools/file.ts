@@ -21,10 +21,10 @@ import * as util from './util';
  */
 export default async function compileFile(
     fname: string,
-    trackTime: boolean = true,
-    fast: boolean = false,
-    folding: boolean = false,
-    optimize: boolean = false,
+    trackTime = true,
+    fast = false,
+    folding = false,
+    optimize = false,
 ) {
     // Replace with full, absolute path
     fname = fs.realpathSync(fname);
@@ -82,4 +82,4 @@ export default async function compileFile(
         }
         throw e;
     }
-};
+}

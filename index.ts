@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import yargs = require('yargs');
-import cp = require('child_process');
 
 import runShell from './tools/shell';
 import compileFile from './tools/file';

@@ -11,8 +11,6 @@ export class WATCode {
     parts: string[] = [];
     sources: expr.Expr[] = [];
 
-    constructor(){}
-
     add(s: string, e: expr.Expr) {
         this.parts.push(s);
         this.sources.push(e);
@@ -22,7 +20,7 @@ export class WATCode {
         this.parts.push(...other.parts);
         this.sources.push(...other.sources);
     }
-};
+}
 
 /**
  * this is a parametric template string literal
@@ -36,7 +34,7 @@ export default function wat(e: expr.Expr) {
                 a.concat(bindings[i - 1]);
             return a;
         }, new WATCode());
-};
+}
 
 
 /* Moved to Type.getWasmTypename

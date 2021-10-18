@@ -45,7 +45,7 @@ export default function parse(tokens: LexerToken[], ctx = new Context(undefined,
                     ctx.push(new value.IdValue(t, t.token, ctx.scopes.slice()));
                 } else {
                     // Invoke operator
-                    let v = ctx.getId(t.token);
+                    const v = ctx.getId(t.token);
                     if (!v)
                         return new error.SyntaxError(`${t.token} is undefined`, t, ctx);
                     // console.log('invoke', t.token, v);
@@ -58,4 +58,4 @@ export default function parse(tokens: LexerToken[], ctx = new Context(undefined,
         }
     }
     return ctx;
-};
+}
