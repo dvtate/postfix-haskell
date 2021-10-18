@@ -22,7 +22,7 @@
 { swap pop } { swap pop @ } $|| global fun
 { pop } { pop @ } $|| global fun
 
-# Boilerplate for when 2 values have same type
+# Boilerplate for when 2 values have given types
 { { $ta $tb } =
 	{ $a $b } =
 	a has_type

@@ -433,9 +433,11 @@ export default class Context {
 
         // Error
         if (v instanceof Array)
-            v = new error.SyntaxError(v.map(e => `${token.token}: ${e}`).join('; '), token, this);
-        if (v instanceof error.SyntaxError)
+            return new error.SyntaxError(v.map(e => `${token.token}: ${e}`).join('; '), token, this);
+        if (v instanceof error.SyntaxError) {
             v.tokens.push(token);
+            return v;
+        }
 
         console.error('wtf?', v);
         throw new Error('unknown value recieved');

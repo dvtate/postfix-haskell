@@ -2,7 +2,7 @@ import readline = require('readline');
 import fs = require('fs');
 
 import lex from '../lib/scan';
-import parse from '../lib/parse';
+import parse, { generatePerfSummary } from '../lib/parse';
 import Context from '../lib/context';
 
 /**
@@ -25,13 +25,10 @@ export default function runShell(lexFlag = false, verboseFlag = true) {
     // For each line
     rl.on('line', line => {
         // TODO imports
-        if (line.startsWith("#!load:")) {
-            const fname = line.split(':')[1];
-            const src = fs.readFileSync(fname).toString();
-            console.log(src);
-            const ev = parse(lex(src, fname), ctx);
-            if (!(ev instanceof Context))
-                console.log(ev);
+        if (line == '#! token-timers') {
+            const ret = generatePerfSummary();
+            console.log(ret);
+            fs.writeFileSync('/tmp/phs.perf.dump.json', JSON.stringify(ret));
             return;
         }
 

@@ -67,8 +67,8 @@
 
     # Collisions
     { true } { } $x_cc fun
-    { x dx <= } { rng_1_10 set_dx} $x_cc fun
-    { x dx + width ball_dim - >= } { 0 rng_1_10 - set_dx} $x_cc fun
+    { x dx <= } { rng_1_10 set_dx } $x_cc fun
+    { x dx + width ball_dim - >= } { 0 rng_1_10 - set_dx } $x_cc fun
     x_cc
 
     { true } { } $y_cc fun

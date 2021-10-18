@@ -1,4 +1,5 @@
-# Import standard library
+# Import standard library (ie - math operators)
+"./stdlib/prelude.phs" include use
 
 # Stack operators
 { $_ = } $pop =				# Pop value
