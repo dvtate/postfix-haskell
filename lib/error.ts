@@ -9,6 +9,8 @@ import * as value from './value';
 import { Expr } from "./expr";
 import { Type } from "./datatypes";
 
+// TODO Only a few of these are used atm ...
+
 export class CompilerError extends Error {};
 
 // Base Class for parse-time errors

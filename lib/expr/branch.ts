@@ -20,10 +20,14 @@ import {
  * These expressions are stored into local variables to reduce duplication within branch
  */
 export class BranchInputExpr extends DataExpr {
-    // Id for local variable into which it should be stored
+    /**
+     * Id for local variable into which it should be stored
+     */
     index: number = -1;
 
-    // Expression that this should capture
+    /**
+     * Expression that this should capture
+     */
     value: DataExpr;
 
     constructor(token: LexerToken, value: DataExpr) {
@@ -69,22 +73,31 @@ export class BranchInputExpr extends DataExpr {
  * this should only get used when it cannot be determined which branch to take at compile time
  */
 export class BranchExpr extends Expr {
-    // Locations in source
+    /**
+     * Locations in source
+     */
     tokens: LexerToken[];
 
-    // Condtions for brances
+    /**
+     * Condtions for brances
+     */
     conditions: Array<DataExpr>;
 
-    // Actions for branches
+    /**
+     * Actions for branches
+     */
     actions: Array<DataExpr>[];
 
-    // Where results are delivered
+    /**
+     * Where results are delivered
+     */
     results: DependentLocalExpr[];
 
-    //
+    /**
+     * Stack arguments
+     */
     inputExprs: BranchInputExpr[];
 
-    //
     args?: Array<value.Value>;
 
     /**

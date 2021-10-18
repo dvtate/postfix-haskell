@@ -553,6 +553,7 @@ export default class Context {
             return folding ? m2.emitText() : m2.emitStackIR();
         }
 
+        // Return formatted wat
         return mod.toText({ foldExprs: folding, });
 
         /*
@@ -574,6 +575,7 @@ export default class Context {
      * @returns - Wasm binary buffer
      */
     async outWasm() {
+        // Get wasm text and load it into wabt
         const src = await this.outWast({ fast: true });
         const wabt = await wabtProm;
         const mod = wabt.parseWat("test", src, {
@@ -591,9 +593,8 @@ export default class Context {
             gc: true,
         });
 
-        // Validate
+        // Generate wasm binary
         const invalid = mod.validate();
-
         return mod.toBinary({log: true});
     }
 

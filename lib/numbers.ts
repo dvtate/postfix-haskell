@@ -61,8 +61,6 @@ export default class WasmNumber {
         return this._type;
     }
 
-    // Update we also have to update representation
-
     /**
      * Change type, also updates internal representation
      */
@@ -131,7 +129,7 @@ export default class WasmNumber {
     }
 
     /**
-     *
+     * Parse String
      * @param s - string
      * @returns - this
      */
@@ -238,9 +236,8 @@ export default class WasmNumber {
     }
 
     /**
-     *
+     * Not of this.eq()
      * @param other Number to compare against
-     * @returns
      */
     ne(other: WasmNumber) {
         return new WasmNumber(NumberType.I32, this.equals(other) ? 0 : 1);

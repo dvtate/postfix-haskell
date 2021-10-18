@@ -2,9 +2,7 @@ import Context from "./context";
 import { BlockToken, LexerToken } from "./scan";
 import parse from "./parse";
 import * as error from './error';
-import { Type } from "./datatypes";
 import * as value from './value';
-import { number } from "yargs";
 
 // TODO add arrow type
 // TOOD make it extend Value - not addressing because not clear what the `.value` would be

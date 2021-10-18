@@ -37,7 +37,7 @@ function binaryMath(
     // Operation to perform
     name: keyof WasmNumberKeys,
 
-    //
+    // Characteristics of the instruction
     options: BMathOptions = {},
 
     // Type agnostic handler
@@ -48,6 +48,7 @@ function binaryMath(
     // Versions for each type
     return [
         ...(options.noInts ? [] : [{
+            // Unsigned ints
             // TODO unsigned
             symbol: `i32.${name}${options.signed ? '_u' : ''}`,
             param: [types.PrimitiveType.Types.I32, types.PrimitiveType.Types.I32],
@@ -60,6 +61,7 @@ function binaryMath(
             handler,
         }]),
 
+        // Floats
         ...(options.noFloats ? [] : [{
             symbol: `f32.${name}`,
             param: [types.PrimitiveType.Types.F32, types.PrimitiveType.Types.F32],
@@ -72,6 +74,7 @@ function binaryMath(
             handler,
         }]),
 
+        // Signed ints
         // TODO unsigned
         ...(options.signed ? [{
                 symbol: `i32.${name}_s`,
@@ -355,7 +358,7 @@ const opInstrs: { [k : string] : (ctx: Context, token: LexerToken, cmd: string) 
     },
 };
 
-
+// Reformat for faster lookups
 const instructionDict: { [k: string]: AssemblyDBEntry }
     = instructions.reduce((a, v) => ({ ...a, [v.symbol]: v }), {});
 
@@ -371,7 +374,6 @@ export function invokeAsm(ctx: Context, token: LexerToken, cmd: string) {
     const mnemonic = cmd.split(' ')[0];
     if (opInstrs[mnemonic])
         return opInstrs[mnemonic](ctx, token, cmd);
-
     const instr = instructionDict[mnemonic];
     if (!instr)
         return ['invalid/unsupported instruction ' + mnemonic];

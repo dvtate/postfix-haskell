@@ -318,7 +318,6 @@ export class PrimitiveType extends Type {
         return this == type;
     }
 
-
     /**
      * @override
      */

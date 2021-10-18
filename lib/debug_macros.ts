@@ -58,6 +58,7 @@ const debugOperators = {
         return ret;
     },
 
+    // Debug js stack trace
     ':ctrace' : (ctx: Context, token: LexerToken) => new Error('').stack,
 
     // Debug context
@@ -80,6 +81,7 @@ const debugOperators = {
         return depict(ctx.pop());
     },
 
+    // Run arbitrary js code
     ':eval' : (ctx: Context, token: LexerToken) => {
         const str = ctx.pop();
         if (!(str instanceof value.StrValue))

@@ -19,11 +19,30 @@ import { DependentLocalExpr, fromDataValue } from './expr';
  * Functions are the only way to make branching code
  */
 export default class Fun {
+    /**
+     * Where in the codebase each component is located
+     */
     tokens: LexerToken[] = [];
+
+    /**
+     * Preconditions for each branch
+     */
     conditions: value.MacroValue[] = []
+
+    /**
+     * Actions/postconditions for each branch
+     */
     actions: value.MacroValue[] = [];
-    datatype?: types.Type;
+
+    /**
+     * Identifier function is bound to
+     * @note only used in debugging
+     */
     name: string;
+
+    /**
+     * Is the function marked as recursive?
+     */
     recursive: boolean = false;
 
     /**
@@ -36,13 +55,11 @@ export default class Fun {
         condition: value.MacroValue,
         action: value.MacroValue,
         name: string,
-        datatype?: types.Type
     ) {
         // Macros corresponding to checks and outputs
         this.tokens = token ? [token] : [];
         this.conditions = condition ? [condition] : [];
         this.actions = action ? [action] : [];
-        this.datatype = datatype;
         this.name = name;
     }
 
