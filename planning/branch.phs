@@ -1,7 +1,5 @@
-"./stdlib/prelude.phs" include use
-"./stdlib/math.phs" include use
-
-#{ I32 } {!} $not export
+"./stdlib/prelude.phs" require use
+"./stdlib/math.phs" require use
 
 -1 $fizz =
 -2 $buzz =
@@ -13,14 +11,9 @@ fizz buzz + $fizzbuzz =
 { 3 % 0 == } { pop fizz } $fb fun
 { 5 % 0 == } { pop buzz } $fb fun
 { $n = n 3 % 0 == n 5 % 0 == * } { pop fizzbuzz } $fb fun
-# { I32 } { fb } $fb export
+# ( I32 ) { fb } "fb" export
 
-{ true } { pop } $abc fun
-{ 0 > } { { $t $n } = { t unpack n * } pack } $abc fun
-#{ 0 < } { { $t $n } = { t unpack swap n + swap n - } pack } $abc fun
-# { I32 } { $n = { 4 5 } pack n abc } $test export
-
-Void class $Cuck =
+Unit class $Cuck =
 {
     { $v0 $v1 $v2 $v3 } =
     0 v0 { Cuck I32 I32 } { Cuck } Arrow "i32.store" _asm
@@ -36,7 +29,7 @@ Void class $Cuck =
     12 { I32 } { F32 } Arrow "F32.load" _asm
 } $load =
 
-{ Cuck I32 } {
+( Cuck I32 ) {
     $v =
     load
     { $n $a $b $c } =
@@ -48,4 +41,4 @@ Void class $Cuck =
     branch
     #:stack
     save
-} $test export
+} "test" export

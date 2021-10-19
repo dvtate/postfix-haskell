@@ -40,7 +40,7 @@ export abstract class Type {
      * Does this type hold a value in wasm?
      * @virtual
      */
-    isVoid(): boolean {
+    isUnit(): boolean {
         return false;
     }
 
@@ -152,8 +152,8 @@ export class ClassType extends Type {
     /**
      * @override
      */
-    isVoid() {
-        return this.getBaseType().isVoid();
+    isUnit() {
+        return this.getBaseType().isUnit();
     }
 }
 
@@ -228,7 +228,7 @@ export class TupleType extends Type {
     /**
      * @override
      */
-    isVoid(): boolean {
+    isUnit(): boolean {
         return this.types.length === 0;
     }
 

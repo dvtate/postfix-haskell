@@ -76,7 +76,6 @@ $factorial ~ type ((I32) (I32)) RecFun ==
 $fac ~ "factorial" export
 ```
 
-
 ### Before
 Code taken from prelude which adds type promotion and an optimization to the builtin `==` operator.
 - Note that the builtin `==` operator also accepts untyped values so we have to check for that in all the conditions to prevent syntax errors

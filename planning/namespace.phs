@@ -9,7 +9,7 @@
 10 $five =
 $ns ~ "" "" use_some
 
-{ I32 } {
+( I32 ) {
     # Get 'five' from the namespace
     $five ns ~
 

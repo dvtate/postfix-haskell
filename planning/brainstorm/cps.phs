@@ -38,7 +38,7 @@
 1 -3 {} xformed :data
 1 -3 {} xformed @ :data
 
-{I32 } { 0 {} xformed @ } $exp1 export
-{I32 I32 } { {} xformed @ } $exp2 export
+( I32 ) { 0 {} xformed @ } "exp1" export
+( I32 I32 ) { {} xformed @ } "exp2" export
 
-#{ I32 } { {} fib @ } $fib export
+#( I32 ) { {} fib @ } "fib" export

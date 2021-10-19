@@ -127,7 +127,7 @@ export class DependentLocalExpr extends DataExpr {
         const ret = `${
             !this.source._isCompiled ? this.source.out(ctx, fun) : ''
         } ${
-            this.datatype.getBaseType().isVoid() ? '' : `(local.get ${this.index})`
+            this.datatype.getBaseType().isUnit() ? '' : `(local.get ${this.index})`
         }`;
         this.source._isCompiled = true;
         return ret;
@@ -163,8 +163,8 @@ export class FunExportExpr extends Expr {
     constructor(token: LexerToken, name: string, inputTypes: types.Type[]) {
         super(token);
         this.name = name;
-        this.inputTypes = inputTypes.filter(t => !t.getBaseType().isVoid());
-        this._locals = inputTypes.filter(t => !t.getBaseType().isVoid()).map(() => null);
+        this.inputTypes = inputTypes.filter(t => !t.getBaseType().isUnit());
+        this._locals = inputTypes.filter(t => !t.getBaseType().isUnit()).map(() => null);
     }
 
     /**
@@ -173,7 +173,7 @@ export class FunExportExpr extends Expr {
      */
     addLocal(type: types.Type /*types.PrimitiveType*/): number {
         // Don't add locals for void types
-        if (type.isVoid())
+        if (type.isUnit())
             return -1;
         // TODO when given non-primitive type expand it to a list of primitives
         // new return type will be array
@@ -239,7 +239,7 @@ export class ParamExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        if (this.datatype.getBaseType().isVoid())
+        if (this.datatype.getBaseType().isUnit())
             return '';
         return `(local.get ${this.position})`;
     }
@@ -331,10 +331,10 @@ export class TeeExpr extends DataExpr {
         if (this.local === null) {
             this.local = fun.addLocal(this.datatype);
             return `${this.value.out(ctx, fun)}\n\t${
-                this.datatype.getBaseType().isVoid() ? '' : `(local.tee ${this.local})`
+                this.datatype.getBaseType().isUnit() ? '' : `(local.tee ${this.local})`
             }`;
         }
-        return this.datatype.getBaseType().isVoid() ? '' : `(local.get ${this.local})`;
+        return this.datatype.getBaseType().isUnit() ? '' : `(local.get ${this.local})`;
     }
 
     // Prevent this from getting re-tee'd
@@ -395,7 +395,7 @@ export class MultiInstrExpr extends Expr {
 
         // Get locals
         this.results.forEach(e => {
-            if (!e.datatype.isVoid())
+            if (!e.datatype.isUnit())
                 e.index = fun.addLocal(e.datatype);
         });
         const inds = this.results.map(e => e.index).filter(i => i !== -1);

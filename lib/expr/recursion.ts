@@ -87,16 +87,16 @@ export class RecursiveBodyExpr extends Expr {
 
         // Select non void types
         // const voidTakes: Array<DependentLocalExpr | false>
-        //     = this.takeExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+        //     = this.takeExprs.map(e => !e.datatype.getBaseType().isUnit() && e);
         // const voidGives: Array<DependentLocalExpr | false>
-        //     = this.giveExprs.map(e => !e.datatype.getBaseType().isVoid() && e);
+        //     = this.giveExprs.map(e => !e.datatype.getBaseType().isUnit() && e);
 
         // Store inputs in locals
         this.takeExprs.forEach(e => {
             e.index = fun.addLocal(e.datatype);
         });
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${this.takes[i].out(ctx, fun)}${e.datatype.isVoid() ? '' : `\n\t(local.set ${e.index})`}`
+            `${this.takes[i].out(ctx, fun)}${e.datatype.isUnit() ? '' : `\n\t(local.set ${e.index})`}`
         ).join('\n\t')}\n\t`;
 
         // Create place to store outputs
@@ -110,7 +110,7 @@ export class RecursiveBodyExpr extends Expr {
         ret += this.gives.map(e => e.out(ctx, fun)).join('\n\t');
         ret += `)\n\t${
             this.giveExprs.map(e =>
-                e.datatype.isVoid() ? '' : `(local.set ${e.index})`
+                e.datatype.isUnit() ? '' : `(local.set ${e.index})`
             ).join(' ')
         }\n\t`;
 
@@ -164,7 +164,7 @@ export class RecursiveBodyExpr extends Expr {
         }${
             captureExprs.map(e => e.out(ctx, fun)).join('')
         }\n\t(call ${this.label})${
-            this.giveExprs.map(e => e.datatype.isVoid() ? '' : `(local.set ${e.index})`).join('')
+            this.giveExprs.map(e => e.datatype.isUnit() ? '' : `(local.set ${e.index})`).join('')
         }`;
     }
 
@@ -216,8 +216,8 @@ export class RecFunExpr extends FunExportExpr {
         copiedParams: ParamExpr[],
     ) {
         // Filter void
-        takeExprs = takeExprs.filter(e => !e.datatype.isVoid());
-        copiedParams = copiedParams.filter(e => !e.datatype.isVoid());
+        takeExprs = takeExprs.filter(e => !e.datatype.isUnit());
+        copiedParams = copiedParams.filter(e => !e.datatype.isUnit());
 
         super(
             token,
@@ -298,7 +298,7 @@ export class RecursiveCallExpr extends Expr {
             // Set arg locals
             let ret = `\n\t${this.takeExprs.map((e, i) =>
                 `${e.out(ctx, fun)}${
-                    (!this.body.takeExprs[i] || e.datatype.getBaseType().isVoid())
+                    (!this.body.takeExprs[i] || e.datatype.getBaseType().isUnit())
                         ? '' : `\n\t(local.set ${this.body.takeExprs[i].index})`}`
             ).join('\n\t')}\n\t`;
 

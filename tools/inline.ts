@@ -41,7 +41,7 @@ export async function phs(src: TemplateStringsArray, ...bindings: string[]) {
 Bindings: in this example it prompts user at compile time for this
 const m = await phs`
     {${Number(prompt('enter a number'))} 10 + } $f =
-    {} { f } $plus10 export
+    Unit { f } $plus10 export
 `;
 */
 

@@ -12,10 +12,11 @@ import WasmNumber from "./numbers";
 export enum TokenType {
     String = 0,         // String literal
     Number = 1,         // Number literal
-    ContainerOpen = 2,  // Container open (temp)
-    ContainerClose = 3, // Container close (temp)
+    ContainerOpen = 2,  // Container open (temporary)
+    ContainerClose = 3, // Container close (temporary)
     Identifier = 4,     // Identifier
     Block = 5,          // Macro
+    Tuple = 6,          // Tuple
 }
 
 // Internal
@@ -76,6 +77,17 @@ export class BlockToken extends LexerToken {
     }
 }
 
+export class IdToken extends LexerToken {
+    value: string[];
+    isEscaped: boolean;
+    constructor(token: string, position: number, file: string) {
+        super(token, TokenType.Identifier, position, file);
+        this.isEscaped = this.token[0] === '$';
+        const unescaped = this.isEscaped ? this.token.slice(1) : this.token;
+        this.value = unescaped.split('.');
+    }
+}
+
 /**
  * Describes tokenized string
  *
@@ -103,7 +115,7 @@ function toToken(token: string, position: number, file: string): LexerToken {
         return new BlockToken(token, position, file);
 
     // Identifier
-    return new LexerToken(token, TokenType.Identifier, position, file);
+    return new IdToken(token, position, file);
 }
 
 /**
@@ -225,14 +237,13 @@ export default function scan(code: string, file?: string): LexerToken[] {
                 throwParseError('Unexpected symbol ' + tok.token, [tok]);
 
             // Not matching
-            // @ts-ignore
-            if (ret[ind].subtype !== tok.subtype)
-                throwParseError(`Container mismatch ${ret[ind].token} vs. ${tok.token}`, [ret[ind], tok]);
+            const parent = ret[ind] as BlockToken;
+            if (parent.subtype !== (tok as BlockToken).subtype)
+                throwParseError(`Container mismatch ${parent.token} vs. ${tok.token}`, [parent, tok]);
 
             // Collapse body
-            // Note for now only containers are for 'Block'
-            (ret[ind] as BlockToken).body = ret.splice(ind + 1);
-            ret[ind].type = TokenType.Block;
+            parent.body = ret.splice(ind + 1);
+            parent.type = parent.subtype === ContainerType.Paren ? TokenType.Tuple : TokenType.Block;
         } else {
             ret.push(tok);
         }

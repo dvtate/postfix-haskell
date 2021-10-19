@@ -1,5 +1,5 @@
 # Import standard library (ie - math operators)
-"./stdlib/prelude.phs" include use
+"./stdlib/prelude.phs" require use
 
 # Above this is standard library
 
@@ -12,9 +12,9 @@ I32 I64 | F32 F64 | | $Num =
 } class $Vector3 =
 
 # Generic Accessors
-{ type Any Vector3 == } { unpack pop pop } $.x fun
-{ type Any Vector3 == } { unpack pop swap pop } $.y fun
-{ type Any Vector3 == } { unpack $z = pop pop z } $.z fun
+{ type Any Vector3 == } { unpack pop pop } $Vector3_x fun
+{ type Any Vector3 == } { unpack pop swap pop } $Vector3_y fun
+{ type Any Vector3 == } { unpack $z = pop pop z } $Vector3_z fun
 
 # Overload * for dot-product
 { $b = $a =
@@ -22,10 +22,10 @@ I32 I64 | F32 F64 | | $Num =
     b type Num Vector3 == &&
 } {
     $b = $a =
-    a .x  b .x *
-    a .y  b .y * +
-    a .z  b .z * +
-} $* global fun
+    a Vector3_x  b Vector3_x *
+    a Vector3_y  b Vector3_y * +
+    a Vector3_z  b Vector3_z * +
+} $global.* fun
 
 # Overload * for scalar multiplication
 { $v = $k =
@@ -34,11 +34,11 @@ I32 I64 | F32 F64 | | $Num =
 } {
     $v = $k =
     {
-        v .x k *
-        v .y k *
-        v .z k *
+        v Vector3_x k *
+        v Vector3_y k *
+        v Vector3_z k *
     } pack v type make
-} $* global fun
+} $global.* fun
 
 # Project a onto b
 { $b = $a =
@@ -65,11 +65,11 @@ a b proj :data # [ 4, 8, 4 ]
 
 # Export
 
-{ F64 } {
+( F64 ) {
     $v =
     { v 1.0 v } pack Num Vector3 make $c =
     a b proj c *
-} $test export
+} "test" export
 
 # (module
 # (func $test (param $0 f64) (result f64)

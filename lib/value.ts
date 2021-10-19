@@ -1,11 +1,12 @@
 import * as types from './datatypes';
 import WasmNumber from './numbers';
-import { LexerToken } from './scan';
+import { IdToken, LexerToken } from './scan';
 import Context from './context';
 import { Macro } from './macro';
 import ModuleManager from './module';
 import * as expr from './expr';
 import { Expr } from './expr';
+import { Namespace } from './namespace';
 
 
 /*
@@ -18,13 +19,14 @@ import { Expr } from './expr';
  */
 // TODO should probably use Classes/Inheritance instead of this
 export enum ValueType {
-    Macro  = 0, // Macro literal with unknown signature/inlined
-    Data   = 1, // Physically representable data known at compile time
-    Type   = 2, // DataType/schema
-    Id     = 3, // Escaped identifier
-    Expr   = 4, // Data that's only known at runtime
-    Fxn    = 5, // Function/Branch
-    Str    = 6, // String literal, (note not directly usable)
+    Macro   = 0, // Macro literal with unknown signature/inlined
+    Data    = 1, // Physically representable data known at compile time
+    Type    = 2, // DataType/schema
+    Id      = 3, // Escaped identifier
+    Expr    = 4, // Data that's only known at runtime
+    Fxn     = 5, // Function/Branch
+    Str     = 6, // String literal, (note not directly usable)
+    Ns      = 7, // Namespace
 }
 
 // TODO should be abstract
@@ -83,13 +85,25 @@ export class DataValue extends Value {
 /**
  * Invokable block of code
  */
-export class MacroValue <T extends Macro = Macro> extends Value{
+export class MacroValue <T extends Macro = Macro> extends Value {
     value: T;
     datatype: types.ArrowType = null;
     type: ValueType.Macro = ValueType.Macro;
 
     constructor(token: LexerToken, value: Macro, type: types.ArrowType = null) {
         super(token, ValueType.Macro, value, type);
+    }
+}
+
+/**
+ * Set of identifiers
+ */
+export class NamespaceValue extends Value {
+    value: Namespace;
+    type: ValueType.Ns = ValueType.Ns;
+
+    constructor(token: LexerToken, value: Namespace) {
+        super(token, ValueType.Ns, value);
     }
 }
 
@@ -128,19 +142,19 @@ export class NumberValue extends DataValue {
  * Escaped Identifier
  */
 export class IdValue extends Value {
-    scopes: Array<{ [id: string]: Value }>;
-    value: string;
+    value: string[];
     type: ValueType.Id;
-    constructor(token: LexerToken, id: string, scopes: Array<{ [id: string]: Value }>) {
-        super(token, ValueType.Id, id);
-        this.scopes = scopes;
+    token: IdToken;
+
+    constructor(token: IdToken, public isGlobal = false) {
+        super(token, ValueType.Id, token.value);
     }
 
     /**
      * Convert Id's to values
      */
     deref(ctx: Context) {
-        return ctx.getId(this.value.slice(1), this.scopes || ctx.scopes);
+        return ctx.getId(this.token.value);
     }
 }
 

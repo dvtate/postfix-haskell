@@ -1,6 +1,6 @@
 
 # Import source file/module
-"./stdlib.phs" include $std =
+"./stdlib.phs" require $std =
 
 # Create an alias for a component of the file (using abs_val = std::abs)
 $abs std ~ $absolute_value =

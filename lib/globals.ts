@@ -6,7 +6,7 @@ import Context from './context';
 import WasmNumber from './numbers';
 import Fun from './function';
 import scan, { BlockToken, LexerToken } from './scan';
-import { CompilerMacro, LiteralMacro, NamespaceMacro } from './macro';
+import { CompilerMacro, LiteralMacro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
 import { invokeAsm } from './asm';
@@ -47,9 +47,9 @@ const operators : MacroOperatorsSpec = {
                 return ['expected an expression and a binding identifier'];
             const sym = ctx.pop();
 
+            // Get a list of symbols to assign
             let syms : value.IdValue[];
             if (sym instanceof value.MacroValue) {
-                // TODO verify there's enough items when {$a $b} =
                 // List of identifiers to pull from stack in reverse order
                 const tr = ctx.traceIO(sym, token);
                 if (tr instanceof error.SyntaxError)
@@ -57,34 +57,32 @@ const operators : MacroOperatorsSpec = {
 
                 // Take IdValue[]
                 if (tr.gives.some(sym => !(sym instanceof value.IdValue)))
-                    return ["macro produced invalid results"];
+                    return ['macro produced invalid results'];
                 if (ctx.stack.length < tr.gives.length)
                     return ['not enough values to bind'];
-                syms = (tr.gives as value.IdValue[]).reverse().map(s => {
-                    // Apply to current scope
-                    s.scopes = ctx.scopes.slice();
-                    return s;
-                });
+                syms = (tr.gives as value.IdValue[]).reverse();
             } else if (sym instanceof value.IdValue) {
                 // Single identifier to pull from stack
                 syms = [sym];
+            } else if (sym instanceof value.TupleValue) {
+                // TUple of identifiers
+                if (sym.value.some(sym => !(sym instanceof value.IdValue)))
+                    return ['expected a tuple of identifiers'];
+                if (ctx.stack.length < sym.value.length)
+                    return ['not enough values to bind'];
+                syms = (sym.value as value.IdValue[]).reverse();
             } else {
                 // Syntax error
                 ctx.pop();
-                return ["missing symbol(s) to bind"];
+                return ['missing symbol(s) to bind'];
             }
 
             // Bind idenfiers
-            syms.forEach(sym => {
-                // Verify no reassign
-                const id = sym.value.slice(1);
-                const [scope] = sym.scopes.slice(-1);
-                if (scope[id])
-                    ctx.warn(token, `${id} is already defined in current scope`);
-
-                // Bind identifier
-                scope[id] = ctx.pop();
-            });
+            for (let i = 0; i < syms.length; i++) {
+                const ret = ctx.setId(syms[i].value, ctx.pop(), token);
+                if (ret)
+                    return ret;
+            }
         },
     },
 
@@ -287,20 +285,6 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Make variable reference global
-    'global' : {
-        action: (ctx: Context) => {
-            // Change reference at back of stack to use global scope
-            if (ctx.stack.length === 0)
-                return ['expected a reference to globalize'];
-            const v = ctx.pop();
-            if (!(v instanceof value.IdValue))
-                return ['expected identifier'];
-            v.scopes = [ctx.globals];
-            ctx.push(v);
-        },
-    },
-
     // Function operator
     'fun' : {
         action: (ctx: Context, token: LexerToken) => {
@@ -318,53 +302,53 @@ const operators : MacroOperatorsSpec = {
                 return ['expected a macro condition'];
 
             // Bind Symbol
-            const v = ctx.getId(sym.value.slice(1), sym.scopes);
-            if (!v) {
+            const v = ctx.getId(sym.value);
+            if (!v)
                 // New function
-                sym.scopes[sym.scopes.length - 1][sym.value.slice(1)] =
+                ctx.setId(
+                    sym.value,
                     new value.Value(token, value.ValueType.Fxn,
-                        new Fun(token, condition, action, sym.value.slice(1)));
-                return;
-            } else if (v.type === value.ValueType.Fxn) {
+                        new Fun(token, condition, action, sym.value[sym.value.length - 1])),
+                    token,
+                );
+            else if (v.type === value.ValueType.Fxn)
                 // Pre-existing function to overload
                 v.value.overload(token, condition, action);
-                return;
-            } else {
-                return ['symbol currently stores unfun value'];
-            }
+            else
+                // Type-error
+                return ['symbol currently stores un-fun value'];
         },
     },
 
     // Export a function as wasm
-    // {I32 I32} { + } $add export
+    // (I32 I32) { + } "add" export
     'export' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
             if (ctx.stack.length < 3)
                 return ['not enough values'];
-            const sym = ctx.pop();
-            if (sym.type !== value.ValueType.Id)
+            const id = ctx.pop();
+            let sym : string;
+            if (id instanceof value.IdValue)
+                sym = id.token.token.slice(1);
+            else if (id instanceof value.StrValue)
+                sym = id.value;
+            else
                 return ['expected a symbol'];
             const act = ctx.pop();
             if (!(act instanceof value.MacroValue))
                 return ['expected macro'];
             const args = ctx.pop();
-            if (!(args instanceof value.MacroValue))
-                return ['expected macro'];
+            if (args.type !== value.ValueType.Type || !(args.value instanceof types.TupleType))
+                return ['expected tuple of input types'];
 
             // Get input types
-            const ev = ctx.traceIO(args, token);
-            if (!(ev instanceof Context.TraceResults))
-                return ev;
-            const inputs = ev.gives;
-            if (inputs.some(t => t.type !== value.ValueType.Type))
-                return ['expected a macro of types'];
-            const inTypes: types.Type[] = inputs.map(t => t.value);
+            const inTypes = args.value.types;
 
             // Put param exprs onto stack
-            const out = new expr.FunExportExpr(token, sym.value.slice(1), inTypes);
-            let nonVoidIndex = 0;
-            const pes = inTypes.map((t) => new expr.ParamExpr(token, t, out, t.isVoid() ? -1 : nonVoidIndex++));
+            const out = new expr.FunExportExpr(token, sym, inTypes);
+            let nonUnitIndex = 0;
+            const pes = inTypes.map((t) => new expr.ParamExpr(token, t, out, t.isUnit() ? -1 : nonUnitIndex++));
             ctx.push(...pes);
 
             // Invoke macro to determine structure of fxn
@@ -420,8 +404,8 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Void datatype, stores no values, only accepts empty tuple
-    'Void' : {
+    // Unit datatype, stores no values, only accepts empty tuple
+    'Unit' : {
         action: (ctx, token) => {
             ctx.push(new value.Value(token, value.ValueType.Type, new types.TupleType(token, [])));
         },
@@ -521,7 +505,7 @@ const operators : MacroOperatorsSpec = {
 
             // Create ns
             const ns = arg.value.getNamespace(ctx, token);
-            if (ns instanceof value.MacroValue)
+            if (ns instanceof value.NamespaceValue)
                 ctx.push(ns);
             else
                 return ns;
@@ -535,7 +519,7 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['missing namespace'];
             const ns = ctx.pop();
-            if (!(ns instanceof value.MacroValue && ns.value instanceof NamespaceMacro))
+            if (!(ns instanceof value.NamespaceValue))
                 return ['expected a namespace'];
 
             // Promote members
@@ -557,7 +541,7 @@ const operators : MacroOperatorsSpec = {
             if (!(include instanceof value.StrValue))
                 return ['expected a string containing regex for symbols to include'];
             const ns = ctx.pop();
-            if (!(ns instanceof value.MacroValue && ns.value instanceof NamespaceMacro))
+            if (!(ns instanceof value.NamespaceValue))
                 return ['expected a namespace'];
 
             // Promote members
@@ -566,7 +550,7 @@ const operators : MacroOperatorsSpec = {
     },
 
     // Include another file as a module
-    'include' : {
+    'require' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get argument
             if (ctx.stack.length === 0)
@@ -587,7 +571,7 @@ const operators : MacroOperatorsSpec = {
             // Check if already included
             // If so give user the cached namespace
             if (ctx.includedFiles[realpath]) {
-                ctx.push(new value.MacroValue<NamespaceMacro>(
+                ctx.push(new value.NamespaceValue(
                     token,
                     ctx.includedFiles[realpath]));
                 return;
@@ -603,7 +587,7 @@ const operators : MacroOperatorsSpec = {
 
             // Convert file into namespace and push it
             const ns = new LiteralMacro(ctx, block).getNamespace(ctx, token);
-            if (!(ns instanceof value.MacroValue))
+            if (!(ns instanceof value.NamespaceValue))
                 return ns;
             ctx.push(ns);
             ctx.includedFiles[realpath] = ns.value;

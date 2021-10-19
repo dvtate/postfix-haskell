@@ -6,7 +6,7 @@
     branch
 } rec $fac =
 
-{ I32 I32 I32 } {
+( I32 I32 I32 ) {
     $v2 = $v =
     { # Intentionally non-tail-recursive factorial
         $n =
@@ -15,7 +15,7 @@
         branch
     } rec $fac =
     fac
-} $nfac export
+} "nfac" export
 
 {
     $n =
@@ -26,5 +26,5 @@
 
 6 fib :data
 
-{ I32 } { fac } $fac export
-{ I32 } { fib } $fib export
+( I32 ) { fac } "fac" export
+( I32 ) { fib } "fib" export

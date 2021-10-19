@@ -47,7 +47,7 @@ The shell is probably the best way to learn the language, allowing you to run sh
   datatype: PrimitiveType { token: undefined, name: 'i32' }
 }
 
-> { I32 } { 1 + } $incr export :compile
+> ( I32 ) { 1 + } "incr" export :compile
 :compile - (module
   (func (;0;) (param i32) (result i32)
     local.get 0

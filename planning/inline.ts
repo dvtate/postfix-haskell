@@ -22,12 +22,12 @@ import { phs } from '../tools/inline';
     { $n = n 3 % 0 == n 5 % 0 == && } { pop fizzbuzz } $fb fun
 
     # Export
-    #{ I32 } { fb } $fb export
+    #( I32 ) { fb } "fb" export
 
-    { I32 I32 } { / } $di32 export
-    { I64 I64 } { / } $di64 export
-    { F32 F32 } { / } $df32 export
-    { F64 F64 } { / } $df64 export
+    ( I32 I32 ) { / } "di32" export
+    ( I64 I64 ) { / } "di64" export
+    ( F32 F32 ) { / } "df32" export
+    ( F64 F64 ) { / } "df64" export
     `;
 
     const { fb } = program.instance.exports as any;

@@ -1,14 +1,14 @@
 # Import stuff from modules
-"stdlib/monad.phs" include use # ">>"       ""  use_some
-"stdlib/io.phs"    include use #"IO|print" ""  use_some
-"stdlib/str.phs"   include use #"Str|to_Str"      ""  use_some
+"stdlib/monad.phs" require use # ">>"       ""  use_some
+"stdlib/io.phs"    require use #"IO|print" ""  use_some
+"stdlib/str.phs"   require use #"Str|to_Str"      ""  use_some
 
 # Lazy evaluated IO action
 { "Testing" Str.new print }
 { 888.5 print } >> $action =
 
 # Export that performs IO
-{ Void IO } {
+( Unit IO ) {
     # Invoke IO action
     action
 

@@ -1,0 +1,34 @@
+
+
+"./fake_math.phs" require $math =
+
+2 2 math.pow :data # 4
+
+{
+    {
+        I32 I64 F32 F64 | | | $Num =
+        { ( $a $b ) = a type Num == b type Num == &&  } { + } $add fun
+    } namespace $math =
+} namespace $util =
+
+# Get escaped an unescaped ids for members
+$util.math.Num ~ :type  # { syntaxType: 'Type' }
+util.math.Num :type     # { syntaxType: 'Type' }
+
+# Extend namespace member
+{ $Type = (Type Type) } class $Vec2 =
+{ ( $a $b ) =
+    a type util.math.Num Vec2 ==
+    b type util.math.Num Vec2 == &&
+} { unpack ( $b0 $b1 ) = unpack ( $a0 $a1 ) =
+    ( a0 b0 +  a1 b1 + )
+} $util.math.add fun
+
+# Apply math namespace to current scope
+math use
+
+# Apply nested namespace to current scope
+util.math use
+
+# This is honestly way simpler and what I had in mind initially when designing lang
+# idk why I chose the other way lmao

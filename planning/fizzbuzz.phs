@@ -1,15 +1,15 @@
-"stdlib/prelude.phs" include use
-"stdlib/str.phs" include use
-"stdlib/io.phs" include use
+"stdlib/prelude.phs" require use
+"stdlib/str.phs" require use
+"stdlib/io.phs" require use
 
 # export for performing IO
-{ Void IO  I32 } {
+( Unit IO  I32 ) {
     $n =
 
     # Some strings
-    "fizz" Str.new $fizz =
-    "buzz" Str.new $buzz =
-    "fizzbuzz" Str.new $fizzbuzz =
+    "fizz" Str_new $fizz =
+    "buzz" Str_new $buzz =
+    "fizzbuzz" Str_new $fizzbuzz =
 
     # fizzbuzz logic
     { true } { print } $fb fun

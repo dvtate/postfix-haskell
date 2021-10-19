@@ -1,8 +1,8 @@
-"./stdlib/prelude.phs" include use
-"./stdlib/monad.phs" include use
+"./stdlib/prelude.phs" require use
+"./stdlib/monad.phs" require use
 
 # Cucked linear memory monad
-Void class $World =
+Unit class $World =
 
 # console.log
 { World I32 I32 } { World } Arrow { "js" "console.log" } import $log_2_i32 =
@@ -37,12 +37,9 @@ Void class $World =
 
 
 # Export to JS
-{ World I32 } { set } $set export
-{ World } { get } $get export
-{ World } {
+( World I32 ) { set } "set" export
+( World ) { get } "get" export
+( World ) {
     # {} {I32} Arrow "call $get" _asm
     get 1 + set
-} $incr export
-
-
-
+} "incr" export

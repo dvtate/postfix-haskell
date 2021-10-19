@@ -1,7 +1,7 @@
-"./prelude.phs" include use
-"./bits.phs" include use
+"./prelude.phs" require use
+"./bits.phs" require use
 
-{   { $v $addr } =
+{   ( $v $addr ) =
     # NOTE little endian
     v 0xff and
         addr static_init_byte
@@ -26,12 +26,12 @@
     static_init
 } $static_init fun
 { pop type I64 == } {
-    { $v $addr } =
+    ( $v $addr ) =
     v 0xffffffff and "i32.warp_i64" static_init
     v 32 >> addr
 } $static_init fun
 { pop type I32 == } {
-    { $v $addr } =
+    ( $v $addr ) =
     # NOTE little endian
     v 0xff and
         addr static_init_byte
@@ -46,16 +46,16 @@
 # Store value in memory
 # <void> <addr> <value> store
 { pop type I32 == } {
-    swap { Void I32 I32 } { Void } Arrow "i32.store" _asm
+    swap { Unit I32 I32 } { Unit } Arrow "i32.store" _asm
 } $store fun
 { pop type F32 == } {
-    swap { Void I32 F32 } { Void } Arrow "f32.store" _asm
+    swap { Unit I32 F32 } { Unit } Arrow "f32.store" _asm
 } $store fun
 { pop type I64 == } {
-    swap { Void I32 I64 } { Void } Arrow "i64.store" _asm
+    swap { Unit I32 I64 } { Unit } Arrow "i64.store" _asm
 } $store fun
 { pop type F64 == } {
-    swap { Void I32 F64 } { Void } Arrow "f64.store" _asm
+    swap { Unit I32 F64 } { Unit } Arrow "f64.store" _asm
 } $store fun
 
 # Load value from memory

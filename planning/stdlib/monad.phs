@@ -1,4 +1,4 @@
-"./prelude.phs" include use
+"./prelude.phs" require use
 
 # These 'monads' rly do be cucked ngl
 
@@ -9,7 +9,7 @@
 # TODO should probably check if they're truthy
 #{ true } { { $a  $b } = { a b } }
 #   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
-#$>> global fun
+#$global.>> fun
 #{ true } { { $a  $b } = { a b } }
 #   # {{Any Monad} {Any Monad} Arrow} {{Any Monad} {Any Monad} Arrow} Arrow as
-#$>>= global fun
+#$global.>>= fun

@@ -43,7 +43,7 @@ export class BranchInputExpr extends DataExpr {
         // if (this.index !== -1)
         //     return '';
         // If it's void no need to capture it
-        if (this.datatype.isVoid())
+        if (this.datatype.isUnit())
             return this.value.out(ctx, fun);
 
         //
@@ -55,11 +55,11 @@ export class BranchInputExpr extends DataExpr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        if (!this.datatype.isVoid() && this.index == -1) {
+        if (!this.datatype.isUnit() && this.index == -1) {
             console.log(this.value);
             console.log(new Error('bt'));
         }
-        return this.datatype.isVoid() ? '' : `(local.get ${this.index})`;
+        return this.datatype.isUnit() ? '' : `(local.get ${this.index})`;
     }
 
     static expensive = false;
@@ -142,7 +142,7 @@ export class BranchExpr extends Expr {
         const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
 
         // Set up dependent locals
-        const results = this.results.filter(r => !r.datatype.getBaseType().isVoid());
+        const results = this.results.filter(r => !r.datatype.getBaseType().isUnit());
         results.forEach(r => {
             if (r.datatype instanceof types.PrimitiveType)
                 r.index = fun.addLocal(r.datatype);

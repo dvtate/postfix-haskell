@@ -1,4 +1,4 @@
-"stdlib/prelude.phs" include use
+"stdlib/prelude.phs" require use
 
 # Average
 { + 2.0 / } $avg =
@@ -7,7 +7,7 @@
 { true } {} $abs fun
 { 0.0 < } { -1.0 * } $abs fun
 
-{ F64 } { # Square route via newton's method
+( F64 ) { # Square route via newton's method
 	{ # Tail-recursive helper
         $guess =
         $x =
@@ -26,4 +26,4 @@
 
     # Start calculating with first guess being 1
     1.0 iter
-} $sqrt export
+} "sqrt" export

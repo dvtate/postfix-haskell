@@ -1,14 +1,14 @@
-"./prelude.phs" include use
+"./prelude.phs" require use
 
 # Left shift
-{ I32 I32 _2_with_types } { "i32.shl" asm } $<< global fun
-{ I64 I64 _2_with_types } { "i64.shl" asm } $<< global fun
+{ I32 I32 _2_with_types } { "i32.shl" asm } $global.<< fun
+{ I64 I64 _2_with_types } { "i64.shl" asm } $global.<< fun
 
 # Right shift
-{ I32 I32 _2_with_types } { "i32.shr_s" asm } $>> global fun
-{ I64 I64 _2_with_types } { "i64.shr_s" asm } $>> global fun
-{ I32 I32 _2_with_types } { "i32.shr_u" asm } $>>> global fun
-{ I64 I64 _2_with_types } { "i64.shr_u" asm } $>>> global fun
+{ I32 I32 _2_with_types } { "i32.shr_s" asm } $global.>> fun
+{ I64 I64 _2_with_types } { "i64.shr_s" asm } $global.>> fun
+{ I32 I32 _2_with_types } { "i32.shr_u" asm } $global.>>> fun
+{ I64 I64 _2_with_types } { "i64.shr_u" asm } $global.>>> fun
 
 # Bitwise and
 { I32 I32 _2_with_types } { "i32.and" asm } $and fun

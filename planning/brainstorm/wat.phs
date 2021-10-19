@@ -6,4 +6,4 @@
 } {
 	$b = $a =
 	{ a b } $i32.add wasm @
-} $+ global fun
+} $global.+ fun

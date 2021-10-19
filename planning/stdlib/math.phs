@@ -1,4 +1,4 @@
-"./prelude.phs" include use
+"./prelude.phs" require use
 
 I32 I64 | $Int =
 F32 F64 | $Float =

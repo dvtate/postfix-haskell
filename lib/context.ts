@@ -7,13 +7,14 @@ import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
-import { LexerToken } from "./scan";
+import { BlockToken, LexerToken } from "./scan";
 import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';
 import ModuleManager from "./module";
-import { NamespaceMacro } from "./macro";
+import { CompilerMacro, LiteralMacro, Macro } from "./macro";
 import { formatErrorPos } from '../tools/util';
+import { Namespace } from './namespace';
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
@@ -85,7 +86,7 @@ export default class Context {
     static TraceResults = TraceResults;
 
     // Recycled `include` namespaces
-    includedFiles: { [k: string]: NamespaceMacro } = {};
+    includedFiles: { [k: string]: Namespace } = {};
 
     // Default constructor
     constructor(optLevel = 1, private entryPoint?: string) {
@@ -101,10 +102,11 @@ export default class Context {
         Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
             this.globals[typeName] = new value.Value(null, value.ValueType.Type, type));
         this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.AnyType());
+        this.globals['global'] = new value.NamespaceValue(null, new Namespace(this.globals));
 
         // If there's an entry file we need to track imports to it
         if (entryPoint)
-            this.includedFiles[fs.realpathSync(entryPoint)] = new NamespaceMacro(this.scopes[0]);
+            this.includedFiles[fs.realpathSync(entryPoint)] = new Namespace(this.scopes[0]);
     }
 
     /**
@@ -164,18 +166,67 @@ export default class Context {
     /**
      * Look up identifier
      *
-     * @param id - identifier name
-     * @param [scopes] - scopes to check in
+     * @param id - identifier
      * @returns returns value stored if found
      */
-    getId(id : string, scopes: typeof Context.prototype.scopes = this.scopes): value.Value | undefined {
+    getId(id : string[]): value.Value | undefined {
         // Resolve Local
-        for (let i = scopes.length - 1; i >= 0; i--)
-            if (scopes[i][id])
-                return scopes[i][id];
+        let ret : value.Value;
+        for (let i = this.scopes.length - 1; i >= 0; i--)
+            if (this.scopes[i][id[0]]) {
+                ret = this.scopes[i][id[0]];
+                break;
+            }
 
         // Resolve Global
-        return this.globals[id];
+        if (!ret)
+            ret = this.globals[id[0]];
+
+        // Resolve namespaces
+        for (let i = 1; i < id.length; i++)
+            if (ret instanceof value.NamespaceValue)
+                ret = ret.value.getId(id[i]);
+            else
+                return undefined;
+        return ret;
+    }
+
+    /**
+     * Store value into identifier
+     *
+     * @param id - identifier
+     * @param value - value to set identifier to
+     */
+    setId(id: string[], v: value.Value, token: LexerToken) {
+        // Handle fast case first
+        if (id.length == 1) {
+            this.scopes[this.scopes.length - 1][id[0]] = v;
+            return;
+        }
+
+        // Resolve Local
+        let scope : value.Value;
+        for (let i = this.scopes.length - 1; i >= 0; i--)
+            if (this.scopes[i][id[0]]) {
+                scope = this.scopes[i][id[0]];
+                break;
+            }
+
+        // Resolve Global
+        if (!scope)
+            scope = this.globals[id[0]];
+
+        // Resolve namespaces
+        for (let i = 1; i < id.length - 1; i++)
+            if (!(scope instanceof value.NamespaceValue))
+                return new error.SyntaxError(
+                    `expected '${id.slice(0, i).join('.')}.' to be a namespace`,
+                    token,
+                    this);
+            else
+                scope = scope.value.getId(id[i]);
+
+        (scope as value.NamespaceValue).value.scope[id[id.length - 1]] = v;
     }
 
     /**
@@ -342,7 +393,7 @@ export default class Context {
                 .slice(stack.length - ios.takes.length)
                 .some(v =>
                     v.type === value.ValueType.Expr
-                    // && !(v.datatype && v.datatype.isVoid())
+                    // && !(v.datatype && v.datatype.isUnit())
                     );
             if (isConstExpr) {
                 this.warn(token, 'expanding constexpr');
@@ -441,6 +492,34 @@ export default class Context {
 
         console.error('wtf?', v);
         throw new Error('unknown value recieved');
+    }
+
+    /**
+     * Parse a tuple literal into a value
+     * @param t token for tuple
+     * @returns this | error
+     */
+    parseTuple(t: BlockToken) {
+        // Copy stack length
+        const sl = this.stack.length;
+
+        // Invoke body
+        const ret = this.invoke(new value.MacroValue(t, new LiteralMacro(this, t)), t, false);
+
+        // Create tuple from values pushed onto stack
+        if (sl > this.stack.length)
+            return new error.SyntaxError('invalid tuple, takes more values than gives', t, this);
+        const vs = this.stack.splice(sl);
+
+        // Get return value
+        const val = vs.every(v => v.type == value.ValueType.Type)
+            ? new value.Value(t, value.ValueType.Type,
+                new types.TupleType(t, vs.map(v => v.value as types.Type)))
+            : new value.TupleValue(t, vs);
+
+        // Push value and exit with original status
+        this.push(val);
+        return ret;
     }
 
     /**

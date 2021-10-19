@@ -1,8 +1,8 @@
-"../stdlib/prelude.phs" include use
-"../stdlib/bits.phs" include use
-"../stdlib/math.phs" include use
+"../stdlib/prelude.phs" require use
+"../stdlib/bits.phs" require use
+"../stdlib/math.phs" require use
 
-{   { $v $addr } =
+{   ( $v $addr ) =
     # NOTE little endian
     v 0xff and
         addr static_init_byte
@@ -32,10 +32,10 @@
 
 # Store value in memory
 # <void> <addr> <value> store
-{ type I32 == } { { Void I32 I32 } { Void } Arrow "i32.store" _asm } $store fun
-{ type F32 == } { { Void I32 F32 } { Void } Arrow "f32.store" _asm } $store fun
-{ type I64 == } { { Void I32 I64 } { Void } Arrow "i64.store" _asm } $store fun
-{ type F64 == } { { Void I32 F64 } { Void } Arrow "f64.store" _asm } $store fun
+{ type I32 == } { { Unit I32 I32 } { Unit } Arrow "i32.store" _asm } $store fun
+{ type F32 == } { { Unit I32 F32 } { Unit } Arrow "f32.store" _asm } $store fun
+{ type I64 == } { { Unit I32 I64 } { Unit } Arrow "i64.store" _asm } $store fun
+{ type F64 == } { { Unit I32 F64 } { Unit } Arrow "f64.store" _asm } $store fun
 
 # Setters
 { # dup type I32 == :assert
@@ -84,26 +84,26 @@
 {
     # Clear scene
     #0 0 height width
-    #{ Void I32 I32 I32 I32 } { Void } Arrow
+    #{ Unit I32 I32 I32 I32 } { Unit } Arrow
     #{ "js" "contextClearRect" } import @
 
     # Draw rectangle
     get_y get_x ball_dim ball_dim
-    { Void I32 I32 I32 I32 } { Void } Arrow
+    { Unit I32 I32 I32 I32 } { Unit } Arrow
     { "js" "contextFillRect" } import @
 
     # Debugging
     # get_x get_y get_dx get_dy
-    # { Void I32 I32 I32 I32 } { Void } Arrow
+    # { Unit I32 I32 I32 I32 } { Unit } Arrow
     # { "js" "console.log" } import @
 } $draw =
 
-{ Void } { draw } $draw export
-{ Void } { update } $update export
-{ Void } {
+( Unit ) { draw } "draw" export
+( Unit ) { update } "update" export
+( Unit ) {
     update
     draw
 
     # Await next frame
-    { Void } { Void } Arrow { "js" "nextFrame" } import @
-} $loop export
+    { Unit } { Unit } Arrow { "js" "nextFrame" } import @
+} "loop" export

@@ -1,4 +1,4 @@
-import { BlockToken, LexerToken, NumberToken } from "./scan";
+import { BlockToken, IdToken, LexerToken, NumberToken } from "./scan";
 import * as value from './value';
 import Context from './context';
 import { LiteralMacro } from './macro';
@@ -51,6 +51,15 @@ export default function parse(tokens: LexerToken[], ctx = new Context(undefined,
                 ctx.push(new value.MacroValue(t, new LiteralMacro(ctx, t as BlockToken)));
                 break;
 
+            // Tuples: Like a block but gets parsed immediately and not as smart
+            case LexerToken.Type.Tuple: {
+                const ret = ctx.parseTuple(t as BlockToken);
+                if (!(ret instanceof Context))
+                    return ret;
+                break;
+            }
+
+            // Parse: strings
             case LexerToken.Type.String:
                 ctx.push(new value.StrValue(t));
                 break;
@@ -58,13 +67,13 @@ export default function parse(tokens: LexerToken[], ctx = new Context(undefined,
             // Identifiers: also need to bind scope
             case LexerToken.Type.Identifier:
                 // Handle subtypes
-                if (t.token[0] === '$') {
+                if ((t as IdToken).isEscaped) {
                     // Escaped symbol
-                    ctx.push(new value.IdValue(t, t.token, ctx.scopes.slice()));
+                    ctx.push(new value.IdValue(t as IdToken));
                 } else {
                     // Invoke operator
-                    const s = performance.now();
-                    const v = ctx.getId(t.token);
+                    // const s = performance.now();
+                    const v = ctx.getId((t as IdToken).value);
                     if (!v)
                         return new error.SyntaxError(`${t.token} is undefined`, t, ctx);
                     // console.log('invoke', t.token, v);

@@ -346,7 +346,7 @@ const opInstrs: { [k : string] : (ctx: Context, token: LexerToken, cmd: string) 
             return ['syntax error'];
         if (!trueVal.datatype.check(falseVal.datatype) || !falseVal.datatype.check(trueVal.datatype))
             return ['incompatible datatypes for different branches of select'];
-        if (trueVal.datatype.isVoid())
+        if (trueVal.datatype.isUnit())
             return ['void datatype not allowed in select instruciton'];
 
         // Create select instruction
