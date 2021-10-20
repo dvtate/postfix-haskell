@@ -617,7 +617,7 @@ const operators : MacroOperatorsSpec = {
 
     // Defer results of calculations invloving this value until runtime
     'defer' : {
-        action: (ctx: Context, token: LexerToken) => {
+        action: (ctx: Context) => {
             // Get value from stack
             if (ctx.stack.length === 0)
                 return ['missing value']
@@ -707,7 +707,7 @@ const operators : MacroOperatorsSpec = {
     },
 
     'static_init_byte' : {
-        action: (ctx, token) => {
+        action: (ctx) => {
             // Get args
             if (ctx.stack.length < 2)
                 return ['missing value'];
@@ -722,29 +722,6 @@ const operators : MacroOperatorsSpec = {
         },
     },
 };
-
-// Condition for two numeric types
-// This macro returns 1 when the top two values on the stack are numbers and 0 otherwise
-const numberCheck = new value.MacroValue(null, new CompilerMacro((ctx, token) => {
-    // Pull args
-    if (ctx.stack.length < 2)
-        return [`expected two numbers but only received ${ctx.stack.length} values`];
-    const b = ctx.pop();
-    const a = ctx.pop();
-
-    // Return result of type-check
-    const numberType = new types.UnionType(null, [
-        types.PrimitiveType.Types.I32,
-        types.PrimitiveType.Types.I64,
-        types.PrimitiveType.Types.F32,
-        types.PrimitiveType.Types.F64,
-    ]);
-    const synTypes = [value.ValueType.Data, value.ValueType.Expr];
-    const ret = synTypes.includes(a.type) && synTypes.includes(b.type)
-        && numberType.check(b.datatype) && numberType.check(a.datatype)
-        && (b.datatype.check(a.datatype) || a.datatype.check(b.datatype));
-    ctx.push(toBool(ret, token));
-}));
 
 // Global functions that the user can overload
 const funs = {

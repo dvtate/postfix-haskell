@@ -12,7 +12,7 @@ import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';
 import ModuleManager from "./module";
-import { CompilerMacro, LiteralMacro, Macro } from "./macro";
+import { LiteralMacro } from "./macro";
 import { formatErrorPos } from '../tools/util';
 import { Namespace } from './namespace';
 

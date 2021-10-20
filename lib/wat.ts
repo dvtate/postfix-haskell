@@ -1,5 +1,4 @@
 import * as expr from './expr';
-import * as types from './datatypes';
 
 
 // Not sure if I'll actually end up using this long term...

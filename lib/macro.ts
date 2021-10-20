@@ -82,7 +82,7 @@ export class LiteralMacro extends Macro {
     /**
      * @override
      */
-    action(ctx: Context, token: LexerToken): ActionRet {
+    action(ctx: Context): ActionRet {
         // TODO simplify and/or use ctx.copyState()
         // Use proper lexical scope
         const oldScopes = ctx.scopes;

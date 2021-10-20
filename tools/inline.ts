@@ -10,9 +10,8 @@ const wabtProm = wabtMod();
  * Compile source code and instantiate module
  * @param src source code
  * @param importObject bindings imported from js
- * @param options unused for now
  */
-export async function compile(src: string, importObject = {}, options = {}) {
+export async function compile(src: string, importObject = {}) {
     // TODO bindings
     const ctx = parse(lex(src, "inline"));
     if (!(ctx instanceof Context))
