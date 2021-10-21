@@ -1,4 +1,5 @@
 import { LexerToken } from './scan';
+import { Value } from './value';
 
 /**
  * Abstract base for datatypes
@@ -357,6 +358,15 @@ export class ArrowType extends Type {
         return !(this.inputTypes.some((t, i) => t.check(type.inputTypes[i]))
             || this.outputTypes.some((t, i) => t.check(type.outputTypes[i])));
     }
-}
 
-// TODO add ValueTypes as classes?
+    /**
+     * Can this arrow be called with the given stack?
+     * @param stack stack to check from
+     * @returns true if types align
+     */
+    checkInputs(stack: Value[]): boolean {
+        return stack
+            .slice(-this.inputTypes.length)
+            .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype))
+    }
+}

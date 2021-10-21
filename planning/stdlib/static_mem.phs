@@ -46,16 +46,16 @@
 # Store value in memory
 # <void> <addr> <value> store
 { pop type I32 == } {
-    swap { Unit I32 I32 } { Unit } Arrow "i32.store" _asm
+    swap ( Unit I32 I32 ) ( Unit ) Arrow "i32.store" _asm
 } $store fun
 { pop type F32 == } {
-    swap { Unit I32 F32 } { Unit } Arrow "f32.store" _asm
+    swap ( Unit I32 F32 ) ( Unit ) Arrow "f32.store" _asm
 } $store fun
 { pop type I64 == } {
-    swap { Unit I32 I64 } { Unit } Arrow "i64.store" _asm
+    swap ( Unit I32 I64 ) ( Unit ) Arrow "i64.store" _asm
 } $store fun
 { pop type F64 == } {
-    swap { Unit I32 F64 } { Unit } Arrow "f64.store" _asm
+    swap ( Unit I32 F64 ) ( Unit ) Arrow "f64.store" _asm
 } $store fun
 
 # Load value from memory

@@ -10,7 +10,7 @@ $Monad ~ class $IO =
     v type I32 I64 | F32 F64 | | ==
     io type Any IO == && }
 { { $io  $v } =
-    io v { io type v type } { io type } Arrow { "js" "console.log" } import @
+    io v ( io type v type ) ( io type ) Arrow { "js" "console.log" } import @
 } $print fun
 
 # Define print for strings
@@ -18,5 +18,5 @@ $Monad ~ class $IO =
     str type Str ==
     io type Any IO == && }
 { { $io  $str } =
-    io str { io type Str } { io type } Arrow { "js" "logStr" } import @
+    io str ( io type Str ) ( io type ) Arrow { "js" "logStr" } import @
 } $print fun

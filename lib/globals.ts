@@ -376,28 +376,36 @@ const operators : MacroOperatorsSpec = {
             // Get operands
             if (ctx.stack.length < 2)
                 return ['not enough values'];
-            const outputsMacro = ctx.pop();
-            const inputsMacro = ctx.pop();
-            if (!(outputsMacro instanceof Macro) || !(inputsMacro instanceof Macro))
-                return ['expected two macros for input and output types'];
+            const outputsTuple = ctx.pop();
+            const inputsTuple = ctx.pop();
 
             // Get input types
-            const ev = ctx.traceIO(inputsMacro, token);
-            if (!(ev instanceof Context.TraceResults))
-                return ev;
-            ev.gives = ev.gives.slice(0, Math.abs(ev.delta));
-            if (ev.gives.some(v => v.type !== value.ValueType.Type))
-                return ['expected all input types to be types'];
-            const inputs : types.Type[] = ev.gives.map(t => t.value);
+            let inputs: types.Type[];
+            if (inputsTuple instanceof value.TupleValue && inputsTuple.value.length === 0) {
+                ctx.warn(token, '() is context sensitive, you should use warn');
+                inputs = [];
+            } else if (inputsTuple.type === value.ValueType.Type) {
+                const bt = inputsTuple.value.getBaseType();
+                if (!(bt instanceof types.TupleType))
+                    return new error.SyntaxError('Expected a tuple type for inputs', token, ctx);
+                inputs = bt.types;
+            } else {
+                return new error.SyntaxError('Expected a tuple type for inputs', token, ctx);
+            }
 
             // Get output types
-            const ev2 = ctx.traceIO(outputsMacro, token);
-            if (!(ev2 instanceof Context.TraceResults))
-                return ev2;
-            ev2.gives = ev2.gives.slice(0, Math.abs(ev2.delta));
-            if (ev2.gives.some(v => v.type !== value.ValueType.Type))
-                return ['expected all output types to be types'];
-            const outputs : types.Type[] = ev2.gives.map(t => t.value);
+            let outputs: types.Type[];
+            if (outputsTuple instanceof value.TupleValue && outputsTuple.value.length === 0) {
+                ctx.warn(token, '() is context sensitive, you should use warn');
+                outputs = [];
+            } else if (outputsTuple.type === value.ValueType.Type) {
+                const bt = outputsTuple.value.getBaseType();
+                if (!(bt instanceof types.TupleType))
+                    return new error.SyntaxError('Expected a tuple type for outputs', token, ctx);
+                outputs = bt.types;
+            } else {
+                return new error.SyntaxError('Expected a tuple type for outputs', token, ctx);
+            }
 
             // Push Type onto the stack
             const type = new types.ArrowType(token, inputs, outputs);

@@ -188,6 +188,8 @@ export default class ModuleManager {
      * @returns - memory address for start of region
      */
     addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string, isConst = false): number {
+        // TODO OPTIMIZATION we should segregate strings vs non-string static data
+
         // Convert data to byte array
         const bytes = ModuleManager.toByteArray(data);
 

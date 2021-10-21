@@ -32,10 +32,10 @@
 
 # Store value in memory
 # <void> <addr> <value> store
-{ type I32 == } { { Unit I32 I32 } { Unit } Arrow "i32.store" _asm } $store fun
-{ type F32 == } { { Unit I32 F32 } { Unit } Arrow "f32.store" _asm } $store fun
-{ type I64 == } { { Unit I32 I64 } { Unit } Arrow "i64.store" _asm } $store fun
-{ type F64 == } { { Unit I32 F64 } { Unit } Arrow "f64.store" _asm } $store fun
+{ type I32 == } { ( Unit I32 I32 ) ( Unit ) Arrow "i32.store" _asm } $store fun
+{ type F32 == } { ( Unit I32 F32 ) ( Unit ) Arrow "f32.store" _asm } $store fun
+{ type I64 == } { ( Unit I32 I64 ) ( Unit ) Arrow "i64.store" _asm } $store fun
+{ type F64 == } { ( Unit I32 F64 ) ( Unit ) Arrow "f64.store" _asm } $store fun
 
 # Setters
 { # dup type I32 == :assert
@@ -56,7 +56,7 @@
 4 $ball_dim =
 
 { # Generate random int from 1-10
-    { } { F32 } Arrow { "js" "Math.random" } import @
+    Unit (F32) Arrow { "js" "Math.random" } import @
     10.0f * I32 cast 1 +
 } $rng_1_10 =
 
@@ -84,18 +84,18 @@
 {
     # Clear scene
     #0 0 height width
-    #{ Unit I32 I32 I32 I32 } { Unit } Arrow
+    #( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
     #{ "js" "contextClearRect" } import @
 
     # Draw rectangle
     get_y get_x ball_dim ball_dim
-    { Unit I32 I32 I32 I32 } { Unit } Arrow
+    ( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
     { "js" "contextFillRect" } import @
 
     # Debugging
-    # get_x get_y get_dx get_dy
-    # { Unit I32 I32 I32 I32 } { Unit } Arrow
-    # { "js" "console.log" } import @
+    #get_x get_y get_dx get_dy
+    #( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
+    #{ "js" "console.log" } import @
 } $draw =
 
 ( Unit ) { draw } "draw" export
@@ -105,5 +105,5 @@
     draw
 
     # Await next frame
-    { Unit } { Unit } Arrow { "js" "nextFrame" } import @
+    (Unit) (Unit) Arrow { "js" "nextFrame" } import @
 } "loop" export
