@@ -5,6 +5,7 @@ import * as expr from './expr';
 import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
 import { fromDataValue } from './expr';
+import { Macro } from './macro';
 
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
@@ -26,12 +27,12 @@ export default class Fun {
     /**
      * Preconditions for each branch
      */
-    conditions: value.MacroValue[] = []
+    conditions: Macro[] = []
 
     /**
      * Actions/postconditions for each branch
      */
-    actions: value.MacroValue[] = [];
+    actions: Macro[] = [];
 
     /**
      * Identifier function is bound to
@@ -48,14 +49,14 @@ export default class Fun {
      * @param [token] - token for first def
      * @param [condition] - condition macro for first def
      * @param [action] - action macro for first def
+     * @param [name] - debugging symbol
      */
     constructor(
-        token: LexerToken,
-        condition: value.MacroValue,
-        action: value.MacroValue,
-        name: string,
+        token?: LexerToken,
+        condition?: Macro,
+        action?: Macro,
+        name?: string,
     ) {
-        // Macros corresponding to checks and outputs
         this.tokens = token ? [token] : [];
         this.conditions = condition ? [condition] : [];
         this.actions = action ? [action] : [];
@@ -68,7 +69,7 @@ export default class Fun {
      * @param condition - pre-invoke test
      * @param action - action when test passses
      */
-    overload(token: LexerToken, condition: value.MacroValue, action: value.MacroValue) {
+    overload(token: LexerToken, condition: Macro, action: Macro) {
         // Prevent multiple overloads
         const idx = this.tokens.indexOf(token);
         // console.log('overload', this.tokens[0].token, this.tokens.includes(token));
@@ -158,7 +159,7 @@ export default class Fun {
                 && (ret instanceof expr.Expr
                     || (ret instanceof value.DataValue && ret.value.value != BigInt(0)))
                 && [ret, this.actions[i]])
-            .filter(b => !!b)) as Array<[value.DataValue | expr.DataExpr, value.MacroValue]>;
+            .filter(b => !!b)) as Array<[value.DataValue | expr.DataExpr, Macro]>;
 
         // No truthy condition found
         // TODO non-const-expr
@@ -185,7 +186,7 @@ export default class Fun {
         // Branch is known at compile-time: invoke corresponding action
         if (isConstExpr) {
             ctx.stack = oldStack;
-            return ctx.toError(branches[i][1].value.action(ctx, token), token);
+            return ctx.toError(branches[i][1].action(ctx, token), token);
         }
 
         // Runtime checks... fmllll

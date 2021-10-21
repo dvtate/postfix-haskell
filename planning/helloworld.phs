@@ -3,8 +3,10 @@
 "stdlib/io.phs"    require use #"IO|print" ""  use_some
 "stdlib/str.phs"   require use #"Str|to_Str"      ""  use_some
 
+{ ( $a $b ) = { a b } } $>> =
+
 # Lazy evaluated IO action
-{ "Testing" Str.new print }
+{ "Testing" Str_new print }
 { 888.5 print } >> $action =
 
 # Export that performs IO
@@ -13,7 +15,7 @@
     action
 
     # Print string
-    "Hello, world!" Str.new print
+    "Hello, world!" Str_new print
 
     # Print an i32
     123456 print

@@ -22,11 +22,10 @@ interface AssemblyDBEntry {
     handler?: (ctx: Context, args: WasmNumber[], instr: string) => WasmNumber[] | Error;
 }
 
-//
+// Types
 type WasmNumberKeys = {
     [Key in keyof WasmNumber]: Extract<WasmNumber[Key], (..._: WasmNumber[]) => WasmNumber>;
 };
-
 interface BMathOptions {
     noInts?: boolean;
     signed?: boolean;
@@ -325,7 +324,8 @@ function genMemory() {
 }
 
 // These aren't as simple to describe as they have polymorphism and stuff so we treat them as special operators
-const opInstrs: { [k : string] : (ctx: Context, token: LexerToken, cmd: string) => string[] | null | void | error.SyntaxError } = {
+type HandlerFn = (ctx: Context, token: LexerToken, cmd: string) => string[] | null | void | error.SyntaxError;
+const opInstrs: { [k : string] : HandlerFn } = {
     'select' : (ctx, token, cmd) => {
         // Get args
         if (ctx.stack.length < 3)

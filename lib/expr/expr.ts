@@ -89,19 +89,21 @@ export abstract class Expr extends value.Value {
  * @class
  */
 export abstract class DataExpr extends Expr {
-    datatype: types.Type;
-
     /**
      * @param token - location in code
      * @param datatype - Datatype for value
      */
-    constructor(token: LexerToken, datatype: types.Type) {
+    constructor(token: LexerToken, public datatype: types.Type) {
         super(token);
-        this.datatype = datatype;
     }
 
     static expensive = false;
 }
+
+/**
+ * This expression is only used for type inference and thus cannot be compiled
+ */
+export class DummyDataExpr extends DataExpr {}
 
 /**
  * For when the output of an expression is stored in a local variable

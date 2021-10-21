@@ -1,7 +1,6 @@
 import { CompilerMacro } from "./macro";
 import * as value from "./value";
 import * as error from "./error";
-import * as expr from './expr';
 import { Context } from "vm";
 import { LexerToken } from "./scan";
 import { formatErrorPos } from "../tools/util";
@@ -125,7 +124,5 @@ const debugOperators = {
 // Export Macros because user shouldn't override
 export default Object.entries(debugOperators).reduce((acc, [k, v]) => ({
     ...acc,
-    [k] : new value.MacroValue(
-        undefined,
-        new CompilerMacro((ctx, token) => logWithToken(k, ctx, token, v))),
+    [k] : new CompilerMacro(null, (ctx, token) => logWithToken(k, ctx, token, v), k),
 }), {});

@@ -12,9 +12,10 @@ import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';
 import ModuleManager from "./module";
-import { LiteralMacro } from "./macro";
+import { LiteralMacro, Macro } from "./macro";
 import { formatErrorPos } from '../tools/util';
 import { Namespace } from './namespace';
+import Fun from './function';
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
@@ -76,8 +77,6 @@ export default class Context {
 
     // WebAssembly Module imports and exports
     module: ModuleManager;
-
-    recursiveMacros: Set<value.Value> = new Set();
 
     // Some optimizations can be slow with larger projects
     optLevel: number;
@@ -278,7 +277,7 @@ export default class Context {
         // Determine state change
         const ntakes = initialState.stack.length - this.minStackSize;
         const ngives = this.stack.length - this.minStackSize;
-        const takes = initialState.stack.slice(0, ntakes);
+        const takes = initialState.stack.slice(0, ntakes); // TODO this is probably wrong
         const gives = this.stack.slice(-ngives);
         const delta = this.stack.length - initialState.stack.length;
         // const delta = gives.length - takes.length;
@@ -327,18 +326,26 @@ export default class Context {
             return this;
         }
 
-        // Check trace status
-        const tResults = this._getTraceResults(v);
-
-        // console.log("invoke:", (token && token.token),
-        //     'recursive:', recursiveInv,
-        //     'results:', tResults ? (tResults.result && typeof tResults.result) : 'false');
-
         // Try to invoke normally
+        if (v.value instanceof Fun) {
+            this.trace.push(v);
+            if (this.trace.length > 1000) {
+                console.warn('1000 invocations reached, you probably forgot to use `rec`');
+                throw new error.SyntaxError('Semantics max call stack exceeded', this.trace.map(v => v.token), this);
+            }
+            const ret = this.toError(v.value.action(this, token), token);
+            this.trace.pop();
+            return ret;
+        }
+
+        //
+        if (!(v instanceof Macro))
+            throw new Error('wtf?');
+
         // TODO handle constexprs specially
-        if (!v.value.recursive || isTrace) {
+        if (!v.recursive || isTrace) {
             // console.log('non rec', token.token, v.type);
-            this.trace.push(v.value);
+            this.trace.push(v);
             if (this.trace.length > 1000) {
                 console.warn('1000 invocations reached, you probably forgot to use `rec`');
                 // const toks = this.trace.map(t => t && t.token?.token);
@@ -349,20 +356,14 @@ export default class Context {
                 //     .concat(this.trace.slice(-10).map(v => v.token));
                 throw new error.SyntaxError('Max call stack exceeded', this.trace.map(v => v.token), this);
             }
-            const ret = this.toError(v.value.action(this, token), token);
+            const ret = this.toError(v.action(this, token), token);
             this.trace.pop();
             return ret;
         }
 
-        // It's recursive and we didn't see it yet
-        // if (v.value.recursive && (!tResults || tResults.result !== null) && !this.recursiveMacros.has(v.value))
-        //     throw v;
-
-        // if (!recursiveInv)
-        //     console.log('proc recursive');
-
         // This is complicated because of recursion :(
         // TODO copy explanation from tg channel
+        const tResults = this._getTraceResults(v);
         if (tResults === null) { // Not currently tracing
             // Trace results not found, Handle recursive call
             // TODO if all inputs are constexprs => inline/invoke simple
@@ -373,9 +374,6 @@ export default class Context {
                 v instanceof expr.DataExpr || v instanceof value.DataValue
                 ? new expr.RecursiveTakesExpr(v.token, v.datatype, this.stack.length - i, v)
                 : v);
-
-            // Identify value as recursive
-            this.recursiveMacros.add(v.value);
 
             // Make body of (loop ...)
             const body = new expr.RecursiveBodyExpr(token);
@@ -397,10 +395,10 @@ export default class Context {
                     );
             if (isConstExpr) {
                 this.warn(token, 'expanding constexpr');
-                this.trace.push(v.value);
+                this.trace.push(v);
                 try {
                     this.stack = stack;
-                    const ret = this.toError(v.value.action(this, token), token);
+                    const ret = this.toError(v.action(this, token), token);
                     this.trace.pop();
                     return ret;
                 } catch (e) {
@@ -426,9 +424,6 @@ export default class Context {
             const ios2 = this.traceIO(v, token, { result: ios, body });
             if (!(ios2 instanceof TraceResults))
                 return ios2;
-
-            // Done with it
-            this.recursiveMacros.delete(v.value);
 
             // Update body
             body.gives = ios2.gives as expr.DataExpr[];
@@ -504,7 +499,7 @@ export default class Context {
         const sl = this.stack.length;
 
         // Invoke body
-        const ret = this.invoke(new value.MacroValue(t, new LiteralMacro(this, t)), t, false);
+        const ret = this.invoke(new LiteralMacro(this, t), t);
 
         // Create tuple from values pushed onto stack
         if (sl > this.stack.length)

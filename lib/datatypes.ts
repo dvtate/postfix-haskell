@@ -63,11 +63,11 @@ export class AnyType extends Type {}
 /**
  * More specific than types, used for applying methods and stuff
  */
-export class ClassType extends Type {
+export class ClassType<T extends Type> extends Type {
     /**
      * Base type
      */
-    type: Type;
+    type: T;
 
     /**
      * Unique identifier for the class
@@ -80,7 +80,7 @@ export class ClassType extends Type {
      * @param type - Underlying Data type
      * @param [id] - Clone a class
      */
-    constructor(token: LexerToken, type: Type, id: number = ClassType._uid++) {
+    constructor(token: LexerToken, type: T, id: number = ClassType._uid++) {
         super(token);
         this.type = type;
         this.id = id;

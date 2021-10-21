@@ -83,19 +83,6 @@ export class DataValue extends Value {
 }
 
 /**
- * Invokable block of code
- */
-export class MacroValue <T extends Macro = Macro> extends Value {
-    value: T;
-    datatype: types.ArrowType = null;
-    type: ValueType.Macro = ValueType.Macro;
-
-    constructor(token: LexerToken, value: Macro, type: types.ArrowType = null) {
-        super(token, ValueType.Macro, value, type);
-    }
-}
-
-/**
  * Set of identifiers
  */
 export class NamespaceValue extends Value {

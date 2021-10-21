@@ -48,7 +48,7 @@ export default function parse(tokens: LexerToken[], ctx = new Context(undefined,
 
             // Blocks: Need to form a closure with current scope
             case LexerToken.Type.Block:
-                ctx.push(new value.MacroValue(t, new LiteralMacro(ctx, t as BlockToken)));
+                ctx.push(new LiteralMacro(ctx, t as BlockToken));
                 break;
 
             // Tuples: Like a block but gets parsed immediately and not as smart

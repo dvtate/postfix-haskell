@@ -6,7 +6,7 @@ import Context from './context';
 import WasmNumber from './numbers';
 import Fun from './function';
 import scan, { BlockToken, LexerToken } from './scan';
-import { CompilerMacro, LiteralMacro } from './macro';
+import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
 import { invokeAsm } from './asm';
@@ -49,7 +49,7 @@ const operators : MacroOperatorsSpec = {
 
             // Get a list of symbols to assign
             let syms : value.IdValue[];
-            if (sym instanceof value.MacroValue) {
+            if (sym instanceof Macro) {
                 // List of identifiers to pull from stack in reverse order
                 const tr = ctx.traceIO(sym, token);
                 if (tr instanceof error.SyntaxError)
@@ -120,7 +120,7 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['expected a macro of values to pack'];
             const execArr = ctx.pop();
-            if (!(execArr instanceof value.MacroValue))
+            if (!(execArr instanceof Macro))
                 return ['expected a macro of values to pack'];
 
             // Invoke executable array
@@ -158,16 +158,17 @@ const operators : MacroOperatorsSpec = {
             // Pull a macro or convert to one
             if (ctx.stack.length === 0)
                 return ['expected a macro or type'];
-            let v = ctx.pop();
-            if (v.type == value.ValueType.Type) {
-                const cpy = v;
-                v = new value.MacroValue(token, new CompilerMacro((ctx) => void ctx.push(cpy)));
+            let arg = ctx.pop();
+            if (arg.type == value.ValueType.Type) {
+                const cpy = arg;
+                arg = new CompilerMacro(token, ctx => void ctx.push(cpy));
             }
 
             // Validate input
-            if (!(v instanceof value.MacroValue))
+            if (!(arg instanceof Macro))
                 return ['expected a type or macro to make a class of'];
-            if (v.value.recursive)
+            const v: Macro = arg;
+            if (v.recursive)
                 return ['recursive types currently not supported'];
 
             // Generate new class
@@ -178,7 +179,7 @@ const operators : MacroOperatorsSpec = {
                 // TODO i think scoping is fucked :/
                 // Invoke v
                 const oldStack = ctx.stack.slice();
-                const ev = v.value.action(ctx, tok);
+                const ev = v.action(ctx, tok);
                 if (typeof ev === 'object' && !(ev instanceof Context))
                     return ev;
                 // console.log('ev', ev);
@@ -199,7 +200,7 @@ const operators : MacroOperatorsSpec = {
             };
 
             // Push
-            ctx.push(new value.MacroValue(token, new CompilerMacro(wrapper)));
+            ctx.push(new CompilerMacro(token, wrapper));
         },
     },
 
@@ -295,10 +296,10 @@ const operators : MacroOperatorsSpec = {
             if (!(sym instanceof value.IdValue))
                 return ['expected a symbol'];
             const action = ctx.pop();
-            if (!(action instanceof value.MacroValue))
+            if (!(action instanceof Macro))
                 return ['expected a macro action'];
             const condition = ctx.pop();
-            if (!(condition instanceof value.MacroValue))
+            if (!(condition instanceof Macro))
                 return ['expected a macro condition'];
 
             // Bind Symbol
@@ -336,7 +337,7 @@ const operators : MacroOperatorsSpec = {
             else
                 return ['expected a symbol'];
             const act = ctx.pop();
-            if (!(act instanceof value.MacroValue))
+            if (!(act instanceof Macro))
                 return ['expected macro'];
             const args = ctx.pop();
             if (args.type !== value.ValueType.Type || !(args.value instanceof types.TupleType))
@@ -377,7 +378,7 @@ const operators : MacroOperatorsSpec = {
                 return ['not enough values'];
             const outputsMacro = ctx.pop();
             const inputsMacro = ctx.pop();
-            if (!(outputsMacro instanceof value.MacroValue) || !(inputsMacro instanceof value.MacroValue))
+            if (!(outputsMacro instanceof Macro) || !(inputsMacro instanceof Macro))
                 return ['expected two macros for input and output types'];
 
             // Get input types
@@ -419,7 +420,7 @@ const operators : MacroOperatorsSpec = {
                 return ['not enough values'];
             const scopes = ctx.pop();
             const type = ctx.pop();
-            if (!(scopes instanceof value.MacroValue))
+            if (!(scopes instanceof Macro))
                 return ['expected an executable array of scopes'];
             if (type.type !== value.ValueType.Type)
                 return ['expected a type for the input'];
@@ -439,8 +440,8 @@ const operators : MacroOperatorsSpec = {
             if (!importName)
                 return ["invalid import"];
 
-            // Wrap import call in a macro
-            ctx.push(new value.MacroValue(token, new CompilerMacro((ctx, token) => {
+            // Macro action which calls the import
+            const callImport = (ctx: Context, token: LexerToken): ActionRet => {
                 // Verify matching input types
                 const inputs: value.Value[] = [];
                 if (ctx.stack.length < type.value.inputTypes.length)
@@ -466,6 +467,7 @@ const operators : MacroOperatorsSpec = {
                     return;
                 }
 
+                // Handle unlikely case of import with multi-returns... sketchy
                 const instrExpr = new expr.MultiInstrExpr(
                     token,
                     `call ${importName}`,
@@ -473,8 +475,10 @@ const operators : MacroOperatorsSpec = {
                     type.value.outputTypes,
                 );
                 ctx.push(...instrExpr.results);
+            };
 
-            }), type.value));
+            // Wrap import call in a macro
+            ctx.push(new CompilerMacro(token, callImport, importName, type.value));
         },
     },
 
@@ -484,8 +488,12 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['missing value'];
             const arg = ctx.pop();
-            if (arg.value instanceof Fun || arg.value instanceof LiteralMacro) {
+            if (arg.value instanceof Fun) {
+                // TODO recursive Fun's
                 arg.value.recursive = true;
+                ctx.push(arg);
+            } else if (arg instanceof LiteralMacro) {
+                arg.recursive = true;
                 ctx.push(arg);
             } else {
                 return ['expected a macro or function to mark as recursive'];
@@ -500,11 +508,11 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['missing value'];
             const arg = ctx.pop();
-            if (!(arg.value instanceof LiteralMacro))
+            if (!(arg instanceof LiteralMacro))
                 return ['expected a macro literal'];
 
             // Create ns
-            const ns = arg.value.getNamespace(ctx, token);
+            const ns = arg.getNamespace(ctx, token);
             if (ns instanceof value.NamespaceValue)
                 ctx.push(ns);
             else
@@ -728,29 +736,29 @@ const funs = {
     // Invoke operator: dreference/unescape a symbol
     '@' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        new CompilerMacro(null, (ctx, token) => {
             if (!ctx.pop())
                 return ['missing argument'];
             ctx.push(toBool(true, token));
-        })),
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        }, '@'),
+        new CompilerMacro(null, (ctx, token) => {
             let v = ctx.pop();
             if (v instanceof value.IdValue)
                 v = v.deref(ctx);
             return ctx.invoke(v, token);
-        })),
+        }, '@'),
         '@',
     )),
 
     // Dereference operator: dereference a symbol (equivalent to @ except doesn't invoke macros + functions)
     '~' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        new CompilerMacro(null, (ctx, token) => {
             if (!ctx.pop())
                 return ['missing argument'];
             ctx.push(toBool(true, token));
-        })),
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        }),
+        new CompilerMacro(null, (ctx, token) => {
             const sym = ctx.pop();
             if (!(sym instanceof value.IdValue))
                 return ['expected an escaped identifier to extract value from'];
@@ -759,15 +767,15 @@ const funs = {
                 return ['undefined'];
             v.token = token;
             ctx.push(v);
-        })),
+        }),
         '~',
     )),
 
     // Default ==
-    // TODO Expr
+    // TODO Refactor/simplify?
     '==' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        new CompilerMacro(null, (ctx, token) => {
             // Pull args
             if (ctx.stack.length < 2)
                 return ['expected two expressions to compare'];
@@ -790,8 +798,8 @@ const funs = {
 
             // Continue
             ctx.push(toBool(true, token));
-        })),
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        }),
+        new CompilerMacro(null, (ctx, token) => {
             // Pull args
             if (ctx.stack.length < 2)
                 return ['expected two expressions to compare'];
@@ -896,25 +904,25 @@ const funs = {
                     // console.log(a.typename(), b.typename());
                     return ['syntax error'];
             }
-        })),
+        }),
         '==',
     )),
 
     // TODO maybe use make instead?
     'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        new CompilerMacro(null, (ctx, token) => {
             // macro + any datatype
             const type = ctx.pop();
             const v = ctx.pop();
             if (type.type !== value.ValueType.Type)
                 return ctx.push(toBool(false, token));
-            else if (!(v instanceof value.MacroValue))
+            else if (!(v instanceof Macro))
                 return ['as operator currently can only apply types to macros'];
             else
                 return ctx.push(toBool(true, token));
-        })),
-        new value.MacroValue(null, new CompilerMacro((ctx, token) => {
+        }),
+        new CompilerMacro(null, (ctx, token) => {
             // Get args
             const type = ctx.pop();
             const value = ctx.pop();
@@ -929,7 +937,7 @@ const funs = {
             // TODO this is placeholder
             value.datatype = type.value;
             ctx.push(value);
-        })),
+        }),
         'as',
     )),
 };
@@ -938,11 +946,7 @@ const funs = {
 const exportsObj = Object.entries(operators).reduce((ret, [k, v]) =>
     ({
         ...ret,
-        [k] : new value.MacroValue(
-            null,
-            new CompilerMacro(v.action),
-            v.type || undefined,
-        ),
+        [k] : new CompilerMacro(null, v.action, k, v.type || undefined),
     }), {});
 
 // Add some other values as well
