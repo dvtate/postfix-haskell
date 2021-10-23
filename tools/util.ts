@@ -38,6 +38,7 @@ interface CompileError extends Error {
 export function formatErrorPos(errors: CompileError[]): string {
     function ppToken(t: lex.LexerToken) {
         if (!t) return '';
+        if (!t.file) return `${t.token}`;
         const loc = fileLocate(t.file, t.position),
             wsn = Math.min(Math.max(loc.lineOffset - t.token.length, 0), loc.line.length, loc.lineOffset),
             wss = loc.line.slice(0, wsn).split('').reduce((a, v) => a + (v === '\t' ? '\t' : ' '), '');

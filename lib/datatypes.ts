@@ -365,8 +365,20 @@ export class ArrowType extends Type {
      * @returns true if types align
      */
     checkInputs(stack: Value[]): boolean {
-        return stack
-            .slice(-this.inputTypes.length)
-            .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype))
+        if (this.inputTypes.length === 0)
+            return true;
+        return stack.length >= this.inputTypes.length
+            && stack
+                .slice(-this.inputTypes.length)
+                .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype))
+    }
+
+    checkInputTypes(types: Type[]): boolean {
+        if (this.inputTypes.length === 0)
+            return true;
+        return types.length >= this.inputTypes.length
+            && types
+                .slice(-this.inputTypes.length)
+                .every((t, i) => this.inputTypes[i].check(t));
     }
 }

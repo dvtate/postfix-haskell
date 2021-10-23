@@ -7,70 +7,51 @@
 I32 I64 | F32 F64 | | $Num =
 
 # Parametric type
-{ $A =
-    { A A A } pack
-} class $Vector3 =
+(: $A = ( A A A ) ) class $Vector3 =
 
 # Generic Accessors
-{ type Any Vector3 == } { unpack pop pop } $Vector3_x fun
-{ type Any Vector3 == } { unpack pop swap pop } $Vector3_y fun
-{ type Any Vector3 == } { unpack $z = pop pop z } $Vector3_z fun
+((Any Vector3): 1 ) (: unpack pop pop ) $Vector3_x fun
+((Any Vector3): 1 ) (: unpack pop swap pop ) $Vector3_y fun
+((Any Vector3): 1 ) (: unpack $z = pop pop z ) $Vector3_z fun
 
 # Overload * for dot-product
-{ $b = $a =
-    a type Num Vector3 ==
-    b type Num Vector3 == &&
-} {
-    $b = $a =
+((Num Vector3  Num Vector3): 1 ) (:
+    ( $a $b ) =
     a Vector3_x  b Vector3_x *
     a Vector3_y  b Vector3_y * +
     a Vector3_z  b Vector3_z * +
-} $global.* fun
+) $global.* fun
 
 # Overload * for scalar multiplication
-{ $v = $k =
-    k type Num ==
-    v type Num Vector3 == &&
-} {
-    $v = $k =
-    {
-        v Vector3_x k *
-        v Vector3_y k *
-        v Vector3_z k *
-    } pack v type make
-} $global.* fun
+((Num Num Vector3): 1 ) (:
+    ( $k $v ) =
+    v unpack ( $x $y $z ) =
+    ( x k *   y k *   z k * ) v type make
+) $global.* fun
 
 # Project a onto b
-{ $b = $a =
-    a type Num Vector3 ==
-    b type Num Vector3 == &&
-} {
-    $b = $a =
+((Num Vector3  Num Vector3): 1) (:
+    ( $a $b ) =
     a b *
     b b * /     # ||b|| ^ 2 = b dot b
     b *
-} $proj fun
+) $proj fun
 
 # Two perpendicular vectors
-{ 1 1 0 } pack Num Vector3 make $v1 =
-{ -1 1 0 } pack Num Vector3 make $v2 =
+( 1 1 0 ) Num Vector3 make $v1 =
+( -1 1 0 ) Num Vector3 make $v2 =
 
 v1 v2 * :data # 0
 
 # Project a onto b
-{ 5.0 6.0 7.0 } pack Num Vector3 make $a =
-{ 1.0 2.0 1.0 } pack Num Vector3 make $b =
+( 5.0 6.0 7.0 ) Num Vector3 make $a =
+( 1.0 2.0 1.0 ) Num Vector3 make $b =
 
 a b proj :data # [ 4, 8, 4 ]
 
 # Export
-
-( F64 ) {
+( F64 ) (:
     $v =
-    { v 1.0 v } pack Num Vector3 make $c =
+    ( v 1.0 v ) Num Vector3 make $c =
     a b proj c *
-} "test" export
-
-# (module
-# (func $test (param $0 f64) (result f64)
-#        (f64.add (f64.add (f64.mul (f64.const 4) (local.get 0)) (f64.const 8)) (f64.mul (f64.const 4) (local.get 0)))))
+) "test" export

@@ -1,43 +1,43 @@
 "./prelude.phs" require use
 
 # Left shift
-{ I32 I32 _2_with_types } { "i32.shl" asm } $global.<< fun
-{ I64 I64 _2_with_types } { "i64.shl" asm } $global.<< fun
+((I32 I32): 1 ) (: "i32.shl" asm ) $global.<< fun
+((I64 I64): 1 ) (: "i64.shl" asm ) $global.<< fun
 
 # Right shift
-{ I32 I32 _2_with_types } { "i32.shr_s" asm } $global.>> fun
-{ I64 I64 _2_with_types } { "i64.shr_s" asm } $global.>> fun
-{ I32 I32 _2_with_types } { "i32.shr_u" asm } $global.>>> fun
-{ I64 I64 _2_with_types } { "i64.shr_u" asm } $global.>>> fun
+((I32 I32): 1 ) (: "i32.shr_s" asm ) $global.>> fun
+((I64 I64): 1 ) (: "i64.shr_s" asm ) $global.>> fun
+((I32 I32): 1 ) (: "i32.shr_u" asm ) $global.>>> fun
+((I64 I64): 1 ) (: "i64.shr_u" asm ) $global.>>> fun
 
 # Bitwise and
-{ I32 I32 _2_with_types } { "i32.and" asm } $and fun
-{ I64 I64 _2_with_types } { "i64.and" asm } $and fun
+((I32 I32): 1 ) (: "i32.and" asm ) $and fun
+((I64 I64): 1 ) (: "i64.and" asm ) $and fun
 
 # Bitwise or
-{ I32 I32 _2_with_types } { "i32.or" asm } $or fun
-{ I64 I64 _2_with_types } { "i64.or" asm } $or fun
+((I32 I32): 1 ) (: "i32.or" asm ) $or fun
+((I64 I64): 1 ) (: "i64.or" asm ) $or fun
 
 # Bitwise xor
-{ I32 I32 _2_with_types } { "i32.xor" asm } $xor fun
-{ I64 I64 _2_with_types } { "i64.xor" asm } $xor fun
+((I32 I32): 1 ) (: "i32.xor" asm ) $xor fun
+((I64 I64): 1 ) (: "i64.xor" asm ) $xor fun
 
 # Left rotate
-{ I32 I32 _2_with_types } { "i32.rotl" asm } $rotl fun
-{ I64 I64 _2_with_types } { "i64.rotl" asm } $rotl fun
+((I32 I32): 1 ) (: "i32.rotl" asm ) $rotl fun
+((I64 I64): 1 ) (: "i64.rotl" asm ) $rotl fun
 
 # Right rotate
-{ I32 I32 _2_with_types } { "i32.rotr" asm } $rotr fun
-{ I64 I64 _2_with_types } { "i64.rotr" asm } $rotr fun
+((I32 I32): 1 ) (: "i32.rotr" asm ) $rotr fun
+((I64 I64): 1 ) (: "i64.rotr" asm ) $rotr fun
 
 # Count leading zeros
-{ type I32 == } { "i32.clz" asm } $clz fun
-{ type I64 == } { "i64.clz" asm } $clz fun
+((I32): 1 ) (: "i32.clz" asm ) $clz fun
+((I64): 1 ) (: "i64.clz" asm ) $clz fun
 
 # Count trailing zeros
-{ type I32 == } { "i32.ctz" asm } $ctz fun
-{ type I64 == } { "i64.ctz" asm } $ctz fun
+((I32): 1 ) (: "i32.ctz" asm ) $ctz fun
+((I64): 1 ) (: "i64.ctz" asm ) $ctz fun
 
 # Population count (number of 1 bits in binary repr.)
-{ type I32 == } { "i32.popcnt" asm } $popcnt fun
-{ type I64 == } { "i64.popcnt" asm } $popcnt fun
+((I32): 1 ) (: "i32.popcnt" asm ) $popcnt fun
+((I64): 1 ) (: "i64.popcnt" asm ) $popcnt fun

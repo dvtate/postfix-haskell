@@ -1,29 +1,29 @@
 "stdlib/prelude.phs" require use
 
 # Average
-{ + 2.0 / } $avg =
+(: + 2.0 / ) $avg =
 
 # Absolute value
-{ true } {} $abs fun
-{ 0.0 < } { -1.0 * } $abs fun
+(: true ) (: ) $abs fun
+(: 0.0 < ) (: neg ) $abs fun
 
-( F64 ) { # Square route via newton's method
-	{ # Tail-recursive helper
+( F64 ) (: # Square route via newton's method
+	(: # Tail-recursive helper
         $guess =
         $x =
 
         # Do we have an acceptable margin of error?
-        { guess guess * x - abs x / 1.0e-15 < } $good_enough =
+        (: guess guess * x - abs x / 1.0e-15 < ) $good_enough =
 
         # We can improve the value by averaging with quotient
-        { x x guess / guess avg iter } $improve =
+        (: x x guess / guess avg iter ) $improve =
 
         # Improve value until it's good enough
-        { true } { improve } $cond fun
-        { good_enough } { guess } $cond fun
+        (: true ) (: improve ) $cond fun
+        (: good_enough ) (: guess ) $cond fun
         cond
-	} rec $iter =
+	) rec $iter =
 
     # Start calculating with first guess being 1
     1.0 iter
-} "sqrt" export
+) "sqrt" export

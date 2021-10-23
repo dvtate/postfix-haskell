@@ -36,33 +36,21 @@ $inc ~ type () Fun ==
 $factorial ~ type ((I32) (I32)) RecFun ==
 ```
 
-### Current Postfix haskell
+### v0.0.3 Postfix haskell
 ```php
 { $n =
     { { $ret $n } =
         { true } { ret n * n 1 - iter } $act fun
         { n 0 <= } { 1 } $act fun
         act
-    } rec $iter
+    } rec $iter =
     1 n iter
 } $fac =
-```
 
-### Intermediate change
-```php
-(: $n =
-    (rec: ( $ret $n ) =
-        (: true ) (: ret n * n 1 - iter ) $act case
-        (: n 0 <= ) (: 1 ) $act case
-        act
-    ) $iter
-    1 n iter
-) $fac =
+{I32} {fac} $factorial export
 ```
-
 ### New syntax
 ```php
-# Note: placing identifier after type means it's captured as a parameter
 # Note: could omit type annotations
 ((I32) (I32): $n =
     ((I32 I32) (I32) rec: ($ret $n) =
@@ -73,8 +61,9 @@ $factorial ~ type ((I32) (I32)) RecFun ==
     1 n iter =
 ) $fac =
 
-$fac ~ "factorial" export
+(I32) {fac} "factorial" export
 ```
+
 
 ### Before
 Code taken from prelude which adds type promotion and an optimization to the builtin `==` operator.

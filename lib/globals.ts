@@ -5,7 +5,7 @@ import * as error from './error';
 import Context from './context';
 import WasmNumber from './numbers';
 import Fun from './function';
-import scan, { BlockToken, LexerToken } from './scan';
+import scan, { BlockToken, LexerToken, MacroToken } from './scan';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -228,13 +228,13 @@ const operators : MacroOperatorsSpec = {
                 // Push values onto the stack
                 v.value.forEach(val => ctx.push(val));
             } else if (v.type === value.ValueType.Expr) {
-
                 // Verify it's a tuple expr
                 if (v.value instanceof value.TupleValue)
                     v.value.value.forEach(val => ctx.push(val));
 
                 // TODO probably more ways to have tuple exprs...
-                else {console.log(v);
+                else {
+                    console.log(v);
                     return ['unexpected runtime-expr'];
                 }
             } else {
@@ -428,20 +428,17 @@ const operators : MacroOperatorsSpec = {
                 return ['not enough values'];
             const scopes = ctx.pop();
             const type = ctx.pop();
-            if (!(scopes instanceof Macro))
-                return ['expected an executable array of scopes'];
+            if (!(scopes instanceof value.TupleValue))
+                return ['expected a tuple of scopes'];
             if (type.type !== value.ValueType.Type)
                 return ['expected a type for the input'];
             if (!(type.value instanceof types.ArrowType))
                 return ['expected an arrow type for the import'];
 
             // Get scopes
-            const traceResults = ctx.traceIO(scopes, token);
-            if (!(traceResults instanceof Context.TraceResults))
-                return traceResults;
-            if (traceResults.gives.some(s => !(s instanceof value.StrValue)))
+            if (scopes.value.some(s => !(s instanceof value.StrValue)))
                 return ['expected an executable array of string scopes'];
-            const scopeStrs = traceResults.gives.map(s => s.value) as string[];
+            const scopeStrs = scopes.value.map(s => s.value) as string[];
 
             // Add relevant import
             const importName = ctx.module.addImport(scopeStrs, type.value);
@@ -487,25 +484,6 @@ const operators : MacroOperatorsSpec = {
 
             // Wrap import call in a macro
             ctx.push(new CompilerMacro(token, callImport, importName, type.value));
-        },
-    },
-
-    // Mark as recursive
-    'rec' : {
-        action: (ctx: Context) => {
-            if (ctx.stack.length === 0)
-                return ['missing value'];
-            const arg = ctx.pop();
-            if (arg.value instanceof Fun) {
-                // TODO recursive Fun's
-                arg.value.recursive = true;
-                ctx.push(arg);
-            } else if (arg instanceof LiteralMacro) {
-                arg.recursive = true;
-                ctx.push(arg);
-            } else {
-                return ['expected a macro or function to mark as recursive'];
-            }
         },
     },
 
@@ -597,9 +575,7 @@ const operators : MacroOperatorsSpec = {
             const tokens = scan(fs.readFileSync(realpath).toString(), realpath);
 
             // Put file into a macro
-            const block = new BlockToken('{', token.position, token.file || curDir);
-            block.token = token.token;
-            block.body  = tokens;
+            const block = new MacroToken(token.token, token.position, token.file || curDir, tokens, [], false);
 
             // Convert file into namespace and push it
             const ns = new LiteralMacro(ctx, block).getNamespace(ctx, token);
@@ -618,16 +594,6 @@ const operators : MacroOperatorsSpec = {
                 return ['missing value'];
             const arg = ctx.pop();
             ctx.push(toBool(!(arg instanceof expr.Expr), token))
-        },
-    },
-
-    // Does the value have a datatype?
-    'has_type': {
-        action: (ctx, token) => {
-            if (ctx.stack.length === 0)
-                return ['missing value'];
-            const arg = ctx.pop();
-            ctx.push(toBool(!!arg.datatype, token));
         },
     },
 

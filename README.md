@@ -2,7 +2,7 @@
 A very low-level functional programming language designed to compile to WebAssembly in the browser.
 
 ## How to use
-The all examples can be run in an interactive shell like below. Note that this is unfinished and possibly out of date. For better examples check out the recently edited files in the `planning/*` folder.
+The all examples can be run in an interactive shell like below. Note that this is unfinished and possibly out of date. For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/planning/stdlib/*`.
 ```
 $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell
@@ -47,7 +47,7 @@ The shell is probably the best way to learn the language, allowing you to run sh
   datatype: PrimitiveType { token: undefined, name: 'i32' }
 }
 
-> ( I32 ) { 1 + } "incr" export :compile
+> ( I32 ) (: 1 + ) "incr" export :compile
 :compile - (module
   (func (;0;) (param i32) (result i32)
     local.get 0
@@ -100,7 +100,7 @@ You can embed the language in JavaScript or TypeScript. See a demo in `planning/
 ## Identifiers
 - Escaped identifiers (ie - `$name`) can be used to store any type of value
 - Unescaped identifiers will invoke stored value, either running it in place or pushing it's value onto the stack
-```ps
+```php
 # equiv to `let a = 4 * (1 + 2)`
 1 2 + 4 * $a =
 
@@ -112,9 +112,10 @@ a :data
 - Macros are equivalent to functions in other languages
 - Conceptually similar to executable arrays in postscript
 - When invoked, compiler will do as needed to make them run in place
-```ps
+```php
 # Macro that returns the next number
-{ 1 + } $incr =
+# Notice we specified optional type annotations
+((I32)(I32): 1 + ) $incr =
 
 # :data - 6
 5 incr :data
@@ -122,19 +123,19 @@ a :data
 ```
 
 - macros aren't functions however and aren't limited to a single return value
-```ps
+```php
 # (a,b)->(b,a)
-{ $b = $a = b a } $swap =
+(: ( $a $b ) = b a ) $swap =
 
 # (a)->()
-{ $_ = } $drop =
+{ $_ = } $pop =
 
 # ()->(a,b)
-{ 1.0 2.0 } $nums =
+( 1.0 2.0 ) $nums =
 
 nums / :data # 0.5
 nums swap / :data # 2
-nums drop :data # 1
+nums pop :data # 1
 ```
 
 ## Branching

@@ -3,13 +3,12 @@
 # These 'monads' rly do be cucked ngl
 
 # Cucked io monad alternative
-{ $T = T } class $Monad =
+(: $T = T ) class $Monad =
 
 # These operators exist only such that we can do operations involving various monad types
 # TODO should probably check if they're truthy
-#{ true } { { $a  $b } = { a b } }
-#   # ((Any Monad) (Any Monad) Arrow) ((Any Monad) (Any Monad) Arrow) Arrow as
-#$global.>> fun
-#{ true } { { $a  $b } = { a b } }
-#   # ((Any Monad) (Any Monad) Arrow) ((Any Monad) (Any Monad) Arrow) Arrow as
-#$global.>>= fun
+#(((Any Monad) (Any Monad) Arrow (Any Monad) (Any Monad) Arrow): true )
+#(((Any Monad) (Any Monad) Arrow (Any Monad) (Any Monad) Arrow):
+#    ( $a  $b ) =
+#    ((Any Monad) (Any Monad): a b )
+#) $global.>>= fun

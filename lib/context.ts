@@ -7,7 +7,7 @@ import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
-import { BlockToken, LexerToken } from "./scan";
+import { BlockToken, LexerToken, MacroToken } from "./scan";
 import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';
@@ -338,9 +338,13 @@ export default class Context {
             return ret;
         }
 
-        //
+        // Make typescript do it's thing
         if (!(v instanceof Macro))
             throw new Error('wtf?');
+
+        // Type check
+        if (v.datatype && !v.datatype.checkInputs(this.stack))
+            return new error.SyntaxError('Type mismatch', token, this);
 
         // TODO handle constexprs specially
         if (!v.recursive || isTrace) {
@@ -494,7 +498,7 @@ export default class Context {
      * @param t token for tuple
      * @returns this | error
      */
-    parseTuple(t: BlockToken) {
+    parseTuple(t: BlockToken, isType = false) {
         // Copy stack length
         const sl = this.stack.length;
 
@@ -507,10 +511,11 @@ export default class Context {
         const vs = this.stack.splice(sl);
 
         // Get return value
-        const val = vs.every(v => v.type == value.ValueType.Type)
-            ? new value.Value(t, value.ValueType.Type,
-                new types.TupleType(t, vs.map(v => v.value as types.Type)))
-            : new value.TupleValue(t, vs);
+        const val = (isType && !vs.length)
+            || (vs.length && vs.every(v => v.type === value.ValueType.Type))
+                ? new value.Value(t, value.ValueType.Type,
+                    new types.TupleType(t, vs.map(v => v.value as types.Type)))
+                : new value.TupleValue(t, vs);
 
         // Push value and exit with original status
         this.push(val);

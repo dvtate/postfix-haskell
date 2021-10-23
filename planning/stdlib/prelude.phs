@@ -1,223 +1,215 @@
 # Stack
-{ $_ = } $pop =				# Pop value
-{ $v = v v } $dup =			# Duplicate value
-{ ( $a $b ) = $b ~ $a ~ } $swap = # swap values
-{ $v = $v ~ } $touch =		# Bad sign if this needed...
+(: $_ = ) $pop =				# Pop value
+(: $v = v v ) $dup =			# Duplicate value
+(: ( $a $b ) = $b ~ $a ~ ) $swap = # swap values
+(: $v = $v ~ ) $touch =			# Bad sign if this needed...
 
 # Booleans
 1 $true  =
 0 $false =
 
 # Logic
-# TODO use WASM lib
-{ true } { false == } $global.! fun
+((I32): 1 ) (: false == ) $global.! fun
 
 # And - this definition might be too clever...
 # Notice the @ for lazy evaluation
-{ true } { pop pop false } $global.&& fun
-{ swap } { swap pop @ } $global.&& fun
+(: true ) (: pop pop false ) $global.&& fun
+(: swap ) (: swap pop @ ) $global.&& fun
 
 # Or
-{ true } { pop pop false } $global.|| fun
-{ swap pop } { swap pop @ } $global.|| fun
-{ pop } { pop @ } $global.|| fun
-
-# Boilerplate for when 2 values have given types
-{ ( $ta $tb ) =
-	( $a $b ) =
-	a has_type
-	b has_type &&
-	{ a type ta == } &&
-	{ b type tb == } &&
-} $_2_with_types =
-
-# Keeping these commented out because they slow things down a lot
-#{ ( $a $b ) =
-#	a b I32 I32 _2_with_types
-#	b is_const &&
-#	{ b 0 ==} &&
-#} { pop "i32.eqz" asm } $global.== fun
-#{ ( $a $b ) =
-#	a b I32 I32 _2_with_types
-#	a _is_0
-#} { swap pop "i32.eqz" asm } $global.== fun
-# { I32 I64 _2_with_types } { swap I64 cast swap == } $global.== fun
-# { I64 I32 _2_with_types } { I64 cast == } $global.== fun
-# { F32 F64 _2_with_types } { swap F64 cast swap == } $global.== fun
-# { F64 F32 _2_with_types } { F64 cast == } $global.== fun
+(: true ) (: pop pop false ) $global.|| fun
+(: swap pop ) (: swap pop @ ) $global.|| fun
+(: pop ) (: pop @ ) $global.|| fun
 
 ##
 # cast a value of one type to another type
 # <value> <type> cast
 ##
 
-# No need to cast if already same type as target (Maybe remove classes?)
-{ swap type == } { pop } $cast fun
-
 # Boilerplate for conditions
-{ ( $from $to ) =
+(: ( $from $to ) =
 	( $val $t ) =
 	val has_type
-	{ t from == val type to == && } &&
-} $_is_from_to =
+	(: t from == val type to == && ) &&
+) $_is_from_to =
+
+# No need to cast if already same type as target (Maybe remove classes?)
+(: swap type == ) (: pop ) $cast fun
 
 # Cast to I32
-{ I32 I64 _is_from_to } { pop "i32.wrap_i64_s" asm } $cast fun
-{ I32 F32 _is_from_to } { pop "i32.trunc_f32_s" asm } $cast fun
-{ I32 F64 _is_from_to } { pop "i32.trunc_f64_s" asm } $cast fun
+(: I32 I64 _is_from_to ) (: pop "i32.wrap_i64_s" asm ) $cast fun
+(: I32 F32 _is_from_to ) (: pop "i32.trunc_f32_s" asm ) $cast fun
+(: I32 F64 _is_from_to ) (: pop "i32.trunc_f64_s" asm ) $cast fun
 
 # Cast to I64
-{ I64 I32 _is_from_to } { pop "i64.extend_i32_s" asm } $cast fun
-{ I64 F32 _is_from_to } { pop "i64.trunc_f32_s" asm } $cast fun
-{ I64 F64 _is_from_to } { pop "i64.trunc_f64_s" asm } $cast fun
+(: I64 I32 _is_from_to ) (: pop "i64.extend_i32_s" asm ) $cast fun
+(: I64 F32 _is_from_to ) (: pop "i64.trunc_f32_s" asm ) $cast fun
+(: I64 F64 _is_from_to ) (: pop "i64.trunc_f64_s" asm ) $cast fun
 
 # Cast to F32
-{ F32 I32 _is_from_to } { pop "f32.convert_i32_s" asm } $cast fun
-{ F32 I64 _is_from_to } { pop "f32.convert_i64_s" asm } $cast fun
-{ F32 F64 _is_from_to } { pop "f32.demote_f64" asm } $cast fun
+(: F32 I32 _is_from_to ) (: pop "f32.convert_i32_s" asm ) $cast fun
+(: F32 I64 _is_from_to ) (: pop "f32.convert_i64_s" asm ) $cast fun
+(: F32 F64 _is_from_to ) (: pop "f32.demote_f64" asm ) $cast fun
 
 # Cast to F64
-{ F64 I32 _is_from_to } { pop "f64.convert_i32_s" asm } $cast fun
-{ F64 I64 _is_from_to } { pop "f64.convert_i64_s" asm } $cast fun
-{ F64 F32 _is_from_to } { pop "f64.promote_f32" asm } $cast fun
-
-# Code to handle scalar type promotions
-I32 I64 | F32 F64 | | $_Scalar =
-{ # Check conditions for promotion
-	( $a $b ) =
-	a has_type
-	b has_type &&
-	{
-		a type _Scalar ==
-		b type _Scalar == &&
-		a type b type != &&
-	} &&
-} $_can_promote =
+(: F64 I32 _is_from_to ) (: pop "f64.convert_i32_s" asm ) $cast fun
+(: F64 I64 _is_from_to ) (: pop "f64.convert_i64_s" asm ) $cast fun
+(: F64 F32 _is_from_to ) (: pop "f64.promote_f32" asm ) $cast fun
 
 # Perform promotion
-{ I64 F64 _2_with_types } { swap F64 cast swap } $_promote fun
-{ F64 I64 _2_with_types } { F64 cast } $_promote fun
-{ I64 F32 _2_with_types } { swap F32 cast swap } $_promote fun
-{ F32 I64 _2_with_types	} { F32 cast } $_promote fun
-{ I32 I64 _2_with_types } { swap I64 cast swap } $_promote fun
-{ I64 I32 _2_with_types } { I64 cast } $_promote fun
-{ I32 F32 _2_with_types } { swap F32 cast swap } $_promote fun
-{ F32 I32 _2_with_types } { F32 cast } $_promote fun
-{ F32 F64 _2_with_types } { swap F64 cast swap } $_promote fun
-{ F64 F32 _2_with_types } { F64 cast } $_promote fun
-{ I32 F64 _2_with_types } { swap F64 cast swap } $_promote fun
-{ F64 I32 _2_with_types } { F64 cast } $_promote fun
+((I64 F64): 1 ) (: swap F64 cast swap ) $_promote fun
+((F64 I64): 1 ) (: F64 cast ) $_promote fun
+((I64 F32): 1 ) (: swap F32 cast swap ) $_promote fun
+((F32 I64): 1 ) (: F32 cast ) $_promote fun
+((I32 I64): 1 ) (: swap I64 cast swap ) $_promote fun
+((I64 I32): 1 ) (: I64 cast ) $_promote fun
+((I32 F32): 1 ) (: swap F32 cast swap ) $_promote fun
+((F32 I32): 1 ) (: F32 cast ) $_promote fun
+((F32 F64): 1 ) (: swap F64 cast swap ) $_promote fun
+((F64 F32): 1 ) (: F64 cast ) $_promote fun
+((I32 F64): 1 ) (: swap F64 cast swap ) $_promote fun
+((F64 I32): 1 ) (: F64 cast ) $_promote fun
+
+# Condition for numeric type promotions
+I32 I64 | F32 F64 | | $_Scalar =
+((_Scalar _Scalar): ( $a $b ) =
+	a type b type == !
+) $_can_promote =
+
+# Do we know at compile time that the value is a 0/1
+(: 1 ) (: 0 ) $_is_0 fun
+((I32): is_const ) (: 0 == ) $_is_0 fun
+((I64): is_const ) (: 0L == ) $_is_0 fun
+((F32): is_const ) (: 0.0f == ) $_is_0 fun
+((F64): is_const ) (: 0.0l == ) $_is_0 fun
+(: 1 ) (: 0 ) $_is_1 fun
+((I32): is_const ) (: 1 == ) $_is_1 fun
+((I64): is_const ) (: 1L == ) $_is_1 fun
+((F32): is_const ) (: 1.0f == ) $_is_1 fun
+((F64): is_const ) (: 1.0l == ) $_is_1 fun
+
+##
+# Operator ==
+##
+
+#((I32 I32): _is_0 ) (: pop "i32.eqz" asm ) $global.== fun
+#((I32 I32): pop _is_0 ) (: swap pop "i32.eqz" asm ) $global.== fun
+#((I64 I64): _is_0 ) (: pop "i64.eqz" asm ) $global.== fun
+#((I64 I64): pop _is_0 ) (: swap pop "i64.eqz" asm ) $global.== fun
+((I32 I64): 1 ) (: swap I64 cast swap == ) $global.== fun
+((I64 I32): 1 ) (: I64 cast == ) $global.== fun
+((F32 F64): 1 ) (: swap F64 cast swap == ) $global.== fun
+((F64 F32): 1 ) (: F64 cast == ) $global.== fun
+
+##
+# Operator !=
+##
+
+# Make != also work on untyped values
+(: true ) (: == ! ) $global.!= fun
+
+# Compare of same type
+((I32 I32): 1 ) (: "i32.ne_s" asm ) $global.!= fun
+((I64 I64): 1 ) (: "i64.ne_s" asm ) $global.!= fun
+((F32 F32): 1 ) (: "f32.ne" asm ) $global.!= fun
+((F64 F64): 1 ) (: "f64.ne" asm ) $global.!= fun
+
+# Attempt to promote values to same type
+$_can_promote ~ (: _promote != ) $global.!= fun
 
 ##
 # Operator +
 ##
 
 # Add values of same type
-{ I32 I32 _2_with_types } { "i32.add" asm } $global.+ fun
-{ I64 I64 _2_with_types } { "i64.add" asm } $global.+ fun
-{ F32 F32 _2_with_types } { "f32.add" asm } $global.+ fun
-{ F64 F64 _2_with_types } { "f64.add" asm } $global.+ fun
+((I32 I32): 1 ) (: "i32.add" asm ) $global.+ fun
+((I64 I64): 1 ) (: "i64.add" asm ) $global.+ fun
+((F32 F32): 1 ) (: "f32.add" asm ) $global.+ fun
+((F64 F64): 1 ) (: "f64.add" asm ) $global.+ fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote + } $global.+ fun
+$_can_promote ~ (: _promote + ) $global.+ fun
 
 # Optimization when one of the values is known to be zero the result is the other value
-{ $v =
-	v is_const
-	{
-		v type I32 == { v 0    == } &&
-		v type I64 == { v 0L   == } && ||
-		v type F32 == { v 0.0f == } && ||
-		v type F64 == { v 0.0l == } && ||
-	} &&
-} $_is_0 =
-{ pop $a = a _is_0 } { swap pop } $global.+ fun
-{ $b = b _is_0 } { pop } $global.+ fun
+(: pop $a = a _is_0 ) (: swap pop ) $global.+ fun
+(: _is_0 ) (: pop ) $global.+ fun
 
 ##
 # Operator -
 ##
 
 # Negation
-{ type I32 == } { $n = 0 n "i32.sub" asm } $neg fun
-{ type I64 == } { $n = 0L n "i64.sub" asm } $neg fun
-{ type F32 == } { "f32.neg" asm } $neg fun
-{ type F64 == } { "f64.neg" asm } $neg fun
+((I32): 1 ) (: $n = 0 n "i32.sub" asm ) $neg fun
+((I64): 1 ) (: $n = 0L n "i64.sub" asm ) $neg fun
+((F32): 1 ) (: "f32.neg" asm ) $neg fun
+((F64): 1 ) (: "f64.neg" asm ) $neg fun
 
 # Add values of same type
-{ I32 I32 _2_with_types } { "i32.sub" asm } $global.- fun
-{ I64 I64 _2_with_types } { "i64.sub" asm } $global.- fun
-{ F32 F32 _2_with_types } { "f32.sub" asm } $global.- fun
-{ F64 F64 _2_with_types } { "f64.sub" asm } $global.- fun
+((I32 I32): 1 ) (: "i32.sub" asm ) $global.- fun
+((I64 I64): 1 ) (: "i64.sub" asm ) $global.- fun
+((F32 F32): 1 ) (: "f32.sub" asm ) $global.- fun
+((F64 F64): 1 ) (: "f64.sub" asm ) $global.- fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote - } $global.- fun
+$_can_promote ~ (: _promote - ) $global.- fun
 
 # Optimization when one of the values is known to be zero
-{ pop $a = a _is_0 } { swap pop neg } $global.- fun
-{ $b = b _is_0 } { pop } $global.- fun
+(: pop $a = a _is_0 ) (: swap pop neg ) $global.- fun
+(: _is_0 ) (: pop ) $global.- fun
 
 ##
 # Operator *
 ##
 
 # Mul values of same type
-{ I32 I32 _2_with_types } { "i32.mul" asm } $global.* fun
-{ I64 I64 _2_with_types } { "i64.mul" asm } $global.* fun
-{ F32 F32 _2_with_types } { "f32.mul" asm } $global.* fun
-{ F64 F64 _2_with_types } { "f64.mul" asm } $global.* fun
+((I32 I32): 1 ) (: "i32.mul" asm ) $global.* fun
+((I64 I64): 1 ) (: "i64.mul" asm ) $global.* fun
+((F32 F32): 1 ) (: "f32.mul" asm ) $global.* fun
+((F64 F64): 1 ) (: "f64.mul" asm ) $global.* fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote * } $global.* fun
+$_can_promote ~ (: _promote * ) $global.* fun
 
 # Optimization for identity property of multiplication
-{ $v =
-	v is_const
-	{
-		v type I32 == { v 1    == } &&
-		v type I64 == { v 1L   == } && ||
-		v type F32 == { v 1.0f == } && ||
-		v type F64 == { v 1.0l == } && ||
-	} &&
-} $_is_1 =
-{ pop $a = a _is_1 } { swap pop } $global.* fun
-{ $b = b _is_1 } { pop } $global.* fun
+(: pop $a = a _is_1 ) (: swap pop ) $global.* fun
+(: _is_1 ) (: pop ) $global.* fun
 
 # Optimization for zero property of multiplication
-{ pop $a = a _is_0 } { pop pop 0 } $global.* fun
-{ $b = b _is_0 } { pop pop 0 } $global.* fun
+# TODO? maybe make the zero the same type?
+(: pop $a = a _is_0 ) (: pop pop 0 ) $global.* fun
+(: _is_0 ) (: pop pop 0 ) $global.* fun
 
 ##
 # Operator /
 ##
 
 # Div values of same type
-{ I32 I32 _2_with_types } { "i32.div_s" asm } $global./ fun
-{ I64 I64 _2_with_types } { "i64.div_s" asm } $global./ fun
-{ F32 F32 _2_with_types } { "f32.div" asm } $global./ fun
-{ F64 F64 _2_with_types } { "f64.div" asm } $global./ fun
+((I32 I32): 1 ) (: "i32.div_s" asm ) $global./ fun
+((I64 I64): 1 ) (: "i64.div_s" asm ) $global./ fun
+((F32 F32): 1 ) (: "f32.div" asm ) $global./ fun
+((F64 F64): 1 ) (: "f64.div" asm ) $global./ fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote / } $global./ fun
+$_can_promote ~ (: _promote / ) $global./ fun
 
 # Divide by 1 is identity
-{ $b = b _is_1 } { pop } $global./ fun
+(: _is_1 ) (: pop ) $global./ fun
 
 # 0 divided by anything is 0
-{ pop $a = a _is_0 } { pop pop 0 } $global./ fun
+(: pop _is_0 ) (: pop ) $global./ fun
 
 ##
 # Operator %
 ##
 
 # Remainder values of same type
-{ I32 I32 _2_with_types } { "i32.rem_s" asm } $global.% fun
-{ I64 I64 _2_with_types } { "i64.rem_s" asm } $global.% fun
-{ F32 F32 _2_with_types } { "f32.rem" asm } $global.% fun
-{ F64 F64 _2_with_types } { "f64.rem" asm } $global.% fun
+((I32 I32): 1 ) (: "i32.rem_s" asm ) $global.% fun
+((I64 I64): 1 ) (: "i64.rem_s" asm ) $global.% fun
+((F32 F32): 1 ) (: "f32.rem" asm ) $global.% fun
+((F64 F64): 1 ) (: "f64.rem" asm ) $global.% fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote % } $global.% fun
+$_can_promote ~ (: _promote % ) $global.% fun
 
 
 ##
@@ -225,66 +217,56 @@ I32 I64 | F32 F64 | | $_Scalar =
 ##
 
 # Compare of same type
-{ I32 I32 _2_with_types } { "i32.lt_s" asm } $global.< fun
-{ I64 I64 _2_with_types } { "i64.lt_s" asm } $global.< fun
-{ F32 F32 _2_with_types } { "f32.lt" asm } $global.< fun
-{ F64 F64 _2_with_types } { "f64.lt" asm } $global.< fun
+((I32 I32): 1 ) (: "i32.lt_s" asm ) $global.< fun
+((I64 I64): 1 ) (: "i64.lt_s" asm ) $global.< fun
+((F32 F32): 1 ) (: "f32.lt" asm ) $global.< fun
+((F64 F64): 1 ) (: "f64.lt" asm ) $global.< fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote < } $global.< fun
+$_can_promote ~ (: _promote < ) $global.< fun
 
 ##
 # Operator >
 ##
 
 # Compare of same type
-{ I32 I32 _2_with_types } { "i32.gt_s" asm } $global.> fun
-{ I64 I64 _2_with_types } { "i64.gt_s" asm } $global.> fun
-{ F32 F32 _2_with_types } { "f32.gt" asm } $global.> fun
-{ F64 F64 _2_with_types } { "f64.gt" asm } $global.> fun
+((I32 I32): 1 ) (: "i32.gt_s" asm ) $global.> fun
+((I64 I64): 1 ) (: "i64.gt_s" asm ) $global.> fun
+((F32 F32): 1 ) (: "f32.gt" asm ) $global.> fun
+((F64 F64): 1 ) (: "f64.gt" asm ) $global.> fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote > } $global.> fun
+$_can_promote ~ (: _promote > ) $global.> fun
 
 ##
 # Operator >=
 ##
 
 # Compare of same type
-{ I32 I32 _2_with_types } { "i32.ge_s" asm } $global.>= fun
-{ I64 I64 _2_with_types } { "i64.ge_s" asm } $global.>= fun
-{ F32 F32 _2_with_types } { "f32.ge" asm } $global.>= fun
-{ F64 F64 _2_with_types } { "f64.ge" asm } $global.>= fun
+((I32 I32): 1 ) (: "i32.ge_s" asm ) $global.>= fun
+((I64 I64): 1 ) (: "i64.ge_s" asm ) $global.>= fun
+((F32 F32): 1 ) (: "f32.ge" asm ) $global.>= fun
+((F64 F64): 1 ) (: "f64.ge" asm ) $global.>= fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote >= } $global.>= fun
+$_can_promote ~ (: _promote >= ) $global.>= fun
 
 ##
 # Operator <=
 ##
 
 # Compare of same type
-{ I32 I32 _2_with_types } { "i32.le_s" asm } $global.<= fun
-{ I64 I64 _2_with_types } { "i64.le_s" asm } $global.<= fun
-{ F32 F32 _2_with_types } { "f32.le" asm } $global.<= fun
-{ F64 F64 _2_with_types } { "f64.le" asm } $global.<= fun
+((I32 I32): 1 ) (: "i32.le_s" asm ) $global.<= fun
+((I64 I64): 1 ) (: "i64.le_s" asm ) $global.<= fun
+((F32 F32): 1 ) (: "f32.le" asm ) $global.<= fun
+((F64 F64): 1 ) (: "f64.le" asm ) $global.<= fun
 
 # Attempt to promote values to same type
-{ _can_promote } { _promote <= } $global.<= fun
+$_can_promote ~ (: _promote <= ) $global.<= fun
 
 ##
-# Operator !=
+# Has type
+# Does the given value fall within the type system?
 ##
-
-# Compare of same type
-{ I32 I32 _2_with_types } { "i32.ne_s" asm } $global.!= fun
-{ I64 I64 _2_with_types } { "i64.ne_s" asm } $global.!= fun
-{ F32 F32 _2_with_types } { "f32.ne" asm } $global.!= fun
-{ F64 F64 _2_with_types } { "f64.ne" asm } $global.!= fun
-
-# Attempt to promote values to same type
-{ _can_promote } { _promote != } $global.!= fun
-
-# Make != also work on non-data values
-{ swap has_type ! } { == ! } $global.!= fun
-{ has_type ! } { == ! } $global.!= fun
+(: 1 ) (: 0 ) $has_type fun
+((Any): 1 ) (: 1 ) $has_type fun

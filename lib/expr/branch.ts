@@ -11,7 +11,6 @@ import {
     DependentLocalExpr,
 } from './expr';
 
-
 /**
  * Describes expensive expressions which were on the stack before a branch was invoked
  *
@@ -54,7 +53,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out() {
         if (!this.datatype.isUnit() && this.index == -1) {
             console.log(this.value);
             console.log(new Error('bt'));

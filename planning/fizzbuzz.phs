@@ -3,7 +3,7 @@
 "stdlib/io.phs" require use
 
 # export for performing IO
-( Unit IO  I32 ) {
+( Unit IO  I32 ) (:
     $n =
 
     # Some strings
@@ -12,23 +12,23 @@
     "fizzbuzz" Str_new $fizzbuzz =
 
     # fizzbuzz logic
-    { true } { print } $fb fun
-    { 3 % 0 == } { pop fizz print } $fb fun
-    { 5 % 0 == } { pop buzz print } $fb fun
-    { $n =
+    (: true ) (: print ) $fb fun
+    (: 3 % 0 == ) (: pop fizz print ) $fb fun
+    (: 5 % 0 == ) (: pop buzz print ) $fb fun
+    (: $n =
         n 3 % 0 ==
         n 5 % 0 == &&
-    } { pop fizzbuzz print } $fb fun
+    ) (: pop fizzbuzz print ) $fb fun
 
     # from 1 - n do fizzbuzz
-    {
-        { $n $i } =
-        { true } { @ } $cond fun
-        { i n <= } {
+    (:
+        (: $n $i ) =
+        (: true ) (: @ ) $cond fun
+        (: i n <= ) (:
             i fb
             n  i 1 +  iter
-        } $cond fun
+        ) $cond fun
         cond
-    } rec $iter =
+    ) rec $iter =
     n 1 iter
-} $main export
+) $main export

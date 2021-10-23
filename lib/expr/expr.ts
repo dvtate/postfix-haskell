@@ -103,7 +103,26 @@ export abstract class DataExpr extends Expr {
 /**
  * This expression is only used for type inference and thus cannot be compiled
  */
-export class DummyDataExpr extends DataExpr {}
+export class DummyDataExpr extends DataExpr {
+    /**
+     * Create a dummy expression to represent an unknown value of this type.
+     * @note behavior with tuples
+     * @param token location in code
+     * @param datatype result type
+     * @returns Expression or tuple of expressions with given datatype
+     */
+    static create(token: LexerToken, datatype: types.Type): value.TupleValue | DummyDataExpr {
+        const bt = datatype.getBaseType();
+        if (bt instanceof types.TupleType && bt.types.length !== 0)
+            return new value.TupleValue(
+                token,
+                bt.types.map(t => DummyDataExpr.create(token, t)),
+                datatype as types.TupleType,
+            );
+        else
+            return new DummyDataExpr(token, datatype);
+    }
+}
 
 /**
  * For when the output of an expression is stored in a local variable

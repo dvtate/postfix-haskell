@@ -5,51 +5,50 @@ F32 F64 | $Float =
 Int Float | $Num =
 
 # Absolute value
-{ true } { touch } $abs fun
-{ 0.0 < } { 0 swap - } $abs fun
-{ type F32 == } { "f32.abs" asm } $abs fun
-{ type F64 == } { "f64.abs" asm } $abs fun
+(: true ) (: touch ) $abs fun
+(: 0.0 < ) (: 0 swap - ) $abs fun
+((F32): 1 ) (: "f32.abs" asm ) $abs fun
+((F64): 1 ) (: "f64.abs" asm ) $abs fun
 
 # Use bigger of two values
-{ true } { pop } $max fun
-{ < } { { $a $b } = b } $max fun
-{ type F32 == } { "f32.max" asm } $max fun
-{ type F64 == } { "f64.max" asm } $max fun
+(: true ) (: pop ) $max fun
+(: < ) (: ( $a $b ) = b ) $max fun
+((F32): 1 ) (: "f32.max" asm ) $max fun
+((F64): 1 ) (: "f64.max" asm ) $max fun
 
 # Use smaller of two values
-{ true } { pop } $min fun
-{ > } { { $a $b } = b } $min fun
-{ type F32 == } { "f32.min" asm } $min fun
-{ type F64 == } { "f64.min" asm } $min fun
+(: true ) (: pop ) $min fun
+(: > ) (: ( $a $b ) = b ) $min fun
+((F32): 1 ) (: "f32.min" asm ) $min fun
+((F64): 1 ) (: "f64.min" asm ) $min fun
 
 # Square route
-{ type F32 == } { "f32.sqrt" asm } $sqrt fun
-{ type F64 == } { "f64.sqrt" asm } $sqrt fun
+((F32): 1 ) (: "f32.sqrt" asm ) $sqrt fun
+((F64): 1 ) (: "f64.sqrt" asm ) $sqrt fun
 
 # Floor
-{ type F32 == } { "f32.floor" asm } $floor fun
-{ type F64 == } { "f64.floor" asm } $floor fun
+((F32): 1 ) (: "f32.floor" asm ) $floor fun
+((F64): 1 ) (: "f64.floor" asm ) $floor fun
 
 # Ceiling
-{ type F32 == } { "f32.ceil" asm } $ceil fun
-{ type F64 == } { "f64.ceil" asm } $ceil fun
+((F32): 1 ) (: "f32.ceil" asm ) $ceil fun
+((F64): 1 ) (: "f64.ceil" asm ) $ceil fun
 
 # Truncate float
-{ type F32 == } { "f32.trunc" asm } $trunc fun
-{ type F64 == } { "f64.trunc" asm } $trunc fun
+((F32): 1 ) (: "f32.trunc" asm ) $trunc fun
+((F64): 1 ) (: "f64.trunc" asm ) $trunc fun
 
 # Nearest int ties to even
-{ type F32 == } { "f32.nearest" asm } $nearest fun
-{ type F64 == } { "f64.nearest" asm } $nearest fun
+((F32): 1 ) (: "f32.nearest" asm ) $nearest fun
+((F64): 1 ) (: "f64.nearest" asm ) $nearest fun
 
 # Factorial
-{ true } {
-    {
-        { $n $ret } =
-        { true } { n } $branch fun
-        { n 0 > } { n 1 - ret n * iter } $branch fun
+(: 1 ) (:
+    (rec:
+        ( $n $ret ) =
+        (: 1 ) (: n ) $branch fun
+        (: n 0 > ) (: n 1 - ret n * iter ) $branch fun
         branch
-    } rec $iter =
+    ) $iter =
     1 iter
-} $fac fun
-
+) $fac fun
