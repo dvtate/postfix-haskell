@@ -5,7 +5,7 @@
 Unit class $World =
 
 # console.log
-( World I32 I32 ) ( World ) Arrow (: "js" "console.log" ) import $log_2_i32 =
+( World I32 I32 ) ( World ) Arrow ( "js" "console.log" ) import $log_2_i32 =
 
 # Store value in position zero of linear memory
 (: $value =

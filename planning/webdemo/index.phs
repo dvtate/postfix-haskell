@@ -32,7 +32,7 @@
 4 $ball_dim =
 
 (: # Generate random int from 1-10
-    Unit (F32) Arrow (: "js" "Math.random" ) import @
+    Unit (F32) Arrow ( "js" "Math.random" ) import @
     10.0f * I32 cast 1 +
 ) $rng_1_10 =
 
@@ -61,17 +61,17 @@
     # Clear scene
     #0 0 height width
     #( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
-    #(: "js" "contextClearRect" ) import @
+    #( "js" "contextClearRect" ) import @
 
     # Draw rectangle
     get_y get_x ball_dim ball_dim
     ( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
-    (: "js" "contextFillRect" ) import @
+    ( "js" "contextFillRect" ) import @
 
     # Debugging
     #get_x get_y get_dx get_dy
     #( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
-    #(: "js" "console.log" ) import @
+    #( "js" "console.log" ) import @
 ) $draw =
 
 ( Unit ) (: draw ) "draw" export
@@ -81,5 +81,5 @@
     draw
 
     # Await next frame
-    (Unit) (Unit) Arrow (: "js" "nextFrame" ) import @
+    (Unit) (Unit) Arrow ( "js" "nextFrame" ) import @
 ) "loop" export

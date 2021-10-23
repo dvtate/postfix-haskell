@@ -65,7 +65,7 @@ export abstract class Macro extends value.Value {
         //     return cached;
 
         // Generate dummy inputs
-        const inputs = inputTypes.map(t => new expr.DummyDataExpr(token, t))
+        const inputs = inputTypes.map(t => expr.DummyDataExpr.create(token, t));
         ctx.stack.push(...inputs);
 
         // Trace the macro
@@ -77,8 +77,10 @@ export abstract class Macro extends value.Value {
         // Validate trace
         if (ios.takes.length > inputs.length)
             return 'differing input lengths';
-        if (ios.takes.some((e, i) => e !== inputs[i]))
+        if (ios.takes.some((e, i) => e !== inputs[i])) {
+            console.log(ios.takes, 'vs', inputs);
             return 'differing input values';
+        }
         if (ios.takes.some(v => !v.datatype))
             throw new Error('wtf?');
         if (ios.gives.some(v => !v.datatype))

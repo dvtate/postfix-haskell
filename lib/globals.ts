@@ -228,13 +228,13 @@ const operators : MacroOperatorsSpec = {
                 // Push values onto the stack
                 v.value.forEach(val => ctx.push(val));
             } else if (v.type === value.ValueType.Expr) {
-
                 // Verify it's a tuple expr
                 if (v.value instanceof value.TupleValue)
                     v.value.value.forEach(val => ctx.push(val));
 
                 // TODO probably more ways to have tuple exprs...
-                else {console.log(v);
+                else {
+                    console.log(v);
                     return ['unexpected runtime-expr'];
                 }
             } else {
@@ -428,20 +428,17 @@ const operators : MacroOperatorsSpec = {
                 return ['not enough values'];
             const scopes = ctx.pop();
             const type = ctx.pop();
-            if (!(scopes instanceof Macro))
-                return ['expected an executable array of scopes'];
+            if (!(scopes instanceof value.TupleValue))
+                return ['expected a tuple of scopes'];
             if (type.type !== value.ValueType.Type)
                 return ['expected a type for the input'];
             if (!(type.value instanceof types.ArrowType))
                 return ['expected an arrow type for the import'];
 
             // Get scopes
-            const traceResults = ctx.traceIO(scopes, token);
-            if (!(traceResults instanceof Context.TraceResults))
-                return traceResults;
-            if (traceResults.gives.some(s => !(s instanceof value.StrValue)))
+            if (scopes.value.some(s => !(s instanceof value.StrValue)))
                 return ['expected an executable array of string scopes'];
-            const scopeStrs = traceResults.gives.map(s => s.value) as string[];
+            const scopeStrs = scopes.value.map(s => s.value) as string[];
 
             // Add relevant import
             const importName = ctx.module.addImport(scopeStrs, type.value);

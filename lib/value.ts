@@ -145,6 +145,8 @@ export class IdValue extends Value {
     }
 }
 
+type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
+
 /**
  * Packed values
  */
@@ -152,7 +154,7 @@ export class TupleValue extends DataValue {
     value: Value[];
     datatype: types.TupleType;
 
-    constructor(token: LexerToken, values: Value[], datatype?: types.TupleType) {
+    constructor(token: LexerToken, values: Value[], datatype?: ClassOrType<types.TupleType>) {
         const type = datatype || new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
     }

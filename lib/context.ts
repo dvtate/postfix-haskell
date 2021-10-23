@@ -511,10 +511,11 @@ export default class Context {
         const vs = this.stack.splice(sl);
 
         // Get return value
-        const val = (isType && !vs.length) || vs.every(v => v.type == value.ValueType.Type)
-            ? new value.Value(t, value.ValueType.Type,
-                new types.TupleType(t, vs.map(v => v.value as types.Type)))
-            : new value.TupleValue(t, vs);
+        const val = (isType && !vs.length)
+            || (vs.length && vs.every(v => v.type === value.ValueType.Type))
+                ? new value.Value(t, value.ValueType.Type,
+                    new types.TupleType(t, vs.map(v => v.value as types.Type)))
+                : new value.TupleValue(t, vs);
 
         // Push value and exit with original status
         this.push(val);

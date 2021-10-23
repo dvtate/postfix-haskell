@@ -7,8 +7,8 @@
 
 # These operators exist only such that we can do operations involving various monad types
 # TODO should probably check if they're truthy
-#(((Any Monad) (Any Monad) Arrow) ((Any Monad) (Any Monad) Arrow): true )
-#(((Any Monad) (Any Monad) Arrow) ((Any Monad) (Any Monad) Arrow):
+#(((Any Monad) (Any Monad) Arrow (Any Monad) (Any Monad) Arrow): true )
+#(((Any Monad) (Any Monad) Arrow (Any Monad) (Any Monad) Arrow):
 #    ( $a  $b ) =
 #    ((Any Monad) (Any Monad): a b )
 #) $global.>>= fun
