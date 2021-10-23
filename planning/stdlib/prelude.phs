@@ -9,7 +9,6 @@
 0 $false =
 
 # Logic
-# TODO use WASM lib
 ((I32): 1 ) (: false == ) $global.! fun
 
 # And - this definition might be too clever...
@@ -21,18 +20,6 @@
 (: true ) (: pop pop false ) $global.|| fun
 (: swap pop ) (: swap pop @ ) $global.|| fun
 (: pop ) (: pop @ ) $global.|| fun
-
-# Do we know at compile time that the value is a 0/1
-(: 1 ) (: 0 ) $_is_0 fun
-((I32): is_const ) (: 0 == ) $_is_0 fun
-((I64): is_const ) (: 0L == ) $_is_0 fun
-((F32): is_const ) (: 0.0f == ) $_is_0 fun
-((F64): is_const ) (: 0.0l == ) $_is_0 fun
-(: 1 ) (: 0 ) $_is_1 fun
-((I32): is_const ) (: 1 == ) $_is_1 fun
-((I64): is_const ) (: 1L == ) $_is_1 fun
-((F32): is_const ) (: 1.0f == ) $_is_1 fun
-((F64): is_const ) (: 1.0l == ) $_is_1 fun
 
 ##
 # cast a value of one type to another type
@@ -89,7 +76,22 @@ I32 I64 | F32 F64 | | $_Scalar =
 	a type b type == !
 ) $_can_promote =
 
-# Keeping these commented out because they slow things down a lot
+# Do we know at compile time that the value is a 0/1
+(: 1 ) (: 0 ) $_is_0 fun
+((I32): is_const ) (: 0 == ) $_is_0 fun
+((I64): is_const ) (: 0L == ) $_is_0 fun
+((F32): is_const ) (: 0.0f == ) $_is_0 fun
+((F64): is_const ) (: 0.0l == ) $_is_0 fun
+(: 1 ) (: 0 ) $_is_1 fun
+((I32): is_const ) (: 1 == ) $_is_1 fun
+((I64): is_const ) (: 1L == ) $_is_1 fun
+((F32): is_const ) (: 1.0f == ) $_is_1 fun
+((F64): is_const ) (: 1.0l == ) $_is_1 fun
+
+##
+# Operator ==
+##
+
 #((I32 I32): _is_0 ) (: pop "i32.eqz" asm ) $global.== fun
 #((I32 I32): pop _is_0 ) (: swap pop "i32.eqz" asm ) $global.== fun
 #((I64 I64): _is_0 ) (: pop "i64.eqz" asm ) $global.== fun
@@ -261,3 +263,10 @@ $_can_promote ~ (: _promote >= ) $global.>= fun
 
 # Attempt to promote values to same type
 $_can_promote ~ (: _promote <= ) $global.<= fun
+
+##
+# Has type
+# Does the given value fall within the type system?
+##
+(: 1 ) (: 0 ) $has_type fun
+((Any): 1 ) (: 1 ) $has_type fun

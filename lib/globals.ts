@@ -490,25 +490,6 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Mark as recursive
-    'rec' : {
-        action: (ctx: Context) => {
-            if (ctx.stack.length === 0)
-                return ['missing value'];
-            const arg = ctx.pop();
-            if (arg.value instanceof Fun) {
-                // TODO recursive Fun's
-                arg.value.recursive = true;
-                ctx.push(arg);
-            } else if (arg instanceof LiteralMacro) {
-                arg.recursive = true;
-                ctx.push(arg);
-            } else {
-                return ['expected a macro or function to mark as recursive'];
-            }
-        },
-    },
-
     // Namespaces
     'namespace' : {
         action: (ctx: Context, token: LexerToken) => {
@@ -616,16 +597,6 @@ const operators : MacroOperatorsSpec = {
                 return ['missing value'];
             const arg = ctx.pop();
             ctx.push(toBool(!(arg instanceof expr.Expr), token))
-        },
-    },
-
-    // Does the value have a datatype?
-    'has_type': {
-        action: (ctx, token) => {
-            if (ctx.stack.length === 0)
-                return ['missing value'];
-            const arg = ctx.pop();
-            ctx.push(toBool(!!arg.datatype, token));
         },
     },
 
