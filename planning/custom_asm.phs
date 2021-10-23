@@ -5,41 +5,40 @@
 Unit class $World =
 
 # console.log
-( World I32 I32 ) ( World ) Arrow { "js" "console.log" } import $log_2_i32 =
+( World I32 I32 ) ( World ) Arrow (: "js" "console.log" ) import $log_2_i32 =
 
 # Store value in position zero of linear memory
-{ $value =
-    { ( World I32 I32 ) ( World ) Arrow "i32.store" _asm } $i32_store =
-    unpack { $x $v } =
+(: $value =
+    (: ( World I32 I32 ) ( World ) Arrow "i32.store" _asm ) $i32_store =
+    unpack ( $x $v ) =
     0 x i32_store
     4 v i32_store
-} $set =
+) $set =
 
 # Get value from position zero in linear memory
-{
-    { ( I32 ) ( I32 ) Arrow "i32.load" _asm } $i32_load =
-    {
+(:
+    (: ( I32 ) ( I32 ) Arrow "i32.load" _asm ) $i32_load =
+    (
         0 i32_load
         4 i32_load
-    } pack
-} $get =
+    )
+) $get =
 
 
 5 $width =
 3 $speed =
 
-{
-    unpack { $x $v } =
-    { true } { { x v } pack } $branch fun
-    { x 0 > x v + 100 width - < && } { { x v + v } pack } $branch fun
+(:
+    unpack ( $x $v ) =
+    (: true ) (: ( x v ) ) $branch fun
+    (: x 0 > x v + 100 width - < && ) (: ( x v + v ) ) $branch fun
     branch
-} $move =
-
+) $move =
 
 # Export to JS
-( World I32 ) { set } "set" export
-( World ) { get } "get" export
-( World ) {
+( World I32 ) (: set ) "set" export
+( World ) (: get ) "get" export
+( World ) (:
     # () Unit Arrow "call $get" _asm
     get 1 + set
-} "incr" export
+) "incr" export

@@ -6,6 +6,7 @@ import Context, { TraceResults } from './context';
 import { LexerToken } from './scan';
 import { fromDataValue } from './expr';
 import { Macro } from './macro';
+import WasmNumber from './numbers';
 
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
@@ -105,6 +106,10 @@ export default class Fun {
         // Pick which branch to follow
         // TODO stop at first else statement
         const conds = this.conditions.map(cond => {
+            // Typecheck vs pattern matching
+            if (cond.datatype && !cond.datatype.checkInputs(ctx.stack))
+                return new value.NumberValue(null, new WasmNumber(WasmNumber.Type.I32, 0));
+
             // Copy stack
             // Note mss only important for actions as conditions could
             const stk = ctx.stack.slice();
@@ -113,9 +118,8 @@ export default class Fun {
             // Invoke condition
             const rv = ctx.invoke(cond, cond.token || token);
             // const rv = cond.value.action(ctx, token);
-            if (rv instanceof Array || rv instanceof error.SyntaxError)
+            if (rv instanceof error.SyntaxError)
                 return rv;
-
             const ret = ctx.pop();// || new value.NumberValue(token, new WasmNumber().fromString('1'));
 
             // Restore stack
@@ -137,7 +141,8 @@ export default class Fun {
         // Check for errors
         // TODO should prob ignore errors if one of conditions is truthy
         //      so that user can overload operators with diff # inputs
-        const errs: any[] = conds.filter(c => c instanceof Array || c instanceof error.SyntaxError);
+        const errs: error.SyntaxError[] = conds.filter(e => e instanceof error.SyntaxError) as error.SyntaxError[];
+
         if (errs.length) {
             // console.warn(`[warning] ${this.name}: fn errs: `, ...errs.map(e => {
             //     const ret: any = { msg: e.message || e };
@@ -146,7 +151,8 @@ export default class Fun {
             //     return ret;
             // }));
             // TODO we need to make an error datatype that combines these into a single error
-            console.warn(`[warn] ${this.name}: fn errs: ${errs.map(e => e.message || e).join('\n')} `);
+            errs.forEach(e => ctx.warn(e.tokens[0], `[warn] ${this.name}: fn err: ${e.message || e}`));
+            // console.warn(`[warn] ${this.name}: fn errs: ${errs.map(e => e.message || e).join('\n')} `);
             // return errs.reverse()[0];
         }
 

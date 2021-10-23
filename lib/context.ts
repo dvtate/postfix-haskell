@@ -338,9 +338,13 @@ export default class Context {
             return ret;
         }
 
-        //
+        // Make typescript do it's thing
         if (!(v instanceof Macro))
             throw new Error('wtf?');
+
+        // Type check
+        if (v.datatype && !v.datatype.checkInputs(this.stack))
+            return new error.SyntaxError('Type mismatch', token, this);
 
         // TODO handle constexprs specially
         if (!v.recursive || isTrace) {

@@ -1,17 +1,17 @@
 "./prelude.phs" require use
 
 # String TypeClass
-{ I32 I32 } pack class $Str =
-{ type Str == } { unpack pop } $len fun
-{ type Str == } { unpack swap pop } $addr fun
+(I32 I32) class $Str =
+((Str): 1 ) (: unpack pop ) $len fun
+((Str): 1 ) (: unpack swap pop ) $addr fun
 
 # Overload as operator to convert string literals
-{ ( $lit $t ) = t type Str == } {
+(: ( $lit $t ) = t type Str == ) (:
     $lit =
-    { lit } pack Str make
-} $global.as fun
+    ( lit ) Str make
+) $global.as fun
 
-{
+(:
     $lit =
-    { lit } pack Str make
-} $Str_new =
+    ( lit ) Str make
+) $Str_new =

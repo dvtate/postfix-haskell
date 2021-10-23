@@ -1,20 +1,20 @@
 
 
 # Create a namespace 'ns'
-{
+(:
     5 $five =
-    { + } $add =
-} namespace $ns =
+    (: + ) $add =
+) namespace $ns =
 
 10 $five =
 $ns ~ "" "" use_some
 
-( I32 ) {
+( I32 ) (:
     # Get 'five' from the namespace
-    $five ns ~
+    ns.five
 
     # Invoke 'add' from the namespace
-    $add ns @
+    ns.add
 
     five -
-} $export export
+) $export export

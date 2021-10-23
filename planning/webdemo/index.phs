@@ -1,22 +1,7 @@
 "../stdlib/prelude.phs" require use
 "../stdlib/bits.phs" require use
 "../stdlib/math.phs" require use
-
-{   ( $v $addr ) =
-    # NOTE little endian
-    v 0xff and
-        addr static_init_byte
-    v 8 >> 0xff and
-        addr 1 + static_init_byte
-    v 16 >> 0xff and
-        addr 2 + static_init_byte
-    v 24 >> 0xff and
-        addr 3 + static_init_byte
-} $init_i32 =
-{
-    swap "i32.reinterpret_f32" asm swap
-    init_i32
-} $init_f32 =
+"../stdlib/static_mem.phs" require use
 
 # Allocate static memory regions
 4 static_region $x_addr =
@@ -25,85 +10,76 @@
 4 static_region $dy_addr =
 
 # Initialize static memory regions
-50 x_addr init_i32
-20 y_addr init_i32
-1 dx_addr init_i32
-1 dy_addr init_i32
-
-# Store value in memory
-# <void> <addr> <value> store
-{ type I32 == } { ( Unit I32 I32 ) ( Unit ) Arrow "i32.store" _asm } $store fun
-{ type F32 == } { ( Unit I32 F32 ) ( Unit ) Arrow "f32.store" _asm } $store fun
-{ type I64 == } { ( Unit I32 I64 ) ( Unit ) Arrow "i64.store" _asm } $store fun
-{ type F64 == } { ( Unit I32 F64 ) ( Unit ) Arrow "f64.store" _asm } $store fun
+50 x_addr static_init
+20 y_addr static_init
+1 dx_addr static_init
+1 dy_addr static_init
 
 # Setters
-{ # dup type I32 == :assert
-    x_addr swap store } $set_x =
-{ # dup type I32 == :assert
-    y_addr swap store } $set_y =
-{ dx_addr swap store } $set_dx =
-{ dy_addr swap store } $set_dy =
+((Unit I32): x_addr swap store ) $set_x =
+((Unit I32): y_addr swap store ) $set_y =
+((Unit I32): dx_addr swap store ) $set_dx =
+((Unit I32): dy_addr swap store ) $set_dy =
 
 # Getters
-{ x_addr "i32.load" asm } $get_x =
-{ y_addr "i32.load" asm } $get_y =
-{ dx_addr "i32.load" asm } $get_dx =
-{ dy_addr "i32.load" asm } $get_dy =
+(: x_addr "i32.load" asm ) $get_x =
+(: y_addr "i32.load" asm ) $get_y =
+(: dx_addr "i32.load" asm ) $get_dx =
+(: dy_addr "i32.load" asm ) $get_dy =
 
 500 $width =
 400 $height =
 4 $ball_dim =
 
-{ # Generate random int from 1-10
-    Unit (F32) Arrow { "js" "Math.random" } import @
+(: # Generate random int from 1-10
+    Unit (F32) Arrow (: "js" "Math.random" ) import @
     10.0f * I32 cast 1 +
-} $rng_1_10 =
+) $rng_1_10 =
 
-{ # Update
+(: # Update
     # These will get tee'd
     get_x $x = get_y $y =
     get_dx $dx = get_dy $dy =
 
     # Collisions
-    { true } { } $x_cc fun
-    { x dx <= } { rng_1_10 set_dx } $x_cc fun
-    { x dx + width ball_dim - >= } { 0 rng_1_10 - set_dx } $x_cc fun
+    (: true ) (: ) $x_cc fun
+    (: x dx <= ) (: rng_1_10 set_dx ) $x_cc fun
+    (: x dx + width ball_dim - >= ) (: 0 rng_1_10 - set_dx ) $x_cc fun
     x_cc
 
-    { true } { } $y_cc fun
-    { y dy <= } { rng_1_10 set_dy } $y_cc fun
-    { y dy + height ball_dim - >= } { 0 rng_1_10 - set_dy } $y_cc fun
+    (: true ) (: ) $y_cc fun
+    (: y dy <= ) (: rng_1_10 set_dy ) $y_cc fun
+    (: y dy + height ball_dim - >= ) (: 0 rng_1_10 - set_dy ) $y_cc fun
     y_cc
 
     # Update
     x get_dx + I32 cast set_x
     y get_dy + I32 cast set_y
-} $update =
+) $update =
 
-{
+(:
     # Clear scene
     #0 0 height width
     #( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
-    #{ "js" "contextClearRect" } import @
+    #(: "js" "contextClearRect" ) import @
 
     # Draw rectangle
     get_y get_x ball_dim ball_dim
     ( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
-    { "js" "contextFillRect" } import @
+    (: "js" "contextFillRect" ) import @
 
     # Debugging
     #get_x get_y get_dx get_dy
     #( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
-    #{ "js" "console.log" } import @
-} $draw =
+    #(: "js" "console.log" ) import @
+) $draw =
 
-( Unit ) { draw } "draw" export
-( Unit ) { update } "update" export
-( Unit ) {
+( Unit ) (: draw ) "draw" export
+( Unit ) (: update ) "update" export
+( Unit ) (:
     update
     draw
 
     # Await next frame
-    (Unit) (Unit) Arrow { "js" "nextFrame" } import @
-} "loop" export
+    (Unit) (Unit) Arrow (: "js" "nextFrame" ) import @
+) "loop" export

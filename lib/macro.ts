@@ -75,7 +75,7 @@ export abstract class Macro extends value.Value {
         ctx.popn(inputs.length);
 
         // Validate trace
-        if (ios.takes.length != inputs.length)
+        if (ios.takes.length > inputs.length)
             return 'differing input lengths';
         if (ios.takes.some((e, i) => e !== inputs[i]))
             return 'differing input values';
@@ -87,10 +87,11 @@ export abstract class Macro extends value.Value {
                 }`, token, ctx);
 
         // Add match
+        // TODO the outputTypes should be merged with unused inputtypes
         const ret = new types.ArrowType(
             token,
-            ios.takes.map(v => v.datatype),
-            ios.gives.map(v => v.datatype)
+            inputTypes,
+            ios.gives.map(v => v.datatype),
         );
         return ret;
     }
@@ -270,7 +271,7 @@ export class LiteralMacro extends Macro {
         // Infer output types from inputs
         const type = this.inferDatatype(ctx, inputs.types, this.token);
         if (typeof type == 'string')
-            return [type]
+            return new error.SyntaxError(type, this.token, ctx);
         if (type instanceof error.SyntaxError)
             return type;
 
@@ -278,7 +279,7 @@ export class LiteralMacro extends Macro {
         if (outputs && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
             ctx.warn(this.token, 'incorrectly typed macro');
             console.warn('incorrectly typed macro, should be', type);
-            return type;
+            // return type;
         }
 
         // Apply datatype
