@@ -75,6 +75,62 @@ export class BlockToken extends LexerToken {
             ContainerType.Paren, ContainerType.Paren,
         ]['{}[]()'.indexOf(token)];
     }
+
+    isMacro() {
+        return this.subtype === ContainerType.Paren
+            && this.body
+            && this.body.slice(0, 4).some(t => t.token === ':' || t.token === 'rec:');
+    }
+
+    toMacro() {
+        // Not a macro
+        if (!this.isMacro()) {
+            this.type = TokenType.Tuple;
+            return this;
+        }
+
+        const types: BlockToken[] = [];
+        let recursive = false;
+        let i : number;
+        const l = Math.min(4, this.body.length)
+        for (i = 0; i < l; i++) {
+            const t = this.body[i];
+            if (t.token === ':')
+                break;
+            if (t.token === 'rec:') {
+                recursive = true;
+                break;
+            }
+            if (t.token === 'rec')
+                recursive = true;
+            else if (t instanceof BlockToken)
+                types.push(t);
+            else
+                throwParseError('invalid macro prefix', [this, t], this.file);
+        }
+
+        return new MacroToken(
+            this.token,
+            this.position,
+            this.file,
+            this.body.slice(i + 1),
+            types,
+            recursive
+        );
+    }
+}
+
+export class MacroToken extends LexerToken {
+    constructor(
+        token: string,
+        position: number,
+        file: string,
+        public body: LexerToken[],
+        public types: BlockToken[],
+        public recursive = false,
+    ) {
+        super(token, TokenType.Block, position, file);
+    }
 }
 
 export class IdToken extends LexerToken {
@@ -243,7 +299,7 @@ export default function scan(code: string, file?: string): LexerToken[] {
 
             // Collapse body
             parent.body = ret.splice(ind + 1);
-            parent.type = parent.subtype === ContainerType.Paren ? TokenType.Tuple : TokenType.Block;
+            ret[ind] = parent.toMacro();
         } else {
             ret.push(tok);
         }

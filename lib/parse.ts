@@ -1,8 +1,9 @@
-import { BlockToken, IdToken, LexerToken, NumberToken } from "./scan";
+import { BlockToken, IdToken, LexerToken, MacroToken, NumberToken } from "./scan";
 import * as value from './value';
 import Context from './context';
 import { LiteralMacro } from './macro';
 import * as error from './error';
+import * as types from './datatypes';
 
 /*
 The name for this file is somewhat misleading but technically correct
@@ -41,30 +42,7 @@ export default function parse(tokens: LexerToken[], ctx = new Context(undefined,
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];
         switch (t.type) {
-            // Need to determine number type from literal
-            case LexerToken.Type.Number:
-                ctx.push(new value.NumberValue(t, (t as NumberToken).value));
-                break;
-
-            // Blocks: Need to form a closure with current scope
-            case LexerToken.Type.Block:
-                ctx.push(new LiteralMacro(ctx, t as BlockToken));
-                break;
-
-            // Tuples: Like a block but gets parsed immediately and not as smart
-            case LexerToken.Type.Tuple: {
-                const ret = ctx.parseTuple(t as BlockToken);
-                if (!(ret instanceof Context))
-                    return ret;
-                break;
-            }
-
-            // Parse: strings
-            case LexerToken.Type.String:
-                ctx.push(new value.StrValue(t));
-                break;
-
-            // Identifiers: also need to bind scope
+            // Identifiers: references to values
             case LexerToken.Type.Identifier:
                 // Handle subtypes
                 if ((t as IdToken).isEscaped) {
@@ -83,6 +61,56 @@ export default function parse(tokens: LexerToken[], ctx = new Context(undefined,
                     if (!(ret instanceof Context))
                         return ret;
                 }
+                break;
+
+            // Need to determine number type from literal
+            case LexerToken.Type.Number:
+                ctx.push(new value.NumberValue(t, (t as NumberToken).value));
+                break;
+
+            // Blocks: Need to form a closure with current scope
+            case LexerToken.Type.Block: {
+                // This shouldn't be needed
+                if (!(t instanceof MacroToken))
+                    throw new Error('wtf?');
+
+                // Get input and output types
+                const ts: types.TupleType[] = [];
+                for (const tt of t.types) {
+                    const rv = ctx.parseTuple(tt, true);
+                    if (!(rv instanceof Context))
+                        return rv;
+                    const v = ctx.pop();
+                    if (!(v.value instanceof types.TupleType))
+                        return new error.SyntaxError('Macro inputs tuple should only contain types', tt, ctx);
+                    ts.push(v.value);
+                }
+
+                // Push macro onto stack
+                const m = new LiteralMacro(ctx, t)
+                m.recursive = t.recursive;
+                if (ts.length !== 0 && !m.recursive) {
+                    const rv = m.applyType(ctx, ts[0], ts[1]);
+                    if (rv instanceof types.ArrowType)
+                        console.warn('inferred type: ', rv);
+                    if (rv)
+                        throw rv;
+                }
+                ctx.push(m);
+                break;
+            }
+
+            // Tuples: Like a block but gets parsed immediately and not as smart
+            case LexerToken.Type.Tuple: {
+                const ret = ctx.parseTuple(t as BlockToken);
+                if (!(ret instanceof Context))
+                    return ret;
+                break;
+            }
+
+            // Parse: strings
+            case LexerToken.Type.String:
+                ctx.push(new value.StrValue(t));
                 break;
         }
     }

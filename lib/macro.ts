@@ -1,5 +1,5 @@
 import Context from "./context";
-import { BlockToken, LexerToken } from "./scan";
+import { BlockToken, LexerToken, MacroToken } from "./scan";
 import parse from "./parse";
 import { Namespace } from "./namespace";
 import * as error from './error';
@@ -24,12 +24,19 @@ export abstract class Macro extends value.Value {
     value: undefined;
 
     /**
+     * Datatypes which the macro satisfies
+     */
+    // private matchingDatatypes: types.ArrowType[] = [];
+    // private failedDatatypes: types.ArrowType[] = [];
+
+    /**
      * Did the user flag this macro as recursive?
      */
     recursive = false;
 
-    constructor(token: LexerToken, type: types.ArrowType = null) {
+    constructor(token: LexerToken, type: types.ArrowType = null, recursive = false) {
         super(token, value.ValueType.Macro, null, type);
+        this.recursive = recursive;
     }
 
     /**
@@ -48,7 +55,15 @@ export abstract class Macro extends value.Value {
      * @param inputTypes required given input datatypes
      * @returns An arrow type for the datatype of the macro
      */
-    inferDatatype(ctx: Context, inputTypes: types.Type[], token: LexerToken = this.token): types.ArrowType | error.SyntaxError | string {
+    inferDatatype(
+        ctx: Context,
+        inputTypes: types.Type[],
+        token: LexerToken = this.token
+    ): types.ArrowType | error.SyntaxError | string {
+        // const cached = this.matchingDatatypes.find(t => t.checkInputTypes(inputTypes));
+        // if (cached)
+        //     return cached;
+
         // Generate dummy inputs
         const inputs = inputTypes.map(t => new expr.DummyDataExpr(token, t))
         ctx.stack.push(...inputs);
@@ -64,31 +79,44 @@ export abstract class Macro extends value.Value {
             return 'differing input lengths';
         if (ios.takes.some((e, i) => e !== inputs[i]))
             return 'differing input values';
-        if (ios.takes.some(v => !v.datatype)) // todo this only for debugging
+        if (ios.takes.some(v => !v.datatype))
             throw new Error('wtf?');
         if (ios.gives.some(v => !v.datatype))
             return new error.SyntaxError(`macro returns untyped value ${
                 ios.gives.find(v => !v.datatype).typename()
                 }`, token, ctx);
 
-        return this.datatype = new types.ArrowType(
+        // Add match
+        const ret = new types.ArrowType(
             token,
             ios.takes.map(v => v.datatype),
             ios.gives.map(v => v.datatype)
         );
+        return ret;
     }
 
+    /**
+     * Verify this macro has specified type
+     * @param ctx parser context
+     * @param datatype type to check against
+     * @param token location in code where check is required
+     * @returns true/false if checks or not or a syntax error
+     */
     typeCheck(
         ctx: Context,
         datatype: ClassOrType<types.TupleType | types.ArrowType>,
-        token: LexerToken = this.token
+        token: LexerToken = this.token,
+        safe = false,
     ): boolean | error.SyntaxError {
         // No need to inference if we already know the datatype
         if (this.datatype)
             return datatype.check(this.datatype);
+        // if (this.matchingDatatypes.some(t => t.check(datatype)))
+        //     return true;
+        // if (this.failedDatatypes.some(t => t.check(datatype)))
+        //     return false;
 
         // Generate type from partial
-        // NOTE this also sets this.datatype
         const baseType = datatype.getBaseType() as types.TupleType | types.ArrowType;
         const dt = this.inferDatatype(
             ctx,
@@ -99,12 +127,18 @@ export abstract class Macro extends value.Value {
         );
 
         // Invalid macro
+        // TODO this could mean it's just incorrectly typed...
         if (dt instanceof error.SyntaxError)
-            return dt;
+            return !safe && dt;
 
         // Verify type
         if (dt instanceof types.ArrowType) {
-            return datatype.check(this.datatype);
+            const ret = datatype.check(this.datatype);
+            // if (ret)
+            //     this.matchingDatatypes.push(dt);
+            // else
+            //     this.failedDatatypes.push(dt);
+            return ret;
         }
 
         // Invalid type
@@ -148,7 +182,7 @@ export abstract class Macro extends value.Value {
 /**
  * User-defined macros
  */
- export class LiteralMacro extends Macro {
+export class LiteralMacro extends Macro {
     body: LexerToken[];
     scopes: Array<{ [k: string] : value.Value }>;
 
@@ -157,10 +191,11 @@ export abstract class Macro extends value.Value {
      * @param ctx - context for literal
      * @param token - token for literal
      */
-    constructor(ctx: Context, token: BlockToken) {
+    constructor(ctx: Context, token: MacroToken | BlockToken) {
         super(token);
         this.body = token.body;
         this.scopes = ctx.scopes.slice();
+        this.recursive = token instanceof MacroToken && token.recursive;
     }
 
     /**
@@ -224,7 +259,34 @@ export abstract class Macro extends value.Value {
             : ret;
     }
 
+    /**
+     *
+     * @param ctx compiler context
+     * @param inputs input datatypes
+     * @param outputs output datatypes
+     * @returns void if successful, anything else if error
+     */
+    applyType(ctx: Context, inputs: types.TupleType, outputs?: types.TupleType): void | error.SyntaxError | string[] | types.ArrowType {
+        // Infer output types from inputs
+        const type = this.inferDatatype(ctx, inputs.types, this.token);
+        if (typeof type == 'string')
+            return [type]
+        if (type instanceof error.SyntaxError)
+            return type;
+
+        // Verify outputs
+        if (outputs && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
+            ctx.warn(this.token, 'incorrectly typed macro');
+            console.warn('incorrectly typed macro, should be', type);
+            return type;
+        }
+
+        // Apply datatype
+        this.datatype = type;
+    }
+
     toString() {
-        return `LiteralMacro { ${this.token.file || this.token.position} }`;
+        return `LiteralMacro { ${this.token.file || ''}:${this.token.position} }`;
     }
 }
+

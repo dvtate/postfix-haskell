@@ -11,7 +11,7 @@ import { Macro } from './macro';
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
 
 /**
- * In this language 'functions' are more like overloadable operators.
+ * In this language 'functions' are more like overloadable operators or branches.
  * They work as an associative array of conditions and actions
  *
  * Being overloadable is the key distinction between these and macros

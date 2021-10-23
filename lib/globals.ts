@@ -5,7 +5,7 @@ import * as error from './error';
 import Context from './context';
 import WasmNumber from './numbers';
 import Fun from './function';
-import scan, { BlockToken, LexerToken } from './scan';
+import scan, { BlockToken, LexerToken, MacroToken } from './scan';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -597,9 +597,7 @@ const operators : MacroOperatorsSpec = {
             const tokens = scan(fs.readFileSync(realpath).toString(), realpath);
 
             // Put file into a macro
-            const block = new BlockToken('{', token.position, token.file || curDir);
-            block.token = token.token;
-            block.body  = tokens;
+            const block = new MacroToken(token.token, token.position, token.file || curDir, tokens, [], false);
 
             // Convert file into namespace and push it
             const ns = new LiteralMacro(ctx, block).getNamespace(ctx, token);

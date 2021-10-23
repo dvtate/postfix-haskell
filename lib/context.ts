@@ -7,7 +7,7 @@ import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
-import { BlockToken, LexerToken } from "./scan";
+import { BlockToken, LexerToken, MacroToken } from "./scan";
 import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';
@@ -494,7 +494,7 @@ export default class Context {
      * @param t token for tuple
      * @returns this | error
      */
-    parseTuple(t: BlockToken) {
+    parseTuple(t: BlockToken, isType = false) {
         // Copy stack length
         const sl = this.stack.length;
 
@@ -507,7 +507,7 @@ export default class Context {
         const vs = this.stack.splice(sl);
 
         // Get return value
-        const val = vs.every(v => v.type == value.ValueType.Type)
+        const val = (isType && !vs.length) || vs.every(v => v.type == value.ValueType.Type)
             ? new value.Value(t, value.ValueType.Type,
                 new types.TupleType(t, vs.map(v => v.value as types.Type)))
             : new value.TupleValue(t, vs);

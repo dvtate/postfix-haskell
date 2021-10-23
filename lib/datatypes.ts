@@ -369,4 +369,10 @@ export class ArrowType extends Type {
             .slice(-this.inputTypes.length)
             .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype))
     }
+
+    checkInputTypes(types: Type[]): boolean {
+        return types
+            .slice(-this.inputTypes.length)
+            .every((t, i) => this.inputTypes[i].check(t));
+    }
 }
