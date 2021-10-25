@@ -8,7 +8,7 @@ $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell
 $ npm install --global
 $ phc shell
-> "./planning/stdlib/prelude.phs" include use
+> "./planning/stdlib/prelude.phs" require use
 > 1 2 + :data
 :data - 3n
 ```
