@@ -355,8 +355,8 @@ export class ArrowType extends Type {
     check(type: Type): boolean {
         if (!(type instanceof ArrowType))
             return false;
-        return !(this.inputTypes.some((t, i) => t.check(type.inputTypes[i]))
-            || this.outputTypes.some((t, i) => t.check(type.outputTypes[i])));
+        return this.inputTypes.every((t, i) => t.check(type.inputTypes[i]))
+            && this.outputTypes.every((t, i) => t.check(type.outputTypes[i]));
     }
 
     /**

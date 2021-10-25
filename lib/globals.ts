@@ -557,7 +557,9 @@ const operators : MacroOperatorsSpec = {
             const curDir = token.file ? path.parse(token.file).dir : '.';
             let realpath : string;
             try {
-                realpath = fs.realpathSync(path.normalize(path.join(curDir, arg.value)));
+                realpath = fs.realpathSync(path.normalize(arg.value[0] == '/'
+                    ? arg.value
+                    : path.join(curDir, arg.value)));
             } catch (e: any) {
                 return new error.SyntaxError(`include: ${e && e.message}`, token, ctx);
             }

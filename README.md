@@ -95,11 +95,16 @@ You can embed the language in JavaScript or TypeScript. See a demo in `planning/
 # Quick intro to language
 - functional: immutable variables defined via `=` operator
 - postfix: operators follow the operands they act on (ie - `1 2 +`)
-    + the stack (place where expressions are put) is a compile-time abstraction, and values stored on it often aren't included in the compiled code
+  + the stack (place where expressions are put) is a compile-time abstraction, and values stored on it often aren't included in the compiled code
+- All the below examples assume you've imported the standard library which contains many basic operators like `+` and `&&` for example.
+  + to import it use `"/[path to this repo]/postfix-haskell/planning/stdlib/prelude.phs" require use`
 
 ## Identifiers
 - Escaped identifiers (ie - `$name`) can be used to store any type of value
 - Unescaped identifiers will invoke stored value, either running it in place or pushing it's value onto the stack
+- There are two operators which act on identifiers:
+  + `@` : this is the same as unecaping the identifier, it will invoke values
+  + `~` : this will unescape the the value but will not invoke it
 ```php
 # equiv to `let a = 4 * (1 + 2)`
 1 2 + 4 * $a =
@@ -128,23 +133,60 @@ a :data
 (: ( $a $b ) = b a ) $swap =
 
 # (a)->()
-{ $_ = } $pop =
+(: $_ = ) $pop =
 
 # ()->(a,b)
-( 1.0 2.0 ) $nums =
+# Notice the optional type annotations
+(()(F64 F64): 1.0 2.0 ) $nums =
 
 nums / :data # 0.5
 nums swap / :data # 2
 nums pop :data # 1
 ```
+Notice that if we want to get the macro stored in a variable we cannot simply unescape it, and must use the `~` operator.
+```php
+(: $op = 1 2 op ) $apply_operator =
+(: + 2 *) $add_and_double =
+
+# This is valid
+$add_and_double ~ apply_operator :data # 6
+
+# This is wrong and will not compile
+add_and_double apply_operator :data
+```
 
 ## Branching
 - Functions are like macros but overloadable with conditions
 - Functions are the only way to do branching in the language
-- When invoked the correct branch will be choosen, if no branches work, the compiler will error
+- When invoked, the conditions are checked until reaching one which is truthy
+- The truthy branch is taken
+- If there are no possible branches the compiler will error
 - they syntax for functions is `{ condition } { action } $identifier fun`
-```ps
-# Not operator
-{ 1 }    { drop 0 } $! fun	# Always returns false
-{ 0 == } { drop 1 } $! fun	# Unless given value is false
+```php
+# Use bigger of two values
+
+# Here we're checking a runtime condition
+(: true ) (: pop ) $max fun
+(: < ) (: ( $a $b ) = b ) $max fun
+
+# Here we're checking a compile-time condition
+((F32): 1 ) (: "f32.max" asm ) $max fun
+
+# This does basically the same thing as the above definition
+#   but for F64's. The difference comes
+(: type F64 == ) (: "f64.max" asm ) $max fun
+
+# This takes the F64 branch
+1.0 30.1 max :data # 30.1
+
+# This takes the (: < ) branch
+# Condition: 30 gets promoted to 30.0 causing it to take the branch
+# Action: the other 30 remains on the stack as the result
+1.2 30 max :data # 30
 ```
+
+# Should to add to guide
+- list of operators
+- list of data and syntactic types
+- namespaces elaborate on modules
+- recursion
