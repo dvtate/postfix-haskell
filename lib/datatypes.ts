@@ -23,7 +23,7 @@ export abstract class Type {
 
     /**
      * Gives the wasm typename for given type
-     * @returns {sting} - typename
+     * @returns {string} - typename
      * @virtual
      */
     getWasmTypeName(name?: string): string { return ''; }
@@ -202,7 +202,7 @@ export class UnionType extends Type {
     /**
      * @override
      */
-    getWasmTypeName(name?: string) {
+    getWasmTypeName() {
         return 'invalid union type';
     }
 }
@@ -297,7 +297,7 @@ export class PrimitiveType extends Type {
     /**
      * @override
      */
-    getWasmTypeName(name?: string) {
+    getWasmTypeName() {
         return this.name;
     }
 

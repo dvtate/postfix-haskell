@@ -7,7 +7,7 @@ import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
 import * as expr from './expr';
-import { BlockToken, LexerToken, MacroToken } from "./scan";
+import { BlockToken, LexerToken } from "./scan";
 import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';

@@ -4,11 +4,10 @@
  * Solution A: Use ASM.js notation
  * - I don't like this solution
  * - it requires us to carefully rely on the js spec
- * - so could break in future/old browsers
+ * - so could break in future/old browsers and other interpreters
  * Solution B: Use BigInt and Float*Array
  * - Probably worse performance
  * - More reliable and intuitive
- *
  */
 
 // TODO: DON'T USE GET/SET METHODS!

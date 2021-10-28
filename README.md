@@ -185,6 +185,10 @@ add_and_double apply_operator :data
 1.2 30 max :data # 30
 ```
 
+## Syntactic Types
+
+## Namespaces
+
 # Should to add to guide
 - list of operators
 - list of data and syntactic types

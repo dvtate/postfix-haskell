@@ -162,7 +162,7 @@ export class RecursiveBodyExpr extends Expr {
         return `${
             this.takes.map(e => e.out(ctx, fun)).join('')
         }${
-            captureExprs.map(e => e.out(ctx, fun)).join('')
+            captureExprs.map((e: DataExpr) => e.out(ctx, fun)).join('')
         }\n\t(call ${this.label})${
             this.giveExprs.map(e => e.datatype.isUnit() ? '' : `(local.set ${e.index})`).join('')
         }`;
@@ -316,7 +316,7 @@ export class RecursiveCallExpr extends Expr {
         return `\n\t${
             this.takeExprs.map(e => e.out(ctx, fun)).join(' ')
         } ${
-            this.body.helper.copiedParams.map(p => p.out(ctx, fun)).join('')
+            this.body.helper.copiedParams.map((p: DataExpr) => p.out(ctx, fun)).join('')
         } (call ${this.body.label})`;
     }
 

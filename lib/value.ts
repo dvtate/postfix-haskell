@@ -2,7 +2,6 @@ import * as types from './datatypes';
 import WasmNumber from './numbers';
 import { IdToken, LexerToken } from './scan';
 import Context from './context';
-import { Macro } from './macro';
 import ModuleManager from './module';
 import * as expr from './expr';
 import { Expr } from './expr';

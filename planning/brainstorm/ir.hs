@@ -1,6 +1,4 @@
 module IR where
-
--- WASM types
 import Prelude
 
 -- | WASM datatypes allowed on stack
@@ -13,6 +11,7 @@ wasmTypeName I64 = "i64"
 wasmTypeName F32 = "f32"
 wasmTypeName F64 = "f64"
 
+-- | Our IR language
 -- | Values/Operations that act on the WASM stack
 data DataExpr =
     I32Lit Int      -- ^ Compiles to i32.const
@@ -63,11 +62,12 @@ data Context = Ctx Module ExportedFun
 --     let fun' = FunExport id params (locals ++ [t]) results
 --     in (length locals, fun')
 
--- Expressions can be compiled to WASM
+-- | Expressions can be compiled to WASM
 class Expr a where
     -- | Compile
     outExpr :: Context -> a -> (String, Context)
 
+-- Our IR can compile to WASM
 instance Expr DataExpr where
     outExpr ctx (I32Lit n) = ("(i32.const " ++ show n ++ ")", ctx)
     outExpr ctx (I64Lit n) = ("(i64.const " ++ show n ++ ")", ctx)
@@ -85,6 +85,7 @@ instance Expr DataExpr where
             impl ret ctx (arg : args) = impl (ret ++ " " ++ str) ctx' args
                 where (str, ctx') = outExpr ctx arg
 
+-- | Compile program to a wasm string
 outModule :: Module -> String
 outModule funs =
     let
@@ -118,9 +119,9 @@ outModule funs =
     in
         "(module " ++ concat (zipWith funSig funs' bodies) ++ ")"
 
+-- demo
+exampleFunction :: ExportedFun
 exampleFunction = FunExport "incr" [I32] [] [
     InstrExpr "i32.add" [LocalExpr 0, I32Lit 1] I32]
-
--- demo
 main :: IO ()
 main = putStrLn $ outModule [exampleFunction]

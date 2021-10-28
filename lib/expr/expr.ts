@@ -28,12 +28,11 @@ export abstract class Expr extends value.Value {
     /**
      * Compilation action
      * @virtual
+     * @param ctx - compilation context
      * @param fun - function export context
      * @returns - wasm translation
      */
-    out(ctx: ModuleManager, fun?: FunExportExpr): string {
-        return '';
-    }
+    abstract out(ctx: ModuleManager, fun?: FunExportExpr): string;
 
     /**
      * Get all expressions which constitute this one
@@ -121,6 +120,14 @@ export class DummyDataExpr extends DataExpr {
             );
         else
             return new DummyDataExpr(token, datatype);
+    }
+
+    /**
+     * @override
+     */
+    out() {
+        throw new Error('Invalid Intermediate Representation node: ' + this.constructor.name);
+        return '';
     }
 }
 
@@ -259,7 +266,10 @@ export class ParamExpr extends DataExpr {
         this.position = position;
     }
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    /**
+     * @override
+     */
+    out() {
         if (this.datatype.getBaseType().isUnit())
             return '';
         return `(local.get ${this.position})`;
@@ -284,7 +294,7 @@ export class NumberExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out() {
         const outValue = (v: value.Value): string =>
             v instanceof value.TupleValue
                 ? v.value.map(outValue).join()

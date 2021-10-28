@@ -3,8 +3,8 @@ import WasmNumber from "./numbers";
 
 // This handles Context-free grammar
 
-// TODO optimize, use regex, etc.
-// TODO chars
+// TODO optimize, use regex, char literals, etc.
+// TODO this file is ugly
 
 /**
  * Lexical type for token
@@ -140,6 +140,7 @@ export class IdToken extends LexerToken {
         super(token, TokenType.Identifier, position, file);
         this.isEscaped = this.token[0] === '$';
         const unescaped = this.isEscaped ? this.token.slice(1) : this.token;
+        // TODO handle when token is "." or "..." or "..abc" this could be useful?
         this.value = unescaped.split('.');
     }
 }

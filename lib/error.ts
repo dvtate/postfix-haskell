@@ -57,17 +57,4 @@ export class TypeError extends CompilerError {
     }
 }
 
-// Invalid Expression
-class ValueError extends SyntaxError {}
-
-// Invalid Data Expression
-class DataError extends SyntaxError {}
-
-// Unexpected Expression Syntactic Type
-class ValueTypeError extends ValueError {}
-
-// Received a DataValue as expected but it's wrong .datatype
-class DataTypeError extends SyntaxError {}
-
-// Unexpected
-class DataValueError extends SyntaxError {}
+// TODO more, better errors which can get displayed more readably with additional info

@@ -13,8 +13,8 @@ For this language user interacts with this module through operators in order to
 make a somewhat different expression tree
 */
 
+// Debugging tools used to analyze and optimize compile-time
 export const runtimeCache: [string, number][] = [];
-
 export function generatePerfSummary(){
     const times: { [k: string]: number } = {};
     runtimeCache.sort(([, ta], [, tb]) => tb - ta);

@@ -5,7 +5,7 @@ import * as error from './error';
 import Context from './context';
 import WasmNumber from './numbers';
 import Fun from './function';
-import scan, { BlockToken, LexerToken, MacroToken } from './scan';
+import scan, { LexerToken, MacroToken } from './scan';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -898,7 +898,7 @@ const funs = {
             else
                 return ctx.push(toBool(true, token));
         }),
-        new CompilerMacro(null, (ctx, token) => {
+        new CompilerMacro(null, ctx => {
             // Get args
             const type = ctx.pop();
             const value = ctx.pop();
