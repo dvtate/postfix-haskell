@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node index.ts",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "docs": "typedoc index.ts lib/* tools/*.ts --out tsdoc"
   },
   "repository": {
     "type": "git",
@@ -37,6 +38,7 @@
     "@types/yargs": "^17.0.0",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
-    "eslint": "^8.0.1"
+    "eslint": "^8.0.1",
+    "typedoc": "^0.22.7"
   }
 }

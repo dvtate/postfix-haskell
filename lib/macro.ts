@@ -10,9 +10,14 @@ import * as expr from './expr';
 // TODO add arrow type
 // TOOD make it extend Value - not addressing because not clear what the `.value` would be
 
-// Return Type for macro implementations
+/**
+ * Return Type for macro implementations
+ */
 export type ActionRet = Context | Array<string> | undefined | SyntaxError | void;
 
+/**
+ * Type T or class of type T
+ */
 type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
 
 /**

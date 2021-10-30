@@ -1,7 +1,8 @@
 
-/**
- * These are manual entries for a bunch of langauge components
+/*
+ * Manual entries for a bunch of langauge components
  */
+
 
 type DocsMap = { [k: string] : {
     name: string,

@@ -144,6 +144,9 @@ export class IdValue extends Value {
     }
 }
 
+/**
+ * Type T or class of type T
+ */
 type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
 
 /**

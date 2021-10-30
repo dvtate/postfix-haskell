@@ -24,7 +24,9 @@ export function fileLocate(file: string, pos: number): FileSnapshot {
     return null;
 }
 
-
+/**
+ * Could be defined in error.ts or an js object
+ */
 interface CompileError extends Error {
     message: string;
     tokens: Array<lex.LexerToken>;

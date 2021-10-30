@@ -1,1 +1,14 @@
-workspace.code-workspace
+# VSCode
+*.code-workspace
+
+# Webassembly binaries
+*.wasm
+
+# Automatically generated documentation
+tsdoc/
+
+
+planning/brainstorm/
+planning/spec/
+planning/webdemo/
+planning/implementation/

@@ -108,3 +108,6 @@ dist
 
 # Webassembly binaries
 *.wasm
+
+# Automatically generated documentation
+tsdoc/

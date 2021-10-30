@@ -25,13 +25,19 @@ const wabtProm = wabtMod();
 
 // Return Types for Context.traceIO() method
 export class TraceResults {
-    // Consumed by operation
+    /**
+     * Consumed by operation
+     */
     takes: value.Value[];
 
-    // Results of operation
+    /**
+     * Results of operation
+     */
     gives: value.Value[];
 
-    // Difference in lengths
+    /**
+     * Difference in lengths
+     */
     delta: number;
 
     constructor(takes: value.Value[], gives: value.Value[], delta: number) {
@@ -41,6 +47,9 @@ export class TraceResults {
     }
 }
 
+/**
+ * Used for storing result of a Macro trace
+ */
 interface TraceResultTracker {
     token: LexerToken,
     value: value.Value,
