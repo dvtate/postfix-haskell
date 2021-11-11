@@ -1,0 +1,41 @@
+
+# Linked List type
+
+## Unnamed constructors
+# Typedef
+(rec: $T = (T T List) Unit | ) class $List =
+
+# Instance
+( 1 ( 2 ()
+    ) I32 List make
+) I32 List make $list1 =
+
+## Named constructors
+# Typedef
+(rec: $T =
+    (T T List) class $Node =
+    Unit class $Nil =
+    Node Nil |
+) class $List =
+
+# Instance
+( 1 ( 2 () I32 List.Nil make
+    ) I32 List.Node make
+) I32 List.Node make
+
+# Calculate sum of list
+((Any List) rec:
+    (: 1) (:
+        unpack ( $h $t ) = t sum h +
+    ) $branch fun
+    ((Unit): 1)  (: 0 ) $branch fun
+) $sum =
+
+# Binary tree
+(rec: $T = (T BTree T BTree T) Unit | ) class $BTree =
+
+(rec: $T =
+    (T T BTree T BTree) class $Node =
+    Unit class $Nil =
+    Node Nil |
+) class

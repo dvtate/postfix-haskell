@@ -42,6 +42,9 @@ Int Float | $Num =
 ((F32): 1 ) (: "f32.nearest" asm ) $nearest fun
 ((F64): 1 ) (: "f64.nearest" asm ) $nearest fun
 
+# PI constant
+3.141592653589793 $PI =
+
 # Factorial
 (: 1 ) (:
     (rec:

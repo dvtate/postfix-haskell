@@ -3,9 +3,11 @@
 // Load WAT source
 const fs = require('fs');
 
-/*
-const fname = '/home/tate/Desktop/postfix-haskell/planning/wat.wasm';
-const src = fs.readFileSync(fname).toString();
+const fname = 'wat.wasm';
+const bin = fs.readFileSync(fname);
+console.log(bin);
+const valid = WebAssembly.validate(bin);
+console.log(valid);
 
 // WASM Environment
 const env = {
@@ -21,17 +23,19 @@ const env = {
 		},
 		test: function(n) {
 			return [n, n];
-		}
+		},
+		'console.log': console.log,
 	},
 };
 
 // Invoke wasm export
-inline.compileWat(src, env).then(mod => {
+WebAssembly.instantiate(bin, env).then(mod => {
 	mod.instance.exports.main();
+	// mod.instance.exports.test();
 }).catch(e => console.error(e));
-*/
 
-const fname = '/home/tate/Desktop/postfix-haskell/planning/fac.wasm';
+/*
+const fname = '/home/tate/Desktop/postfix-haskell/planning/wat.wasm';
 const bin = fs.readFileSync(fname)
 const valid = WebAssembly.validate(bin.buffer);
 if (!valid)
@@ -41,3 +45,4 @@ else
 		console.log([1,2,3,4,5,6,7,8]
 			.map(m.instance.exports.fac)))
 	.catch(console.error);
+*/
