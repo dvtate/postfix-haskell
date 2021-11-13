@@ -4,8 +4,8 @@
 (: + 2.0 / ) $avg =
 
 # Absolute value
-(: true ) (: ) $abs fun
-(: 0.0 < ) (: neg ) $abs fun
+((F64): true ) (: ) $abs fun
+((F64): 0.0 < ) (: neg ) $abs fun
 
 ( F64 ) (: # Square route via newton's method
 	(: # Tail-recursive helper

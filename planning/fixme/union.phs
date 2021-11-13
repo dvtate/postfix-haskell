@@ -1,0 +1,13 @@
+
+# Bitwise and
+((I32 I32): 1 ) (: "i32.and" asm ) $and fun
+((I64 I64): 1 ) (: "i64.and" asm ) $and fun
+
+# Bitwise or
+(: ( $a $b ) = a type I32 == b type I32 == && ) (: "i32.or" asm ) $or fun
+(: ( $a $b ) = a type I64 == b type I64 == && ) (: "i64.or" asm ) $or fun
+
+I32 I64 | $Int =
+(Int Int) (Int) Arrow $BinaryOperator =
+
+((Int Int): or ) type BinaryOperator == :data

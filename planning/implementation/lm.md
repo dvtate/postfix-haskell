@@ -1,5 +1,5 @@
-# GC and Linear Memory setup
-## Static Regions
+# Linear Memory & GC Runtime
+## Regions
 Note that for some of this we might be able to define [custom sections](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Module/customSections).
 
 ### Roots/Reference Stack
@@ -32,13 +32,14 @@ struct gc_heap_object_t {
     void* refs_bitfield_addr;  // uint32_ptr_t
 
     // Referenced by other nodes?
+    // Used during mark phase
     bool mark : 2;
 
     // How much storage do we have allocated (multiples of 32 bits)
     unsigned size : 30
 
-    // Next pointer so that we can
-    struct gc_heap_object_t* next; // uint32_ptr_t;
+    // Next pointer so that we can iterate over and free pointers
+    struct gc_heap_object_t* next; // uint32_ptr_t
 };
 ```
 
@@ -55,11 +56,11 @@ struct gc_heap_empty_t {
     uint32_t size;
 
     // Next available free space
-    struct gc_heap_empty_t* next;
+    struct gc_heap_empty_t* next; // uint32_ptr_t
 };
 
 // Root element of LL
-struct gc_heap_empty_t* start;
+struct gc_heap_empty_t* gc_free_start;
 ```
 
 Notice that due to implementation, the order of the free spaces will match their order of creation and thus their order in LM. With this in mind we can define our coalesce functions as such

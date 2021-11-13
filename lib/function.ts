@@ -8,7 +8,6 @@ import { fromDataValue } from './expr';
 import { Macro } from './macro';
 import WasmNumber from './numbers';
 
-
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
 
 /**
