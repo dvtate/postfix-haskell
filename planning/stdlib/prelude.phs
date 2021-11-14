@@ -87,6 +87,11 @@ I32 I64 | F32 F64 | | $_Scalar =
 ((I64): is_const ) (: 1L == ) $_is_1 fun
 ((F32): is_const ) (: 1.0f == ) $_is_1 fun
 ((F64): is_const ) (: 1.0l == ) $_is_1 fun
+(: 1 ) (: 0 ) $_is_neg1 fun
+((I32): is_const ) (: -1 == ) $_is_neg1 fun
+((I64): is_const ) (: -1L == ) $_is_neg1 fun
+((F32): is_const ) (: -1.0f == ) $_is_neg1 fun
+((F64): is_const ) (: -1.0l == ) $_is_neg1 fun
 
 ##
 # Operator ==
@@ -171,12 +176,16 @@ $_can_promote ~ (: _promote - ) $global.- fun
 $_can_promote ~ (: _promote * ) $global.* fun
 
 # Optimization for identity property of multiplication
-(: pop $a = a _is_1 ) (: swap pop ) $global.* fun
+(: pop _is_1 ) (: swap pop ) $global.* fun
 (: _is_1 ) (: pop ) $global.* fun
+
+# Negation
+(: pop _is_neg1 ) (: swap pop neg ) $global.* fun
+(: _is_neg1 ) (: pop neg ) $global.* fun
 
 # Optimization for zero property of multiplication
 # TODO? maybe make the zero the same type?
-(: pop $a = a _is_0 ) (: pop pop 0 ) $global.* fun
+(: pop _is_0 ) (: pop pop 0 ) $global.* fun
 (: _is_0 ) (: pop pop 0 ) $global.* fun
 
 ##

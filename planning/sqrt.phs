@@ -1,16 +1,15 @@
 "stdlib/prelude.phs" require use
 
 # Average
-(: + 2.0 / ) $avg =
+(: + 2 / ) $avg =
 
 # Absolute value
 ((F64): true ) (: ) $abs fun
-((F64): 0.0 < ) (: neg ) $abs fun
+((F64): 0 < ) (: -1 * ) $abs fun
 
-( F64 ) (: # Square route via newton's method
-	(: # Tail-recursive helper
-        $guess =
-        $x =
+( F64 ) (: # Square route via newton-rhapson method
+	((F64 F64) (F64) rec: # Tail-recursive helper
+        ( $x $guess ) =
 
         # Do we have an acceptable margin of error?
         (: guess guess * x - abs x / 1.0e-15 < ) $good_enough =
@@ -22,7 +21,7 @@
         (: true ) (: improve ) $cond fun
         (: good_enough ) (: guess ) $cond fun
         cond
-	) rec $iter =
+	) $iter =
 
     # Start calculating with first guess being 1
     1.0 iter

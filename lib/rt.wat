@@ -55,12 +55,13 @@
     (global $__heap_tail (mut i32) (global.get $__heap_start))
 
     ;; Initialize last free space
-    (global $__free_head (mut i32) (i32.const {{STACK_SIZE+NURSERY_SIZE+STATIC_DATA_LEN+OBJ_HEAD_SIZE}})))
+    (global $__free_head (mut i32) (i32.const {{STACK_SIZE+NURSERY_SIZE+STATIC_DATA_LEN+OBJ_HEAD_SIZE}}))
     (data (i32.const {{STACK_SIZE+NURSERY_SIZE+STATIC_DATA_LEN+OBJ_HEAD_SIZE}})
-        {{STACK_SIZE+NURSERY_SIZE+STATIC_DATA_LEN+OBJ_HEAD_SIZE}})
+        {{RESERVED_MEM-STACK_SIZE-NURSERY_SIZE-STATIC_DATA_LEN-OBJ_HEAD_SIZE}})
     ;; TODO need to initialize size to the entire rest of memory
 
     ;; Allocate an object in the nursery
+    ;; Note that size is measured in multiples of 32 bits
     (func $__alloc_nursery (param $size i32) (param $ref_bitfield_addr i32) (result i32)
         (local $new_nsp i32)
 
@@ -171,7 +172,11 @@
         ;; Read bf addr
         local.get $m_ptr
         i32.load
-        local.set $m_bf_addr
+        local.tee $m_bf_addr
+        i32.eqz
+        if  ;; No references (optimization)
+            return
+        end
 
         (loop $for_each_bit
             ;; If it's the first bit in an i64
@@ -225,13 +230,188 @@
     )
 
     ;; Allocate an object onto the heap
-    (func $__alloc_heap (param i32 i32)
+    ;; Note this also copies the given mark
+    ;; Note that size is measured in multiples of 32 bits
+    (func $__alloc_heap (param $mark_size i32) (param $bf_ptr i32)
+        (local $free_p i32)
+        (local $free_v i64)
+        (local $last_free_p i32)
+        (local $delta i32)
 
+        ;; Size without the mark added size of header
+        (local $just_size i32)
+
+        ;; Align to nearest 64 bits (obj header is 96)
+        local.get $mark_size
+        i32.const 0x1
+        i32.or
+        local.tee $mark_size
+
+        ;; Extract size + header
+        i32.const 0x00ffffff
+        i32.and
+        i32.const 12
+        i32.add
+        local.set $just_size
+
+        ;; fuck from here down probably needs to be rewritten
+        ;; Edge cases
+        ;; - Empty list w/ memory growth
+        ;; - Empty list w/ fit
+        ;; - Empty list w/ perfect fit
+
+        ;; Start at start of free-list
+        global.get $__free_head
+        local.tee $free_p
+        local.set $last_free_p
+
+        (loop $next_empty
+            ;; (free_v = *free_ptr).size >= just_size
+            local.get $free_p
+            i64.load
+            local.tee $free_v
+            i64.const 32
+            i64.shr_u
+            i32.wrap_i64
+            local.get $just_size
+            i32.ge_u
+            if ;; Too big for this free space
+                ;; if (free_v.next == NULL)
+                local.get $free_v
+                i32.wrap_i64
+                if ;; check to next node
+                    local.get $free_p
+                    local.set $last_free_p
+
+                    local.get $free_v
+                    i32.wrap_i64
+                    local.set $free_p
+                    br $next_empty
+                end
+
+                ;; Else: this is the last node
+
+                ;; Expand linear memory to fill the gap
+                local.get $just_size
+                local.get $free_v
+                i32.wrap_i64
+                i32.sub
+                i32.const 16384 ;; (1024 B/KiB * 64 KiB) / 8 B/i32
+                i32.div_u
+                i32.const 1
+                i32.add         ;; guarantee there's always some free space at the end
+                local.tee $delta
+                memory.grow
+                i32.const -1
+                i32.eq
+                if
+                    unreachable ;; failed
+                else
+
+                ;; delta now stores the size of the free space that will remain after the object is allocated
+                local.get $delta
+                i32.const 16384
+                i32.mul
+                local.get $free_v
+                i32.wrap_i64
+                i32.add
+                local.get $just_size
+                i32.sub
+                local.set $delta
+
+                ;; Overwrite free object with our object header
+                local.get $free_p
+                local.get $bf_ptr
+                i32.store
+                local.get $free_p
+                local.get $mark_size
+                i32.store offset=4
+                local.get $free_p
+                i32.const 0
+                i32.store offset=8
+
+                ;; Make new excess space new free object in list
+                local.get $free_p
+                local.get $just_size
+                i32.add
+                local.tee
+                local.get $delta
+                i32.store
+                local.get $free_p
+                i32.const 0
+                i32.store offset=4
+
+                ;; Update last free item entry
+                local.get $last_free_p
+                local.get $free_p
+                i32.store offset=4
+
+            else ;; Small enough for this free space
+            end
+        )
     )
 
     ;; GC the nursery
-    (func $__minor_gc )
+    (func $__minor_gc
+        (local $p i32)
+
+        ;; Mark
+
+        ;; p = end of reference stack
+        global.get $__ref_sp
+        local.tee $p
+
+        ;; if p == reference stack pointer
+        i32.const {{STACK_SIZE}}
+        i32.eq
+        if  ;; stack is empty -> everything is garbage (wtf)
+            ;; TODO also empty main heap
+            i32.const {{STACK_SIZE+NURSERY_SIZE-OBJ_HEAD_SIZE}}
+            global.set $__nursery_sp
+            return
+        end
+
+        ;; for each pointer on the references stack
+        (loop $mark_loop
+            ;; mark(*p)
+            local.get $p
+            i32.load
+            call $__mark
+
+            ;; do while (++p < end_of_stack)
+            local.get $p
+            i32.const 4
+            i32.add
+            local.tee $p
+            i32.const {{STACK_SIZE}}
+            i32.lt_u
+            if
+                br $mark_loop
+            end
+        )
+
+        ;;
+    )
 
     ;; GC the main heap
-    (func $__major_gc )
+    (func $__major_gc
+
+
+    )
+
+    ;; Coalesce free spaces
+    (func $__coalesce
+        (local $cur_ptr i32)
+        global.get $__free_head
+
+    )
+
+
+    (func $__in_nursery (param $ptr i32) (result i32)
+
+    )
+
+    (func $__max_addr (result i32)
+
+    )
 )
