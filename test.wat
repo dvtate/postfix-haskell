@@ -1,9 +1,9 @@
 (module
     ;; Memory export
-    (memory (export "m") {{PAGES_NEEDED}})
+    (memory (export "m") 24)
 
     ;; Reference stack pointer (0 - 1,000,000)
-    (global $__ref_sp (mut i32) (i32.const {{STACK_SIZE}}))
+    (global $__ref_sp (mut i32) (i32.const 1024000))
 
     ;; Push a pointer onto the reference stack
     (func $__ref_stack_push (param $ptr i32)
@@ -36,13 +36,13 @@
     )
 
     ;; Initialize static data
-    (data (i32.const {{STACK_SIZE}}) "{{STATIC_DATA_STR}}")
+    (data (i32.const 1024000) "\7B\C8")
 
     ;; Initialize nursery head
-    ;; (data (i32.const {{NURSERY_SP_INIT}}) "\00\00\00\00" "\00\00\00\00" "\00\00\00\00")
+    ;; (data (i32.const 1548276) "\00\00\00\00" "\00\00\00\00" "\00\00\00\00")
 
     ;; Nursery stack pointer
-    (global $__nursery_sp (mut i32) (i32.const {{NURSERY_SP_INIT}}))
+    (global $__nursery_sp (mut i32) (i32.const 1548276))
 
     ;; Does the given pointer fall within the region of the nursery?
     (func $__in_nursery (param $ptr i32) (result i32)
@@ -58,20 +58,20 @@
 
     ;; Heap start
     (global $__heap_start i32
-        (i32.const {{HEAP_START}}))
+        (i32.const 1548290))
 
     ;; Initialize heap head
     (data
-        (i32.const {{HEAP_START}})
+        (i32.const 1548290)
         "\00\00\00\00" "\00\00\00\00" "\00\00\00\00")
 
     ;; Initialize last item stored on the heap
     (global $__heap_tail (mut i32)
-        (i32.const {{HEAP_START}}))
+        (i32.const 1548290))
 
     ;; Initialize last free space
-    (global $__free_head (mut i32) (i32.const {{FREE_START}}))
-    (data (i32.const {{FREE_START}}) "{{INIT_FREE_SIZE_STR}}")
+    (global $__free_head (mut i32) (i32.const 1548302))
+    (data (i32.const 1548302) "\F2\00\00\00")
 
     ;; Allocate an object in the nursery
     ;; Note that size is measured in multiples of 32 bits
@@ -86,12 +86,12 @@
         i32.add
         i32.sub
         local.tee $new_nsp
-        i32.const {{STACK_SIZE}}        ;; start of nursery
+        i32.const 1024000        ;; start of nursery
         i32.lt_u
         if
             ;; Item too big to fit into an empty nursery
             local.get $size
-            i32.const {{NURSERY_SIZE}}
+            i32.const 524288
             i32.const 16384
             i32.sub ;; nursery size - useful space - 12 - 12
             i32.gt_u
@@ -499,11 +499,11 @@
         local.tee $p
 
         ;; if p == reference stack pointer
-        i32.const {{STACK_SIZE}}
+        i32.const 1024000
         i32.eq
         if  ;; stack is empty -> everything is garbage (wtf)
             ;; TODO also empty main heap
-            i32.const {{NURSERY_SP_INIT}}
+            i32.const 1548276
             global.set $__nursery_sp
             return
         end
@@ -520,7 +520,7 @@
             i32.const 4
             i32.add
             local.tee $p
-            i32.const {{STACK_SIZE}}
+            i32.const 1024000
             i32.lt_u
             if
                 br $mark_loop
@@ -583,7 +583,7 @@
             i32.and
             i32.add
             local.tee $p
-            i32.const {{NURSERY_SP_INIT}}
+            i32.const 1548276
             i32.lt_u
             if
                 br $cp_loop
@@ -616,7 +616,7 @@
             i32.const 4
             i32.add
             local.tee $p
-            i32.const {{STACK_SIZE}}
+            i32.const 1024000
             i32.lt_u
             if
                 br $rsu_loop
@@ -627,7 +627,7 @@
         call $__update_nursery_refs
 
         ;; Empty nursery: ie- allow overwrites
-        i32.const {{NURSERY_SP_INIT}}
+        i32.const 1548276
         global.set $__nursery_sp
     )
 
@@ -773,7 +773,7 @@
             i32.and
             i32.add
             local.tee $p
-            i32.const {{NURSERY_SP_INIT}}
+            i32.const 1548276
             i32.lt_u
             if
                 br $cp_loop
@@ -804,5 +804,5 @@
     ;; (export "alloc" (func $__alloc_nursery))
     ;; (export "mark" (func $__mark))
 
-    {{USER_CODE_STR}}
+    (func (export "incr") (param i32) (result i32) (i32.add (local.get 0) (i32.const 1)))
 )
