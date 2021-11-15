@@ -4,7 +4,7 @@
   "description": "A very low-level functional programming language designed to compile directly to WebAssembly",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node build.js",
     "start": "ts-node index.ts",
     "lint": "eslint . --ext .ts",
     "docs": "typedoc index.ts lib/* tools/*.ts --out tsdoc"

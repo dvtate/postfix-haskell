@@ -9,8 +9,7 @@
         "outDir": "./dist",
         "strict": true,
         "strictNullChecks": false,
-        "allowJs": true,
-        "typeRoots": ["./node_modules/@types", "types"]
+        "allowJs": true
     },
     "include": [
         "*/*.js",

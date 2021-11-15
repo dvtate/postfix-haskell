@@ -4,8 +4,10 @@
 (: + 2 / ) $avg =
 
 # Absolute value
-((F64): true ) (: ) $abs fun
-((F64): 0 < ) (: -1 * ) $abs fun
+(: true ) (: ) $abs fun
+(: 0 < ) (: -1 * ) $abs fun
+
+(Unit F64) (Unit) Arrow ( "js" "console.log" ) import $log =
 
 ( F64 ) (: # Square route via newton-rhapson method
 	((F64 F64) (F64) rec: # Tail-recursive helper

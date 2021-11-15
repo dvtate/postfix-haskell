@@ -23,7 +23,21 @@
         i64.const 433
         call $abc
     )
-
+(func $rec_0 (param f64 f64) (result f64)
+                (local f64) (local f64)
+        (f64.lt (f64.div (f64.lt (local.get -1) (f64.const 0))
+        (if
+        (then (local.get -1) (call $import_0     (local.get 1))
+        (local.set 2))
+        (else (local.get -1) (local.set 2))) (local.get 2)  (local.get 0)) (f64.const 1e-15))
+        (if
+        (then  (local.get 1) (local.set 3))
+        (else
+          (local.get 0) (f64.div (f64.add (f64.div  (local.get 0)  (local.get 1))  (local.get 1)) (f64.const 2))  (call $rec_0)
+          (local.get 0) (f64.div (f64.add (f64.div  (local.get 0)  (local.get 1))  (local.get 1)) (f64.const 2))  (call $rec_0)(local.set 3)))
+         (local.get 3))
+            (memory (export "memory") 1)
+            (data (i32.const 0) ""))
     (func (export "test")
         ;; a = 1073741824
         (local i32)

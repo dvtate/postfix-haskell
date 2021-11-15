@@ -1,4 +1,6 @@
 (module
+    {{USER_IMPORTS}}
+
     ;; Memory export
     (memory (export "m") {{PAGES_NEEDED}})
 

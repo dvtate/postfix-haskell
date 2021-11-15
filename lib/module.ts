@@ -2,6 +2,9 @@ import Context from "./context";
 import * as types from "./datatypes";
 import * as expr from './expr';
 
+// Import WAST template as a string
+import template from "./rt.wat";
+
 /**
  * Manges module imports & exports
  */
@@ -51,7 +54,9 @@ export default class ModuleManager {
      */
     constructor(
         public ctx?: Context,
-        public optLevel: number = ctx ? ctx.optLevel : 1
+        public optLevel: number = ctx ? ctx.optLevel : 1,
+        public stackSize = 1024000,
+        public nurserySize = 524288,
     ) {
     }
 
@@ -125,6 +130,11 @@ export default class ModuleManager {
                 })`)
                 .join('\n')
             ).join('\n\n');
+
+        return this.generateRuntime(
+            importDefs,
+            this.definitions.filter(Boolean).join('\n\n'),
+        );
 
         // Create module as string
         return `(module \n${importDefs
@@ -203,11 +213,11 @@ export default class ModuleManager {
 
                 // The data already exists
                 if (j == bytes.length)
-                    return i;
+                    return i + this.stackSize + this.nurserySize;
             }
 
         // Append to static data
-        const ret = this.staticData.length;
+        const ret = this.staticData.length + this.stackSize + this.nurserySize;
         this.staticData.push(...bytes);
         return ret;
     }
@@ -246,8 +256,67 @@ export default class ModuleManager {
      * Determine the amount of memory to use
      * @returns - number of pages to start with
      */
-    initialPages(): number {
+     initialPages(): number {
         // Start out with enough pages for static data + 1
         return Math.floor(this.staticData.length / 64000 + 1);
+    }
+
+    /**
+     * Generate a wasm module from a template which includes our runtime
+     * @param USER_CODE_STR user's function definitions and exports
+     * @param STACK_SIZE size of the references stack
+     * @param NURSERY_SIZE
+     * @returns wasm module text
+     */
+    generateRuntime(
+        USER_IMPORTS: string,
+        USER_CODE_STR: string,
+        STACK_SIZE: number = this.stackSize,
+        NURSERY_SIZE: number = this.nurserySize,
+    ): string {
+        /**
+         * Convert a byte into an escaped hex character
+         * @param b - byte
+         * @returns - string of form \XX where XX is replaced by character hex equiv
+         */
+        function byteToHexEsc(b: number): string {
+            const hexChrs = '0123456789ABCDEF';
+            return '\\'
+                + hexChrs[(b & 0xf0) >> 4]
+                + hexChrs[b & 0xf];
+        }
+        const OBJ_HEAD_SIZE = 3 * 4;
+        // const EMPTY_HEAD_SIZE = 2 * 4;
+        const STATIC_DATA_LEN = this.staticData.length;
+        const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
+        // const STACK_START = 0;
+        const STACK_END = STACK_SIZE;
+        const NURSERY_START  = STACK_SIZE;
+        const NURSERY_END = STACK_SIZE + NURSERY_SIZE;
+        const NURSERY_SP_INIT = NURSERY_END - OBJ_HEAD_SIZE;
+        const STATIC_DATA_START = NURSERY_END;
+        const STATIC_DATA_END = STATIC_DATA_START + STATIC_DATA_LEN;
+        const HEAP_START = STATIC_DATA_END;
+        const FREE_START = HEAP_START + OBJ_HEAD_SIZE;
+        const PAGES_NEEDED = Math.ceil((FREE_START + 2 + 10) / 65536);
+        const INIT_FREE_SIZE = PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE;
+        const INIT_FREE_SIZE_STR = [
+            INIT_FREE_SIZE & 0x00_00_00_ff,
+            INIT_FREE_SIZE & 0x00_00_ff_00,
+            INIT_FREE_SIZE & 0x00_ff_00_00,
+            INIT_FREE_SIZE & 0xff_00_00_00,
+        ].map(byteToHexEsc).join('');
+
+        const obj = {
+            OBJ_HEAD_SIZE, STATIC_DATA_LEN, STACK_END, NURSERY_START,
+            NURSERY_END, NURSERY_SP_INIT, STATIC_DATA_START, STATIC_DATA_END, HEAP_START,
+            PAGES_NEEDED, INIT_FREE_SIZE, INIT_FREE_SIZE_STR, STACK_SIZE, FREE_START,
+            NURSERY_SIZE, USER_CODE_STR, USER_IMPORTS, STATIC_DATA_STR,
+        };
+
+        return Object.entries(obj).reduce(
+            (r, [k, v]) => r.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v)),
+            template,
+        );
     }
 }

@@ -6,6 +6,7 @@ The all examples can be run in an interactive shell like below. Note that this i
 ```
 $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell
+$ npm run build
 $ npm install --global
 $ phc shell
 > "./planning/stdlib/prelude.phs" require use

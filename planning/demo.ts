@@ -42,6 +42,10 @@ import * as util from '../tools/util';
     // for (let i = 0; i < 10; i++)
     //     console.log(fac(i, 0, 1));
 
+    const w = mod.instance.exports as any;
+    for (let i = 0; i < 10; i++)
+        console.log(w.fac(i));
+
     // const { get, set, incr }
     //     = mod.instance.exports as any;
     // console.log(get());
@@ -52,9 +56,9 @@ import * as util from '../tools/util';
     // incr();
     // console.log(get());
 
-    const w = mod.instance.exports as any;
-    for (let i = 0; i < 5; i++) {
-        w.test(1);
-        console.log([...new Uint32Array(mod.instance.exports.memory.buffer)].slice(0,4));
-    }
+    // const w = mod.instance.exports as any;
+    // for (let i = 0; i < 5; i++) {
+    //     w.test(1);
+    //     console.log([...new Uint32Array(mod.instance.exports.memory.buffer)].slice(0,4));
+    // }
 })();
