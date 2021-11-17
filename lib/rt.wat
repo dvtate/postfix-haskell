@@ -194,7 +194,7 @@
             return
         end
 
-        (loop $for_each_bit
+        loop $for_each_bit
             ;; If it's the first bit in an i64
             local.get $bit_ind
             i32.const 64
@@ -243,7 +243,7 @@
             if
                 br $for_each_bit
             end
-        )
+        end
     )
 
     ;; Allocate an object onto the heap
@@ -276,7 +276,7 @@
         ;; local.tee $last_free_p
         local.set $free_p
 
-        (loop $next_empty
+        loop $next_empty
             ;; (free_v = *free_ptr).size >= just_size
             local.get $free_p
             i64.load
@@ -475,17 +475,48 @@
                 local.get $free_p
                 return
             end
-        )
+        end
         unreachable
     )
 
     ;; note that len is in multiples of 32 bits
+    ;; could maybe optimize by using a 64 bit read head but eh
     (func $memcpy32 (param $dest i32) (param $src i32) (param $len i32)
-    )
+        local.get $len
+        if
+            ;; len = len * 4 + dest
+            local.get $dest
+            local.get $len
+            i32.const 4
+            i32.mul
+            i32.add
+            local.set $len
 
+            loop $cp_loop
+                ;; *dest = *src
+                local.get $dest
+                local.get $src
+                i32.load
+                i32.store
 
-    (func $__update_refs (param $addr i32)
+                ;; src++; dest++
+                local.get $src
+                i32.const 4
+                i32.add
+                local.set $src
+                local.get $dest
+                i32.const 4
+                i32.add
+                local.tee $dest
 
+                ;; Do while dest < len
+                local.get $len
+                i32.lt_u
+                if
+                    br $cp_loop
+                end
+            end $cp_loop
+        end
     )
 
     ;; GC the nursery
@@ -511,7 +542,7 @@
         end
 
         ;; for each pointer on the references stack
-        (loop $mark_loop
+        loop $mark_loop
             ;; mark(*p)
             local.get $p
             i32.load
@@ -527,14 +558,14 @@
             if
                 br $mark_loop
             end
-        )
+        end $mark_loop
 
         ;; Move shit to the main heap
 
         ;; Iterate over items in the nursery
         global.get $__nursery_sp
         local.set $p
-        (loop $cp_loop
+        loop $cp_loop
             ;; Load header
             local.get $p
             i64.load
@@ -590,7 +621,7 @@
             if
                 br $cp_loop
             end
-        )
+        end $cp_loop
 
         ;; Update references
 
@@ -598,7 +629,7 @@
         ;; for each pointer on the references stack
         global.get $__ref_sp
         local.set $p
-        (loop $rsu_loop
+        loop $rsu_loop
             local.get $p
             i32.load
             local.tee $dest
@@ -623,7 +654,7 @@
             if
                 br $rsu_loop
             end
-        )
+        end
 
         ;; Update references to objs previously stored in nursery
         call $__update_nursery_refs

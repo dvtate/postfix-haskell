@@ -43,8 +43,8 @@ import * as util from '../tools/util';
     //     console.log(fac(i, 0, 1));
 
     const w = mod.instance.exports as any;
-    for (let i = 0; i < 10; i++)
-        console.log(w.fac(i));
+    for (let i = 1; i < 10; i++)
+        console.log(w.sqrt(i));
 
     // const { get, set, incr }
     //     = mod.instance.exports as any;
