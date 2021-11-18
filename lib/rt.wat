@@ -11,28 +11,28 @@
     (func $__ref_stack_push (param $ptr i32)
         ;; Note we decrement for better cache efficiency
         ;; __ref_sp--
-        (global.get $__ref_sp)
-        (i32.const 4)
-        (i32.sub)
-        (global.set $__ref_sp)
+        global.get $__ref_sp
+        i32.const 4
+        i32.sub
+        global.set $__ref_sp
 
         ;; *__ref_sp = ptr
-        (global.get $__ref_sp)
-        (local.get $ptr)
-        (i32.store)
+        global.get $__ref_sp
+        local.get $ptr
+        i32.store
     )
 
     ;; Pop a pointer from the top of the reference stack
     (func $__ref_stack_pop (result i32)
         ;; ret = *__ref_sp
-        (global.get $__ref_sp)
-        (i32.load)
+        global.get $__ref_sp
+        i32.load
 
         ;; __ref_sp++
-        (global.get $__ref_sp)
-        (i32.const 4)
-        (i32.add)
-        (global.set $__ref_sp)
+        global.get $__ref_sp
+        i32.const 4
+        i32.add
+        global.set $__ref_sp
 
         ;; return ret
     )
@@ -48,14 +48,14 @@
 
     ;; Does the given pointer fall within the region of the nursery?
     (func $__in_nursery (param $ptr i32) (result i32)
-        ;; OPTIMIZATION single compare, don't need to worry about lhs
+        ;; OPTIMIZATION single compare, don't need to worry about lhs check
+        ;; local.get $ptr
+        ;; i32.const {{NURSERY_START}}
+        ;; i32.ge_u
         local.get $ptr
-        i32.const 213121
-        i32.ge_u
-        local.get $ptr
-        i32.const 123123
+        i32.const {{NURSERY_END}}
         i32.lt_u
-        i32.and
+        ;; i32.and
     )
 
     ;; Heap start
@@ -104,7 +104,7 @@
                     (local.get $ref_bitfield_addr)))
             else
                 ;; Empty the nursery to make room
-                call $__minor_gc
+                call $__do_gc
             end
         end
 
@@ -219,8 +219,8 @@
             i64.shr_u
             local.get $bf_cursor
             i64.and
-            i64.popcnt
-            i32.wrap_i64 ;; optimize?
+            i64.eqz
+            i32.eqz ;; convert i64 to boolean -> !!
             if
                 ;; Mark referenced pointer
                 local.get $bit_ind
@@ -229,6 +229,117 @@
                 local.get $user_ptr
                 i32.add
                 call $__mark
+            end
+
+            ;; Do while ++bit_ind < size
+            ;; Remember that size is denoted as multiples of 32 bits
+            ;; Note that the mark part in the local is always 0b00 (see: return)
+            local.get $bit_ind
+            i32.const 1
+            i32.add
+            local.tee $bit_ind
+            local.get $m_mark_size
+            i32.lt_u
+            if
+                br $for_each_bit
+            end
+        end
+    )
+
+    ;; Identical to mark except it ignores pointers which aren't in the nursery
+    (func $__minor_mark (param $user_ptr i32)
+        ;; Pointer to the start of header object for $user_ptr
+        (local $m_ptr i32)
+
+        ;; Value of the mark member of header object
+        (local $m_mark_size i32) ;; recycled: localized index of bit
+
+        ;; Address of the references bitfield
+        (local $m_bf_addr i32)
+
+        ;; Locals for iterating over the references bitfield
+        ;; Note: Initialized to 0
+        (local $bit_ind i32)        ;; Current Bit in the references bitfield
+        (local $bf_cursor i64)      ;; Scanned 64bit section of ref bitfield
+        (local $local_ind i32)      ;; Index within the Scanned 64bit section
+
+        ;; Skip pointers not in nursery
+        local.get $m_ptr
+        call $__in_nursery
+        i32.eqz
+        if
+            return
+        end
+
+        ;; Get mark
+        local.get $user_ptr
+        i32.const 12
+        i32.sub
+        local.tee $m_ptr
+        i32.load offset=4
+        local.set $m_mark_size
+
+        ;; If we've already visited, return
+        local.get $m_mark_size
+        i32.const 0xc0000000
+        i32.and
+        if
+            return
+        end
+
+        ;; Write mark
+        local.get $m_ptr
+        local.get $m_mark_size
+        i32.const 0xc0000000
+        i32.or
+        i32.store offset=4
+
+        ;; Recursively iterate through bitfield references
+
+        ;; Read bf addr
+        local.get $m_ptr
+        i32.load
+        local.tee $m_bf_addr
+        i32.eqz
+        if  ;; No references (optimization)
+            return
+        end
+
+        loop $for_each_bit
+            ;; If it's the first bit in an i64
+            local.get $bit_ind
+            i32.const 64
+            i32.rem_u
+            local.tee $local_ind
+            i32.eqz
+            if
+                ;; Load the next 64 bits from the bitfield
+                local.get $bit_ind
+                i32.const 5
+                i32.shr_u       ;; / 32
+                local.get $m_bf_addr
+                i32.add
+                i64.load
+                local.set $bf_cursor
+            end
+
+            ;; If bit indicates a reference
+            i64.const 0x1000000000000000
+            local.get $local_ind
+            i64.extend_i32_u
+            i64.shr_u
+            local.get $bf_cursor
+            i64.and
+            i64.eqz
+            i32.eqz ;; convert i64 to boolean -> !!
+            if
+                ;; Mark referenced pointer
+                local.get $bit_ind
+                i32.const 3
+                i32.shr_u
+                local.get $user_ptr
+                i32.add
+                call $__minor_mark
             end
 
             ;; Do while ++bit_ind < size
@@ -448,12 +559,12 @@
                     else ;; We have exactly populated the heap
                         ;; Grow memory to make a new freespace
                         ;; Put the new free head at end of lm
-                        ;; TODO calculate this via free_p instead
+                        ;; TODO calculate this via free_p instead?
                         memory.size
-                        i32.const 65536
-                        i32.div_u
-                        i32.const 8
-                        i32.sub
+                        i32.const 65536 ;; bytes/page
+                        i32.mul
+                        ;; i32.const 8
+                        ;; i32.sub
                         global.set $__free_head
 
                         ;; Extend lm by page (64 KiB)
@@ -519,11 +630,16 @@
         end
     )
 
+    ;; increments each time we do gc
+    (global $__gc_cycle (mut i32) (i32.const 0))
+
     ;; GC the nursery
-    (func $__minor_gc
+    (func $__do_gc
         (local $p i32)          ;; stack pointer
         (local $obj i64)        ;; header object value
         (local $dest i32)       ;; pointer to where object is being moved
+        (local $is_major i32)   ;; is this gc a major gc?
+        (local $mark_size i32)  ;; mark+size fields
 
         ;; Mark
 
@@ -541,26 +657,108 @@
             return
         end
 
+        ;; is_major = (++gc_cycle) % GEN_RATIO == 0
+        global.get $__gc_cycle
+        i32.const 1
+        i32.add
+        global.set $__gc_cycle
+        global.get $__gc_cycle
+        i32.const 10             ;; TODO tune this
+        i32.rem_u
+        i32.eqz
+        local.tee $is_major
+
         ;; for each pointer on the references stack
-        loop $mark_loop
-            ;; mark(*p)
-            local.get $p
-            i32.load
-            call $__mark
+        if
+            loop $mark_loop
+                ;; mark(*p)
+                local.get $p
+                i32.load
+                call $__mark
 
-            ;; do while (++p < end_of_stack)
-            local.get $p
-            i32.const 4
-            i32.add
-            local.tee $p
-            i32.const {{STACK_SIZE}}
-            i32.lt_u
-            if
-                br $mark_loop
-            end
-        end $mark_loop
+                ;; do while (++p < end_of_stack)
+                local.get $p
+                i32.const 4
+                i32.add
+                local.tee $p
+                i32.const {{STACK_SIZE}}
+                i32.lt_u
+                if
+                    br $mark_loop
+                end
+            end $mark_loop
+        else
+            loop $mark_loop
+                ;; mark(*p)
+                local.get $p
+                i32.load
+                call $__minor_mark
 
-        ;; Move shit to the main heap
+                ;; do while (++p < end_of_stack)
+                local.get $p
+                i32.const 4
+                i32.add
+                local.tee $p
+                i32.const {{STACK_SIZE}}
+                i32.lt_u
+                if
+                    br $mark_loop
+                end
+            end $mark_loop
+        end
+
+        ;; If major gc, sweep the heap before emptying the nursery
+        local.get $is_major
+        if
+            global.get $__heap_start
+            local.set $p
+
+            ;; $dest is used as $prev in this branch
+            ;; it's initialized to null
+
+            ;; for each object in the heap
+            loop $sweep
+                ;; if unmarked
+                local.get $p
+                i32.load offset=4
+                local.tee $mark_size
+                i32.const 0xc0000000
+                i32.and
+                i32.eqz
+                if
+                    ;; Free it
+                    local.get $p
+                    local.get $dest
+                    call $__heap_free
+
+                    ;; Go next
+                    local.get $dest
+                    i32.load offset=8
+                    local.tee $p
+                    if
+                        br $sweep
+                    end
+                else
+                    ;; Remove mark
+                    local.get $p
+                    local.get $mark_size
+                    i32.const 0x3fffffff
+                    i32.and
+                    i32.store offset=4
+                end
+
+                ;; Do while ((p = (dest = p)->next) != 0)
+                local.get $p
+                local.tee $dest
+                i32.load offset=8
+                local.tee $p
+                if
+                    br $sweep
+                end
+            end $sweep
+        end
+
+        ;; Move marked stuff from nursery to the main heap
 
         ;; Iterate over items in the nursery
         global.get $__nursery_sp
@@ -725,7 +923,7 @@
                     local.set $i
 
                     ;; Iterate over bitfield
-                    (loop $rbf_loop
+                    loop $rbf_loop
                         ;; First bit in an i64
                         local.get $i
                         i32.const 64
@@ -751,7 +949,7 @@
                         local.get $bf_cursor
                         i64.and
                         i64.popcnt
-                        i32.wrap_i64 ;; TODO is this optimal?
+                        i32.wrap_i64 ;; convert i64 to boolean -> !!
                         if
                             ;; Load reference in object
                             ;; *(dest + i * 4) as i32
@@ -774,7 +972,7 @@
                                 local.get $check_ptr
                                 i32.const 4
                                 i32.sub
-                                i32.load            ;; see __minor_gc for how this works
+                                i32.load            ;; see __do_gc for how this works
 
                                 i32.store
                             end
@@ -791,7 +989,7 @@
                         if
                             br $rbf_loop
                         end
-                    )
+                    end
                 end
             end
 
@@ -814,14 +1012,33 @@
         )
     )
 
-    (func $__heap_free (param i32)
-        ;;
-    )
+    ;; Free an object from the heap
+    ;; ptr = the object to free
+    ;; prev = object that came before it in the objects LL
+    (func $__heap_free (param $ptr i32) (param $prev i32)
+        ;; Convert object into a freespace
+        local.get $ptr
+        local.get $ptr
+        i32.load offset=4
+        i32.const 3 ;; add size of object header
+        i32.add
+        i64.extend_i32_u
+        i64.const 32
+        i64.shl
+        i64.store ;; convert object into a free space header
 
+        ;; Remove object from objects LL
+        local.get $prev
+        local.get $ptr
+        i32.load offset=8
+        i32.store offset=8
 
-    ;; GC the main heap
-    (func $__major_gc
-
+        ;; Add freespace to freespace ll
+        global.get $__free_head
+        local.get $ptr
+        i32.store offset=4          ;; make current free head .next = new freespace
+        local.get $ptr
+        global.set $__free_head     ;; make current free head = new freespace
     )
 
     ;; Coalesce free spaces
