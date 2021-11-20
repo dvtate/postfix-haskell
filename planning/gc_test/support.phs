@@ -1,0 +1,12 @@
+"../stdlib/prelude.phs" require use
+"../stdlib/static_mem.phs" require use
+
+8 static_region $reg =
+
+0x4000000000000000L
+#0xffffffffffffffffL
+reg
+    static_init
+
+# Out only export is the location of the bitfield for an LL node
+Unit (: reg ) "static_ref_bf_010" export
