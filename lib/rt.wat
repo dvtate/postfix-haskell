@@ -1,10 +1,19 @@
 (module
     {{USER_IMPORTS}}
 
+    ;; Import console log
+    (import "js" "log"
+        (func $log (param f64 f64))
+    ) (import "js" "log"
+        (func $log3 (param i32 i32 i32))
+    ) (import "js" "log"
+        (func $log3i64 (param i32 i32 i64))
+    )
+
     ;; Memory export
     (memory (export "m") {{PAGES_NEEDED}})
 
-    ;; Reference stack pointer (0 - 1,000,000)
+    ;; Reference stack pointer
     (global $__ref_sp (mut i32) (i32.const {{STACK_SIZE}}))
 
     ;; Push a pointer onto the reference stack
@@ -49,13 +58,13 @@
     ;; Does the given pointer fall within the region of the nursery?
     (func $__in_nursery (param $ptr i32) (result i32)
         ;; OPTIMIZATION single compare, don't need to worry about lhs check
-        ;; local.get $ptr
-        ;; i32.const {{NURSERY_START}}
-        ;; i32.ge_u
+        local.get $ptr
+        i32.const {{NURSERY_START}}
+        i32.ge_u
         local.get $ptr
         i32.const {{NURSERY_END}}
         i32.lt_u
-        ;; i32.and
+        i32.and
     )
 
     ;; Heap start
@@ -63,21 +72,20 @@
         (i32.const {{HEAP_START}}))
 
     ;; Initialize heap head
-    (data
-        (i32.const {{HEAP_START}})
-        "\00\00\00\00" "\00\00\00\00" "\00\00\00\00")
+    ;; (data
+    ;;     (i32.const {{HEAP_START}})
+    ;;     "\00\00\00\00" "\00\00\00\00" "\00\00\00\00")
 
     ;; Initialize last item stored on the heap
-    (global $__heap_tail (mut i32)
-        (i32.const {{HEAP_START}}))
+    (global $__heap_tail (mut i32) (i32.const {{HEAP_START}}))
 
     ;; Initialize last free space
     (global $__free_head (mut i32) (i32.const {{FREE_START}}))
     (data (i32.const {{FREE_START}}) "{{INIT_FREE_SIZE_STR}}")
 
-    ;; Allocate an object in the nursery
+    ;; Allocate an object (w/ preference to nursery)
     ;; Note that size is measured in multiples of 32 bits
-    (func $__alloc_nursery (param $size i32) (param $ref_bitfield_addr i32) (result i32)
+    (func $__alloc (param $size i32) (param $ref_bitfield_addr i32) (result i32)
         (local $new_nsp i32)
 
         ;; Check if we can fit it into the nursery
@@ -85,19 +93,22 @@
         global.get $__nursery_sp        ;; last allocated object start
         i32.const 12                    ;; size of heap object header (3 x i32)
         local.get $size
+        i32.const 2
+        i32.shl
         i32.add
         i32.sub
         local.tee $new_nsp
-        i32.const {{STACK_SIZE}}        ;; start of nursery
+        i32.const {{NURSERY_START}}        ;; start of nursery
         i32.lt_u
         if
             ;; Item too big to fit into an empty nursery
             local.get $size
             i32.const {{NURSERY_SIZE}}
-            i32.const 16384
-            i32.sub ;; nursery size - useful space - 12 - 12
+            i32.const 1
+            i32.shr_u ;; 50% of nursery => put it in the heap
             i32.gt_u
             if
+                (call $log (f64.const 1) (f64.const 0))
                 ;; Allocate it onto the heap, not the nursery
                 (return (call $__alloc_heap
                     (local.get $size)
@@ -105,6 +116,19 @@
             else
                 ;; Empty the nursery to make room
                 call $__do_gc
+                ;; global.get $__nursery_sp        ;; last allocated object start
+                ;; i32.const 12                    ;; size of heap object header (3 x i32)
+                ;; local.get $size
+                ;; i32.const 4
+                ;; i32.mul
+                ;; i32.add
+                ;; i32.sub
+                ;; local.set $new_nsp
+
+                local.get $size
+                local.get $ref_bitfield_addr
+                call $__alloc
+                return
             end
         end
 
@@ -137,13 +161,14 @@
         i32.store offset=8
 
         ;; Return the start of the payload
-        ;; return (nsp + 1)
+        ;; return (nsp + sizeof(header))
         local.get $new_nsp
         i32.const 12
         i32.add
     )
 
     ;; Marks user-provided memory address
+    ;; Note this means user cannot have objects stored in static memory
     (func $__mark (param $user_ptr i32)
         ;; Pointer to the start of header object for $user_ptr
         (local $m_ptr i32)
@@ -159,6 +184,13 @@
         (local $bit_ind i32)        ;; Current Bit in the references bitfield
         (local $bf_cursor i64)      ;; Scanned 64bit section of ref bitfield
         (local $local_ind i32)      ;; Index within the Scanned 64bit section
+
+        ;; check nullptr
+        local.get $user_ptr
+        i32.eqz
+        if
+            return
+        end
 
         ;; Get mark
         local.get $user_ptr
@@ -204,8 +236,8 @@
             if
                 ;; Load the next 64 bits from the bitfield
                 local.get $bit_ind
-                i32.const 5
-                i32.shr_u       ;; / 32
+                i32.const 3
+                i32.shr_u       ;; 64 / 8 *
                 local.get $m_bf_addr
                 i32.add
                 i64.load
@@ -213,10 +245,12 @@
             end
 
             ;; If bit indicates a reference
-            i64.const 0x1000000000000000
+            i64.const 0x1
             local.get $local_ind
+            i32.const 7
+            i32.xor                 ;; wasm is little endian
             i64.extend_i32_u
-            i64.shr_u
+            i64.shl
             local.get $bf_cursor
             i64.and
             i64.eqz
@@ -259,12 +293,19 @@
 
         ;; Locals for iterating over the references bitfield
         ;; Note: Initialized to 0
-        (local $bit_ind i32)        ;; Current Bit in the references bitfield
-        (local $bf_cursor i64)      ;; Scanned 64bit section of ref bitfield
-        (local $local_ind i32)      ;; Index within the Scanned 64bit section
+        (local $bit_ind i32)    ;; Current Bit in the references bitfield
+        (local $bf_cursor i64)  ;; Scanned 64bit section of ref bitfield
+        (local $local_ind i32)  ;; Index within the Scanned 64bit sectio
+
+        ;; check nullptr
+        local.get $user_ptr
+        i32.eqz
+        if
+            return
+        end
 
         ;; Skip pointers not in nursery
-        local.get $m_ptr
+        local.get $user_ptr
         call $__in_nursery
         i32.eqz
         if
@@ -315,8 +356,8 @@
             if
                 ;; Load the next 64 bits from the bitfield
                 local.get $bit_ind
-                i32.const 5
-                i32.shr_u       ;; / 32
+                i32.const 3
+                i32.shr_u       ;; 64 / 8 *
                 local.get $m_bf_addr
                 i32.add
                 i64.load
@@ -324,16 +365,18 @@
             end
 
             ;; If bit indicates a reference
-            i64.const 0x1000000000000000
+            i64.const 0x1
             local.get $local_ind
+            i32.const 7
+            i32.xor                 ;; wasm is little endian
             i64.extend_i32_u
-            i64.shr_u
+            i64.shl
             local.get $bf_cursor
             i64.and
             i64.eqz
             i32.eqz ;; convert i64 to boolean -> !!
             if
-                ;; Mark referenced pointer
+                ;; Mark referenced pointer (DFS)
                 local.get $bit_ind
                 i32.const 3
                 i32.shr_u
@@ -363,7 +406,8 @@
     ;; Note that returns start of header object instead of user pointer (add 12)
     (func $__alloc_heap (param $mark_size i32) (param $bf_ptr i32) (result i32)
         (local $free_p i32)         ;; current gc_heap_empty_t*
-        (local $free_v i64)         ;; value stored in free_p
+        (local $f_size i32)         ;; value of size field in free_p
+        (local $f_next i32)         ;; pointer to next freespace in free_p
         (local $last_free_p i32)    ;; previous value of free_p or 0 if first
         (local $delta i32)          ;; multipurpose, difference
         (local $next i32)           ;; copy next pointer before overwriting it
@@ -378,7 +422,9 @@
         ;; Extract size + header
         i32.const 0x3fffffff
         i32.and
-        i32.const 12
+        ;; i32.const 2
+        ;; i32.shl ;; * 4 (i32 -> bytes)
+        i32.const 3
         i32.add
         local.set $just_size
 
@@ -387,29 +433,36 @@
         ;; local.tee $last_free_p
         local.set $free_p
 
+        (call $log (f64.const 0) (f64.const 0))
+        (call $log3 (local.get $just_size) (local.get $bf_ptr) (local.get $free_p))
+
         loop $next_empty
             ;; (free_v = *free_ptr).size >= just_size
+            ;; read freespace header
             local.get $free_p
-            i64.load
-            local.tee $free_v
-            i64.const 32
-            i64.shr_u
-            i32.wrap_i64
+            i32.load
+            local.set $f_size
+            local.get $free_p
+            i32.load offset=4
+            local.set $f_next
+
+            ;; Check if it fits
             local.get $just_size
+            local.get $f_size
             i32.ge_u
             if ;; Too big for this free space
-                ;; if (free_v.next == NULL)
-                local.get $free_v
-                i32.wrap_i64
+                ;; if (free_p->next == NULL)
+                local.get $f_next
                 if ;; check to next node
                     ;; last_free_p = free_p
                     local.get $free_p
                     local.set $last_free_p
 
-                    ;; free_p = free_v.next
-                    local.get $free_v
-                    i32.wrap_i64
+                    ;; free_p = free_p->next
+                    local.get $f_next
                     local.set $free_p
+
+                    ;; maybe this one is big enough
                     br $next_empty
                 end
 
@@ -417,14 +470,18 @@
 
                 ;; Expand linear memory to fill the gap
                 local.get $just_size
-                local.get $free_v
-                i32.wrap_i64
+                local.get $f_size
                 i32.sub
-                i32.const 16384     ;; (1024 B/KiB * 64 KiB/page) / 8 B/i32
-                i32.div_u
+                i32.const 14
+                i32.shr_u           ;; / ((1024 B/KiB * 64 KiB/page) / 4 B/i32)
                 i32.const 1
                 i32.add             ;; guarantee there's always some free space at the end
-                local.tee $delta    ;;
+                local.tee $delta
+
+                (call $log3 (i32.const 0) (i32.const 1) (local.get $delta))
+                (call $log3 (i32.const 0) (i32.const 1) (local.get $f_size))
+                ;; (call $log3 (i32.const 0) (i32.const 1) (local.get $delta))
+
                 memory.grow
                 i32.const -1
                 i32.eq
@@ -432,12 +489,12 @@
                     unreachable ;; failed to get more memory -> panic
                 end
 
-                ;; delta now stores the size of the free space that will remain after the object is allocated
+                ;; delta now stores the size of the free space that will remain
+                ;; after the object is allocated
                 local.get $delta
-                i32.const 16384
-                i32.mul
-                local.get $free_v
-                i32.wrap_i64
+                i32.const 14
+                i32.shl             ;; pages -> # i32's
+                local.get $f_size
                 i32.add
                 local.get $just_size
                 i32.sub
@@ -491,10 +548,7 @@
 
             else ;; Small enough for this free space
                 ;; Store leftover space into delta
-                local.get $free_v
-                i64.const 32
-                i64.shr_u
-                i32.wrap_i64
+                local.get $f_size
                 local.get $just_size
                 i32.sub
                 local.set $delta
@@ -532,6 +586,7 @@
                     local.get $just_size
                     i32.add
                     local.tee $free_p
+
                     local.get $delta
                     i32.store
                     ;; free_p->next = next
@@ -563,8 +618,6 @@
                         memory.size
                         i32.const 65536 ;; bytes/page
                         i32.mul
-                        ;; i32.const 8
-                        ;; i32.sub
                         global.set $__free_head
 
                         ;; Extend lm by page (64 KiB)
@@ -636,10 +689,10 @@
     ;; GC the nursery
     (func $__do_gc
         (local $p i32)          ;; stack pointer
-        (local $obj i64)        ;; header object value
         (local $dest i32)       ;; pointer to where object is being moved
         (local $is_major i32)   ;; is this gc a major gc?
         (local $mark_size i32)  ;; mark+size fields
+        (local $bf i32)         ;; bitfield addres
 
         ;; Mark
 
@@ -711,7 +764,11 @@
         local.get $is_major
         if
             global.get $__heap_start
-            local.set $p
+            local.tee $p
+
+            ;; Note that the head object does not get freed and always has size zero
+            i32.const 0xc0000000
+            i32.store offset=4
 
             ;; $dest is used as $prev in this branch
             ;; it's initialized to null
@@ -764,24 +821,23 @@
         global.get $__nursery_sp
         local.set $p
         loop $cp_loop
+            (call $log (f64.const 2) (f64.const 0))
             ;; Load header
             local.get $p
-            i64.load
-            local.tee $obj
+            i32.load
+            local.set $bf
+            local.get $p
+            i32.load offset=4
+            local.tee $mark_size
 
             ;; If marked
-            i32.wrap_i64
             i32.const 0xc0000000
             i32.and
             if ;; Copy it into the main heap
-
+                (call $log3 (local.get $p) (local.get $mark_size) (local.get $bf))
                 ;; Allocate space on heap
-                local.get $obj
-                i64.const 32
-                i64.shr_u
-                i32.wrap_i64
-                local.get $obj
-                i32.wrap_i64
+                local.get $mark_size
+                local.get $bf
                 call $__alloc_heap
                 i32.const 12
                 i32.add
@@ -797,8 +853,7 @@
                 local.get $p
                 i32.const 12
                 i32.add
-                local.get $obj
-                i32.wrap_i64
+                local.get $mark_size
                 i32.const 0x3fffffff
                 i32.and
                 call $memcpy32
@@ -808,8 +863,7 @@
             local.get $p
             i32.const 12
             i32.add
-            local.get $obj
-            i32.wrap_i64
+            local.get $mark_size
             i32.const 0x3fffffff
             i32.and
             i32.add
@@ -862,11 +916,38 @@
         global.set $__nursery_sp
     )
 
+    (func (export "heapLen") (result i32)
+        (local $ret i32)
+        (local $p i32)
+
+        global.get $__heap_start
+        local.set $p
+
+        loop $iter_ll
+            local.get $p
+            i32.eqz
+            if
+                local.get $ret
+                return
+            end
+            local.get $ret
+            i32.const 1
+            i32.add
+            local.set $ret
+            local.get $p
+            i32.load offset=8
+            local.set $p
+
+            br $iter_ll
+        end $iter_ll
+        unreachable
+    )
+
     ;; After minor gc, update references to values stored in the nursery
     ;; ideally would be inlined
     (func $__update_nursery_refs
         (local $p i32)          ;; pointer to head of current nursery obejct
-        (local $obj i64)        ;; bf+mark+size values from object header
+        (local $mark_size i32)  ;; mark-size field
         (local $size i32)       ;; size extracted
         (local $dest i32)       ;; where object p has been relocated to
         (local $bf i32)         ;; pointer to the ref bitfield of p
@@ -891,24 +972,21 @@
         (loop $cp_loop
             ;; Load header
             local.get $p
-            i64.load
-            local.tee $obj
+            i32.load
+            local.set $bf
+            local.get $p
+            i32.load offset=4
+            local.tee $mark_size
 
             ;; If marked
-            i32.wrap_i64
             i32.const 0xc0000000
             i32.and
             if
                 ;; and if has a refs bf
-                local.get $obj
-                i64.const 32
-                i64.shr_u
-                i32.wrap_i64
-                local.tee $bf
+                local.get $bf
                 if
                     ;; Get size
-                    local.get $obj
-                    i32.wrap_i64
+                    local.get $mark_size
                     i32.const 0x3fffffff
                     i32.and
                     local.set $size
@@ -933,8 +1011,8 @@
                         if
                             ;; Load next 64 bits from bitfield
                             local.get $i
-                            i32.const 5
-                            i32.shr_u       ;; / 32
+                            i32.const 3
+                            i32.shr_u       ;; 64 / 8 *
                             local.get $bf
                             i32.add
                             i64.load
@@ -942,14 +1020,16 @@
                         end
 
                         ;; If bit indicates reference
-                        i64.const 0x1000000000000000
+                        i64.const 0x1
                         local.get $local_ind
+                        i32.const 7
+                        i32.xor                 ;; wasm is little endian
                         i64.extend_i32_u
-                        i64.shr_u
+                        i64.shl
                         local.get $bf_cursor
                         i64.and
-                        i64.popcnt
-                        i32.wrap_i64 ;; convert i64 to boolean -> !!
+                        i64.eqz
+                        i32.eqz ;; convert i64 to boolean -> !!
                         if
                             ;; Load reference in object
                             ;; *(dest + i * 4) as i32
@@ -973,7 +1053,8 @@
                                 i32.const 4
                                 i32.sub
                                 i32.load            ;; see __do_gc for how this works
-
+                                i32.const 12
+                                i32.add             ;; convert to user ptr
                                 i32.store
                             end
                         end
@@ -998,8 +1079,7 @@
             local.get $p
             i32.const 12
             i32.add
-            local.get $obj
-            i32.wrap_i64
+            local.get $mark_size
             i32.const 0x3fffffff
             i32.and
             i32.add
@@ -1022,10 +1102,12 @@
         i32.load offset=4
         i32.const 3 ;; add size of object header
         i32.add
-        i64.extend_i32_u
-        i64.const 32
-        i64.shl
-        i64.store ;; convert object into a free space header
+        i32.const 0xcfffffff
+        i32.and     ;; remove mark
+        i32.store
+        local.get $ptr
+        i32.const 0
+        i32.store offset=4
 
         ;; Remove object from objects LL
         local.get $prev
@@ -1046,13 +1128,23 @@
         (local $cur_ptr i32)
         global.get $__free_head
         local.set $cur_ptr
-        ;; idk if this is gonna be realistic ngl
+
+        ;; Algorithm O(N * log(N) + N)
+        ;; 1. Merge sort free-list by memory address
+            ;; Note this leaves __free_tail intact
+        ;; 2. Iterate through free-list, mergeing adjacent blocks
+        ;; Steps 1 and 2 could maybe be done simultaneously
     )
 
-    ;; (export "push_ref" (func $__ref_stack_push))
-    ;; (export "pop_ref" (func $__ref_stack_pop))
-    ;; (export "alloc" (func $__alloc_nursery))
-    ;; (export "mark" (func $__mark))
+    ;; Debugging
+    (export "push_ref" (func $__ref_stack_push))
+    (export "pop_ref" (func $__ref_stack_pop))
+    (export "alloc" (func $__alloc))
+    (export "mark" (func $__mark))
+    (export "mmark" (func $__minor_mark))
+    (export "do_gc" (func $__do_gc))
+    (export "free" (func $__heap_free))
+    (export "coalesce" (func $__coalesce))
 
     {{USER_CODE_STR}}
 )

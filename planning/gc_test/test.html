@@ -26,15 +26,14 @@
     class Node {
         constructor(addr) {
             this.addr = addr;
-            this.arr = new Int32Array(m.buffer, addr, 3 * 4);
-            console.log(this.toString(), this);
+            this.dv = new DataView(m.buffer, addr, 3 * 4);
         }
-        get enum() { return this.arr[0]; }
-        get next() { return this.arr[1]; }
-        get value() { return this.arr[2]; }
-        set enum(v) { this.arr[0] = v; }
-        set next(v) { this.arr[1] = v; }
-        set value(v) { this.arr[2] = v; }
+        get enum() { return this.dv.getInt32(0, true); }
+        get next() {  return this.dv.getInt32(4, true); }
+        get value() { return this.dv.getInt32(8, true); }
+        set enum(v) { this.dv.setInt32(0, v, true); }
+        set next(v) { this.dv.setInt32(4, v, true); }
+        set value(v) { this.dv.setInt32(8, v, true); }
         toString() { return `Node { ${this.enum} ${this.enum ? '' : this.next} ${this.enum ? '' : this.value} }`; }
     }
     window.Node = Node;
@@ -57,20 +56,21 @@
     let i = 0;
     push_ref(constructNode(alloc(3, node_bf)).addr);
 
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 100; i++) {
+        const naddr = alloc(3, node_bf);
         push_ref(
             constructNode(
-                alloc(3, node_bf),
+                naddr,
                 pop_ref(),
                 i,
             ).addr);
-        const n = new Node(pop_ref())
+        const n = new Node(pop_ref());
         console.log(n.toString(), n);
         push_ref(n.addr);
     }
 
-    console.log('made 300 nodes');
-    // do_gc();
+    console.log('made 100 nodes');
+    do_gc();
 
     // Iterate over LL
 
@@ -81,8 +81,7 @@
     const l = [];
     let n = new Node(h);
 
-    for (let i = 0; i < 1000 && n.enum != 1 && n.next; i++) {
-        console.log(n.toString(), n);
+    for (let i = 0; i < 200 && n.enum != 1 && n.next; i++) {
         l.push(n.value);
         n = new Node(n.next);
     }
