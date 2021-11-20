@@ -47,13 +47,31 @@ yargs
                     type: 'boolean',
                     default: false,
                 },
+
+                // TODO convert this to a numeric arg
                 'optimize' : {
                     describe: 'pass compiled output through binaryen optimizer',
                     default: false,
                     alias: 'O',
                 },
+                'stack-size' : {
+                    describe: '(advanced) 64bit aligned size in bytes of the references stack section of LM for the runtime',
+                    type: 'number',
+                    default: 1024000,
+                },
+                'nursery-size' : {
+                    describe: '(advanced) 64bit aligned size in bytes of the nusery section of LM for the runtime',
+                    type: 'number',
+                    default: 524288,
+                },
             }),
         argv =>
-            compileFile(argv.name, argv['track-time'], argv.fast, argv.folding, argv.optimize))
+            compileFile(argv.name,
+                argv['track-time'],
+                argv.fast,
+                argv.folding,
+                argv.optimize,
+                argv['stack-size'],
+                argv['nursery-size']))
     // .help()
     .argv;

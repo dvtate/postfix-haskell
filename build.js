@@ -7,6 +7,7 @@ fs.writeFileSync(
 
 // Run compile typescript
 const cp = require('child_process');
+console.log('> tsc');
 cp.exec(
     'tsc',
     // Remove wat import

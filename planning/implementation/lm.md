@@ -7,14 +7,14 @@ Note that for some of this we might be able to define [custom sections](https://
 - Will need associated mutable global `$ref_sp`
 - Size: Probably fixed 1-3 mb, modifyable via compiler flag
 
+### User Static Data
+- Used for storing things like string literals and `static_region` + `static_init_byte`
+- Size: known at compile time but determined by what the program does
+
 ### Nursery
 - This is where the shortest lived objects are stored. Doing a generational Garbage collector
 - Associated mutable globals for optimizations
 - Size: Probably fixed 512 kb
-
-### User Static Data
-- Used for storing things like string literals and `static_region` + `static_init_byte`
-- Size: known at compile time but determined by what the program does
 
 ### Heap
 - Longer term objects stored as described below

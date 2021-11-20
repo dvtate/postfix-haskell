@@ -11,8 +11,8 @@ import { BlockToken, LexerToken } from "./scan";
 import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';
-import ModuleManager from "./module";
-import { LiteralMacro, Macro } from "./macro";
+import ModuleManager, { CompilerOptions } from "./module";
+import { CompilerMacro, LiteralMacro, Macro } from "./macro";
 import { formatErrorPos } from '../tools/util';
 import { Namespace } from './namespace';
 import Fun from './function';
@@ -57,7 +57,6 @@ interface TraceResultTracker {
     body?: expr.RecursiveBodyExpr,
 }
 
-
 /**
  * This class stores state assocated with the parser
  *
@@ -97,10 +96,10 @@ export default class Context {
     includedFiles: { [k: string]: Namespace } = {};
 
     // Default constructor
-    constructor(optLevel = 1, private entryPoint?: string) {
+    constructor(private entryPoint?: string, opts: CompilerOptions = {}) {
         // Initialize Module Manager
-        this.optLevel = optLevel;
-        this.module = new ModuleManager(this);
+        this.optLevel = opts.optLevel || 2;
+        this.module = new ModuleManager(this, opts);
 
         // Initialize globals
         this.globals = {
@@ -616,7 +615,7 @@ export default class Context {
                 gc: true,
             });
         } catch(e) {
-            console.log('parse failed!');
+            console.error('parse failed!');
             return src;
         }
 

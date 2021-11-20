@@ -11,13 +11,15 @@ import Context from '../lib/context';
 
 import * as util from './util';
 
-/***
+/**
  * Compile a file to webassembly text and print it's contents
  * @param fname - name of the source file
  * @param [trackTime] - print debug info or not
  * @param [fast] - skip pretty-print and validation steps
  * @param [folding] - pretty-print formatting option
  * @param [optimize] - pass through binaryen optimizer
+ * @param [stackSize] - size in bytes for ref stack lm section in rt (dword aligned)
+ * @param [nuserySize] - size in bytes for the nursery lm section in rt (dword aligned)
  */
 export default async function compileFile(
     fname: string,
@@ -25,6 +27,8 @@ export default async function compileFile(
     fast = false,
     folding = false,
     optimize = false,
+    stackSize: number = undefined,
+    nurserySize: number = undefined,
 ) {
     // Replace with full, absolute path
     fname = fs.realpathSync(fname);
@@ -55,7 +59,7 @@ export default async function compileFile(
     try {
         // Parse (weird meaning here, more like "interpret phase")
         start = performance.now();
-        const ctx = parse(ptree, new Context(process.env.FAST ? 1 : 2, fname));
+        const ctx = parse(ptree, new Context(fname, { stackSize, nurserySize, optLevel: optimize ? 3 : fast ? 1 : 2 }));
         if (ctx instanceof error.SyntaxError) {
             // console.log(ctx.tokens);
             console.log(util.formatErrorPos([ctx]));

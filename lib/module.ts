@@ -6,6 +6,15 @@ import * as expr from './expr';
 import template from "./rt.wat";
 
 /**
+ *
+ */
+ export interface CompilerOptions {
+    optLevel?: number,
+    nurserySize?: number,
+    stackSize?: number,
+}
+
+/**
  * Manges module imports & exports
  */
 export default class ModuleManager {
@@ -49,15 +58,33 @@ export default class ModuleManager {
     private static uid = 0;
 
     /**
-     * @param optLevel - optimization level for the compilation
+     * Optimization level for compilation (0-3)
+     */
+    protected optLevel: number;
+
+    /**
+     * Size in bytes of the references stack section of linear memory
+     * (see planning/implementation/lm.md)
+     */
+    protected stackSize: number;
+
+    /**
+     * Size in bytes of the nursery section of linear memory
+     * (see planning/implementation/lm.md)
+     */
+    protected nurserySize: number;
+
+    /**
      * @param ctx - parser context object
+     * @param opts - compilation options
      */
     constructor(
         public ctx?: Context,
-        public optLevel: number = ctx ? ctx.optLevel : 1,
-        public stackSize = 1024000,
-        public nurserySize = 524288,
+        opts: CompilerOptions = {},
     ) {
+        this.optLevel = opts.optLevel || (ctx ? ctx.optLevel : 1);
+        this.stackSize = opts.stackSize || 1024000;
+        this.nurserySize = opts.nurserySize || 524288;
     }
 
     /**
@@ -131,23 +158,29 @@ export default class ModuleManager {
                 .join('\n')
             ).join('\n\n');
 
+        // Insert user-generated code into our runtime
         return this.generateRuntime(
             importDefs,
             this.definitions.filter(Boolean).join('\n\n'),
         );
 
-        // Create module as string
-        return `(module \n${importDefs
-            }\n\n${this.definitions.filter(Boolean).join('\n\n')}
-            (memory (export "memory") ${this.initialPages()})
-            (data (i32.const 0) "${this.staticDataToHexString()}"))`;
+        // Create module as string (no runtime)
+        // return `(module \n${importDefs
+        //     }\n\n${this.definitions.filter(Boolean).join('\n\n')}
+        //     (memory (export "memory") ${this.initialPages()})
+        //     (data (i32.const 0) "${this.staticDataToHexString()}"))`;
     }
 
     /**
      * Make a copy
      */
     clone(): ModuleManager {
-        const ret = new ModuleManager(this.ctx, this.optLevel);
+        //
+        const ret = new ModuleManager(this.ctx, {
+            optLevel: this.optLevel,
+            stackSize: this.stackSize,
+            nurserySize: this.nurserySize,
+        });
         // Slice exports
         ret.functions = { ...this.functions };
 
@@ -213,11 +246,11 @@ export default class ModuleManager {
 
                 // The data already exists
                 if (j == bytes.length)
-                    return i + this.stackSize + this.nurserySize;
+                    return i + this.stackSize;
             }
 
         // Append to static data
-        const ret = this.staticData.length + this.stackSize + this.nurserySize;
+        const ret = this.staticData.length + this.stackSize;
         this.staticData.push(...bytes);
         return ret;
     }
@@ -228,7 +261,7 @@ export default class ModuleManager {
      * @param value value to set static data to
      */
     setStaticData(address: number, value: number) {
-        this.staticData[address] = value;
+        this.staticData[address - this.stackSize] = value;
     }
 
     /**
@@ -287,11 +320,11 @@ export default class ModuleManager {
         }
         const OBJ_HEAD_SIZE = 3 * 4;
         // const EMPTY_HEAD_SIZE = 2 * 4;
-        const STATIC_DATA_LEN = this.staticData.length;
+        const STATIC_DATA_LEN = (this.staticData.length | 0b11) + 1; // Align to 4 bytes
         const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
         // const STACK_START = 0;
         const STACK_END = STACK_SIZE;
-        const NURSERY_START  = STACK_SIZE;
+        const NURSERY_START = STACK_SIZE + STATIC_DATA_LEN;
         const NURSERY_END = STACK_SIZE + NURSERY_SIZE;
         const NURSERY_SP_INIT = NURSERY_END - OBJ_HEAD_SIZE;
         const STATIC_DATA_START = NURSERY_END;

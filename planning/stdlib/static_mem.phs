@@ -12,10 +12,10 @@
 ((I64 I32): 1 ) (:
     ( $v $addr ) =
     # Initialize upper
-    v 0xffffffff and "i32.warp_i64" asm addr 4 + static_init
+    v 0xffffffffL and "i32.wrap_i64" asm addr static_init
 
     # Initialize lower
-    v 32 >> "i32.wrap_i64" asm addr static_init
+    v 32L >> "i32.wrap_i64" asm addr 4 + static_init
 ) $static_init fun
 ((I32 I32): 1 ) (:
     ( $v $addr ) =

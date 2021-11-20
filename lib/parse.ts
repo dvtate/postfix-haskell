@@ -37,7 +37,7 @@ export function generatePerfSummary(){
  * @param tokens - tokens to parse
  * @param ctx - parse ctx
  */
-export default function parse(tokens: LexerToken[], ctx = new Context(undefined, tokens[0].file)): Context | error.SyntaxError {
+export default function parse(tokens: LexerToken[], ctx = new Context(tokens[0].file)): Context | error.SyntaxError {
     // For each token
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];
