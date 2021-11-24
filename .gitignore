@@ -109,5 +109,8 @@ dist
 # Webassembly binaries
 *.wasm
 
+# asm.js
+*.asm.js
+
 # Automatically generated documentation
 tsdoc/

@@ -115,14 +115,6 @@
             else
                 ;; Empty the nursery to make room
                 call $__do_gc
-                ;; global.get $__nursery_sp        ;; last allocated object start
-                ;; i32.const 12                    ;; size of heap object header (3 x i32)
-                ;; local.get $size
-                ;; i32.const 4
-                ;; i32.mul
-                ;; i32.add
-                ;; i32.sub
-                ;; local.set $new_nsp
 
                 local.get $size
                 local.get $ref_bitfield_addr
@@ -227,6 +219,8 @@
             return
         end
 
+        (call $log3 (i32.const 911) (local.get $user_ptr) (local.get $m_bf_addr))
+
         loop $for_each_bit
             ;; If it's the first bit in an i64
             local.get $bit_ind
@@ -235,7 +229,6 @@
             local.tee $local_ind
             i32.eqz
             if
-                (call $log3 (i32.const 911) (local.get $bit_ind) (local.get $m_bf_addr))
 
                 ;; Load the next 64 bits from the bitfield
                 local.get $bit_ind
@@ -351,6 +344,8 @@
         if  ;; No references (optimization)
             return
         end
+
+        (call $log3 (i32.const 911) (local.get $user_ptr) (local.get $m_bf_addr))
 
         loop $for_each_bit
             ;; If it's the first bit in an i64
@@ -483,8 +478,8 @@
                 i32.add             ;; guarantee there's always some free space at the end
                 local.tee $delta
 
-                (call $log3 (i32.const 0) (i32.const 1) (local.get $delta))
-                (call $log3 (i32.const 0) (i32.const 1) (local.get $f_size))
+                ;; (call $log3 (i32.const 0) (i32.const 1) (local.get $delta))
+                ;; (call $log3 (i32.const 0) (i32.const 1) (local.get $f_size))
                 ;; (call $log3 (i32.const 0) (i32.const 1) (local.get $delta))
 
                 memory.grow
@@ -527,6 +522,8 @@
                 ;; *(free_p = free_p + just_size) = gc_heap_empty_t { .size=delta, .next=NULL }
                 local.get $free_p
                 local.get $just_size
+                i32.const 2
+                i32.shl         ;; * sizeof(i32)
                 i32.add
                 local.tee $free_p
                 local.get $delta
@@ -555,24 +552,23 @@
 
             else ;; Small enough for this free space
                 ;; Store leftover space into delta
+                ;; delta = (free_size - just_size)
                 local.get $f_size
                 local.get $just_size
                 i32.sub
                 local.set $delta
 
-                ;; Update heap tail
-                global.get $__heap_tail
-                local.get $free_p
-                i32.store offset=8
-                local.get $free_p
-                global.set $__heap_tail
-
                 ;; Copy next pointer
+                ;; next = free_p->next
                 local.get $free_p
                 i32.load offset=4
                 local.set $next
 
                 ;; Overwrite free object with our object header
+                ;; free_p now refers to heap_object_header_t*
+                ;; free_p->refs_bitfield_addr = bf_addr
+                ;; free_p->mark_size = mark_size
+                ;; free_p->next = 0
                 local.get $free_p
                 local.get $bf_ptr
                 i32.store
@@ -584,29 +580,34 @@
                 i32.store offset=8
 
                 ;; Add object to LL
+                ;; heap_tail->next = free_p
+                ;; heap_tail = free_p
                 global.get $__heap_tail
                 local.get $free_p
                 i32.store offset=8
                 local.get $free_p
                 global.set $__heap_tail
 
+                ;; Check leftover space
                 local.get $delta
                 if
                     ;; leftover space
 
                     ;; Write new free space head
-                    ;; (free_p = free_p + just_size)->size = delta
+                    ;; (free_p = free_p + just_size * sizeof(i32))->size = delta
                     local.get $free_p
                     local.get $just_size
+                    i32.const 2
+                    i32.shl         ;; * sizeof(i32)
                     i32.add
                     local.tee $free_p
-
                     local.get $delta
                     i32.store
+
                     ;; free_p->next = next
                     local.get $free_p
                     local.get $next
-                    i32.store
+                    i32.store offset=4
 
                     ;; Maintain LL
                     local.get $last_free_p
@@ -716,13 +717,39 @@
         global.get $__ref_sp
         local.tee $p
 
+        ;; If there's nothing to mark, delete everything
         ;; if p == reference stack pointer
         i32.const {{STACK_SIZE}}
         i32.eq
         if  ;; stack is empty -> everything is garbage
-            ;; TODO also empty main heap
+            ;; Reset globals
             i32.const {{NURSERY_SP_INIT}}
             global.set $__nursery_sp
+            i32.const {{HEAP_START}}
+            global.set $__heap_tail
+            i32.const {{FREE_START}}
+            global.set $__free_head
+
+            ;; heap_start->next = null
+            i32.const {{HEAP_START}}
+            i32.const 0
+            i32.store offset=8
+
+            ;; free_start->size = (free_start - (memory.size * PAGE_SIZE)) / sizeof(i32)
+            i32.const  {{FREE_START}}
+            memory.size
+            i32.const 16
+            i32.shl
+            i32.const {{FREE_START}}
+            i32.sub
+            i32.const 2
+            i32.shr_u
+            i32.store
+
+            ;; free_start->next = null
+            i32.const {{FREE_START}}
+            i32.const 0
+            i32.store offset=4
             return
         end
 
@@ -732,7 +759,7 @@
         i32.add
         global.set $__gc_cycle
         global.get $__gc_cycle
-        i32.const 10             ;; TODO tune this
+        i32.const 4             ;; TODO tune this
         i32.rem_u
         i32.eqz
         local.tee $is_major
@@ -853,6 +880,8 @@
                 (call $log3 (local.get $p) (local.get $mark_size) (local.get $bf))
                 ;; Allocate space on heap
                 local.get $mark_size
+                i32.const 0x3fffffff
+                i32.and
                 local.get $bf
                 call $__alloc_heap
                 local.set $dest
@@ -860,16 +889,18 @@
                     (i32.load (i32.sub (local.get $dest) (i32.const 8)))
                     (i32.load (i32.sub (local.get $dest) (i32.const 12))))
 
-                ;; Store address into the next pointer
+                ;; Store address into the next pointer field
                 local.get $p
                 local.get $dest
                 i32.store offset=8
 
                 ;; memcpy user data
                 local.get $dest
+
                 local.get $p
                 i32.const 12
                 i32.add
+
                 local.get $mark_size
                 i32.const 0x3fffffff
                 i32.and

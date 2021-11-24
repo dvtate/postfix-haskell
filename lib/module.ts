@@ -333,11 +333,13 @@ export default class ModuleManager {
         const FREE_START = HEAP_START + OBJ_HEAD_SIZE;
         const PAGES_NEEDED = Math.ceil((FREE_START + 2 + 10) / 65536);
         const INIT_FREE_SIZE = PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE;
+
+        // Little-endian hex-string representation
         const INIT_FREE_SIZE_STR = [
-            INIT_FREE_SIZE & 0x00_00_00_ff,
-            INIT_FREE_SIZE & 0x00_00_ff_00,
-            INIT_FREE_SIZE & 0x00_ff_00_00,
-            INIT_FREE_SIZE & 0xff_00_00_00,
+            INIT_FREE_SIZE & 0xff,
+            (INIT_FREE_SIZE >> 8) & 0xff,
+            (INIT_FREE_SIZE >> 16) & 0xff,
+            (INIT_FREE_SIZE >> 24) & 0xff,
         ].map(byteToHexEsc).join('');
 
         const obj = {
