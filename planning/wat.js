@@ -5,9 +5,9 @@ const fs = require('fs');
 
 const fname = 'wat.wasm';
 const bin = fs.readFileSync(fname);
-console.log(bin);
+console.log('bin:', bin);
 const valid = WebAssembly.validate(bin);
-console.log(valid);
+console.log('valid:', valid);
 
 // WASM Environment
 const env = {
@@ -21,28 +21,20 @@ const env = {
 			// Execute the string as JS Code lmao
 			eval(str);
 		},
-		test: function(n) {
-			return [n, n];
-		},
 		'console.log': console.log,
 	},
 };
 
 // Invoke wasm export
 WebAssembly.instantiate(bin, env).then(mod => {
-	mod.instance.exports.main();
-	// mod.instance.exports.test();
-}).catch(e => console.error(e));
+	// mod.instance.exports.main();
 
-/*
-const fname = '/home/tate/Desktop/postfix-haskell/planning/wat.wasm';
-const bin = fs.readFileSync(fname)
-const valid = WebAssembly.validate(bin.buffer);
-if (!valid)
-	console.error("wasm invalid!", valid);
-else
-	WebAssembly.instantiate(bin.buffer, importObject).then(m =>
-		console.log([1,2,3,4,5,6,7,8]
-			.map(m.instance.exports.fac)))
-	.catch(console.error);
-*/
+	// Test fac
+	for (let i = 0n; i < 10n; i++)
+		console.log(mod.instance.exports.fac(i));
+
+	// Test abs
+	for (let i = -4; i < 5; i++)
+		console.log(mod.instance.exports.abs(i));
+
+}).catch(e => console.error(e));

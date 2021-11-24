@@ -1,2 +1,3 @@
-node ../../dist/index.js file support.phs --stack-size 128 --nursery-size 4096 -t0 > test.wat
+node ../../dist/index.js file support.phs --stack-size 128 --nursery-size 512 -t0 > test.wat
 wat2wasm test.wat
+wasm-opt test.wasm -O3 -o test-opt.wasm

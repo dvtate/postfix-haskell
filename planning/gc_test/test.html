@@ -18,7 +18,7 @@
 
     mod = await WebAssembly.instantiate(bin, env);
     const {
-        push_ref, pop_ref, alloc, mark, mmark, do_gc, free, coalesce, m
+        push_ref, pop_ref, alloc, mark, mmark, do_gc, free, coalesce, m, alloch
     } = mod.instance.exports;
     window.m = m;
     window.mod = mod.instance.exports;
@@ -26,14 +26,17 @@
     class Node {
         constructor(addr) {
             this.addr = addr;
-            this.dv = new DataView(m.buffer, addr, 3 * 4);
+            this.dv = new DataView(m.buffer, addr - 12, (3 + 3) * 4);
         }
-        get enum() { return this.dv.getInt32(0, true); }
-        get next() {  return this.dv.getInt32(4, true); }
-        get value() { return this.dv.getInt32(8, true); }
-        set enum(v) { this.dv.setInt32(0, v, true); }
-        set next(v) { this.dv.setInt32(4, v, true); }
-        set value(v) { this.dv.setInt32(8, v, true); }
+        get h_refs() { return this.dv.getUint32(0, true); }
+        get h_mark() { return this.dv.getUint32(4, true); }
+        get h_next() { return this.dv.getUint32(8, true); }
+        get enum() { return this.dv.getUint32(12, true); }
+        get next() {  return this.dv.getUint32(16, true); }
+        get value() { return this.dv.getInt32(20, true); }
+        set enum(v) { this.dv.setInt32(12, v, true); }
+        set next(v) { this.dv.setInt32(16, v, true); }
+        set value(v) { this.dv.setInt32(20, v, true); }
         toString() { return `Node { ${this.enum} ${this.enum ? '' : this.next} ${this.enum ? '' : this.value} }`; }
     }
     window.Node = Node;
@@ -53,42 +56,43 @@
     }
 
     // Make a list linked list of 300 i32 nodes in reverse numerical order
-    let i = 0;
-    push_ref(constructNode(alloc(3, node_bf)).addr);
+    window.makeLL = () => {
+        push_ref(constructNode(alloch(3, node_bf)).addr);
 
-    for (let i = 0; i < 100; i++) {
-        const naddr = alloc(3, node_bf);
-        push_ref(
-            constructNode(
-                naddr,
-                pop_ref(),
-                i,
-            ).addr);
-        const n = new Node(pop_ref());
-        console.log(n.toString(), n);
-        push_ref(n.addr);
-    }
+        for (let i = 0; i < 100; i++) {
+            const naddr = alloch(3, node_bf);
+            push_ref(
+                constructNode(
+                    naddr,
+                    pop_ref(),
+                    i,
+                ).addr);
+            const n = new Node(pop_ref());
+            console.log(n.toString(), n);
+            push_ref(n.addr);
+        }
 
-    console.log('made 100 nodes');
-    do_gc();
+        console.log('made 100 nodes');
+    };
 
     // Iterate over LL
+    window.printLL = () =>  {
+        // Dup list head
+        const h = pop_ref();
+        push_ref(h);
 
-    // Dup list head
-    const h = pop_ref();
-    push_ref(h);
+        const l = [];
+        let n = new Node(h);
 
-    const l = [];
-    let n = new Node(h);
-
-    for (let i = 0; i < 200 && n.enum != 1 && n.next; i++) {
-        l.push(n.value);
-        n = new Node(n.next);
-    }
-    console.log(l);
+        for (let i = 0; i < 200 && n.enum != 1 && n.next; i++) {
+            l.push(n.value);
+            n = new Node(n.next);
+        }
+        console.log(l);
+    };
 
     // Reverse LL
-
+    // TODO
 
     // Verify LL gets GC'd
 })();

@@ -2,13 +2,9 @@
     {{USER_IMPORTS}}
 
     ;; Import console log
-    (import "js" "log"
-        (func $log (param f64 f64))
-    ) (import "js" "log"
-        (func $log3 (param i32 i32 i32))
-    ) (import "js" "log"
-        (func $log3i64 (param i32 i32 i64))
-    )
+    (import "js" "log" (func $log (param f64 f64)))
+    (import "js" "log" (func $log3 (param i32 i32 i32)))
+    (import "js" "log" (func $log3i64 (param i32 i32 i64)))
 
     ;; Memory export
     (memory (export "m") {{PAGES_NEEDED}})
@@ -57,6 +53,7 @@
 
     ;; Does the given pointer fall within the region of the nursery?
     (func $__in_nursery (param $ptr i32) (result i32)
+        (local $ret i32)
         ;; OPTIMIZATION single compare, don't need to worry about lhs check
         local.get $ptr
         i32.const {{NURSERY_START}}
@@ -65,6 +62,8 @@
         i32.const {{NURSERY_END}}
         i32.lt_u
         i32.and
+        local.tee $ret
+        ;; (call $log3 (i32.const 123) (local.get $ptr) (local.get $ret))
     )
 
     ;; Heap start
@@ -185,6 +184,8 @@
         (local $bf_cursor i64)      ;; Scanned 64bit section of ref bitfield
         (local $local_ind i32)      ;; Index within the Scanned 64bit section
 
+        ;; (call $log3 (i32.const 911) (i32.const 0) (local.get $user_ptr))
+
         ;; check nullptr
         local.get $user_ptr
         i32.eqz
@@ -234,6 +235,8 @@
             local.tee $local_ind
             i32.eqz
             if
+                (call $log3 (i32.const 911) (local.get $bit_ind) (local.get $m_bf_addr))
+
                 ;; Load the next 64 bits from the bitfield
                 local.get $bit_ind
                 i32.const 3
@@ -258,10 +261,11 @@
             if
                 ;; Mark referenced pointer
                 local.get $bit_ind
-                i32.const 3
-                i32.shr_u
+                i32.const 2
+                i32.shl
                 local.get $user_ptr
                 i32.add
+                i32.load
                 call $__mark
             end
 
@@ -296,6 +300,8 @@
         (local $bit_ind i32)    ;; Current Bit in the references bitfield
         (local $bf_cursor i64)  ;; Scanned 64bit section of ref bitfield
         (local $local_ind i32)  ;; Index within the Scanned 64bit sectio
+
+        ;; (call $log3 (i32.const 911) (i32.const 1) (local.get $user_ptr))
 
         ;; check nullptr
         local.get $user_ptr
@@ -378,10 +384,11 @@
             if
                 ;; Mark referenced pointer (DFS)
                 local.get $bit_ind
-                i32.const 3
-                i32.shr_u
+                i32.const 2
+                i32.shl       ;; * sizeof(i32)
                 local.get $user_ptr
                 i32.add
+                i32.load
                 call $__minor_mark
             end
 
@@ -393,7 +400,7 @@
             i32.add
             local.tee $bit_ind
             local.get $m_mark_size
-            i32.lt_u
+            i32.le_u
             if
                 br $for_each_bit
             end
@@ -403,7 +410,6 @@
     ;; Allocate an object onto the heap
     ;; Note this also copies the given mark if included in size-bf
     ;; Note that size is measured in multiples of 32 bits
-    ;; Note that returns start of header object instead of user pointer (add 12)
     (func $__alloc_heap (param $mark_size i32) (param $bf_ptr i32) (result i32)
         (local $free_p i32)         ;; current gc_heap_empty_t*
         (local $f_size i32)         ;; value of size field in free_p
@@ -417,11 +423,11 @@
         local.get $mark_size
         i32.const 0x1
         i32.or
+        i32.const 0x3fffffff
+        i32.and
         local.tee $mark_size
 
         ;; Extract size + header
-        i32.const 0x3fffffff
-        i32.and
         ;; i32.const 2
         ;; i32.shl ;; * 4 (i32 -> bytes)
         i32.const 3
@@ -434,7 +440,6 @@
         local.set $free_p
 
         (call $log (f64.const 0) (f64.const 0))
-        (call $log3 (local.get $just_size) (local.get $bf_ptr) (local.get $free_p))
 
         loop $next_empty
             ;; (free_v = *free_ptr).size >= just_size
@@ -544,6 +549,8 @@
                 end
 
                 global.get $__heap_tail
+                i32.const 12
+                i32.add
                 return
 
             else ;; Small enough for this free space
@@ -575,6 +582,13 @@
                 local.get $free_p
                 i32.const 0
                 i32.store offset=8
+
+                ;; Add object to LL
+                global.get $__heap_tail
+                local.get $free_p
+                i32.store offset=8
+                local.get $free_p
+                global.set $__heap_tail
 
                 local.get $delta
                 if
@@ -636,7 +650,9 @@
                     end
                 end
 
-                local.get $free_p
+                global.get $__heap_tail
+                i32.const 12
+                i32.add
                 return
             end
         end
@@ -686,7 +702,7 @@
     ;; increments each time we do gc
     (global $__gc_cycle (mut i32) (i32.const 0))
 
-    ;; GC the nursery
+    ;; Collect Garbage
     (func $__do_gc
         (local $p i32)          ;; stack pointer
         (local $dest i32)       ;; pointer to where object is being moved
@@ -703,7 +719,7 @@
         ;; if p == reference stack pointer
         i32.const {{STACK_SIZE}}
         i32.eq
-        if  ;; stack is empty -> everything is garbage (wtf)
+        if  ;; stack is empty -> everything is garbage
             ;; TODO also empty main heap
             i32.const {{NURSERY_SP_INIT}}
             global.set $__nursery_sp
@@ -839,9 +855,10 @@
                 local.get $mark_size
                 local.get $bf
                 call $__alloc_heap
-                i32.const 12
-                i32.add
                 local.set $dest
+                (call $log3 (i32.const 233)
+                    (i32.load (i32.sub (local.get $dest) (i32.const 8)))
+                    (i32.load (i32.sub (local.get $dest) (i32.const 12))))
 
                 ;; Store address into the next pointer
                 local.get $p
@@ -877,6 +894,9 @@
 
         ;; Update references
 
+        ;; Update references to objs previously stored in nursery
+        call $__update_nursery_refs
+
         ;; Update stack refs
         ;; for each pointer on the references stack
         global.get $__ref_sp
@@ -907,9 +927,6 @@
                 br $rsu_loop
             end
         end
-
-        ;; Update references to objs previously stored in nursery
-        call $__update_nursery_refs
 
         ;; Empty nursery: ie- allow overwrites
         i32.const {{NURSERY_SP_INIT}}
@@ -1102,7 +1119,7 @@
         i32.load offset=4
         i32.const 3 ;; add size of object header
         i32.add
-        i32.const 0xcfffffff
+        i32.const 0x3fffffff
         i32.and     ;; remove mark
         i32.store
         local.get $ptr
@@ -1140,6 +1157,7 @@
     (export "push_ref" (func $__ref_stack_push))
     (export "pop_ref" (func $__ref_stack_pop))
     (export "alloc" (func $__alloc))
+    (export "alloch" (func $__alloc_heap))
     (export "mark" (func $__mark))
     (export "mmark" (func $__minor_mark))
     (export "do_gc" (func $__do_gc))

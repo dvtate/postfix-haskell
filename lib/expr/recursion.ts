@@ -197,6 +197,7 @@ export class RecursiveBodyExpr extends Expr {
         //  - otherwise it's not tr
 
         // TODO actually detect tail-recursion lol
+        // return true;
         return false;
     }
 }
