@@ -6,8 +6,10 @@
     ;; (import "js" "log" (func $log3 (param i32 i32 i32)))
     ;; (import "js" "log" (func $log3i64 (param i32 i32 i64)))
 
+    {{USER_TABLE}}
+
     ;; Memory export
-    (memory (export "m") {{PAGES_NEEDED}})
+    (memory (export "__memory") {{PAGES_NEEDED}})
 
     ;; Reference stack pointer
     (global $__ref_sp (mut i32) (i32.const {{STACK_SIZE}}))
@@ -612,8 +614,8 @@
                         ;; Put the new free head at end of lm
                         ;; TODO calculate this via free_p instead?
                         memory.size
-                        i32.const 65536 ;; bytes/page
-                        i32.mul
+                        i32.const 16
+                        i32.shl ;; * bytes/page
                         global.set $__free_head
 
                         ;; Extend lm by page (64 KiB)
@@ -649,8 +651,8 @@
             ;; len = len * 4 + dest
             local.get $dest
             local.get $len
-            i32.const 4
-            i32.mul
+            i32.const 2
+            i32.shl
             i32.add
             local.set $len
 
@@ -942,32 +944,32 @@
         global.set $__nursery_sp
     )
 
-    (func (export "heapLen") (result i32)
-        (local $ret i32)
-        (local $p i32)
+    ;; (func (export "heapLen") (result i32)
+    ;;     (local $ret i32)
+    ;;     (local $p i32)
 
-        global.get $__heap_start
-        local.set $p
+    ;;     global.get $__heap_start
+    ;;     local.set $p
 
-        loop $iter_ll
-            local.get $p
-            i32.eqz
-            if
-                local.get $ret
-                return
-            end
-            local.get $ret
-            i32.const 1
-            i32.add
-            local.set $ret
-            local.get $p
-            i32.load offset=8
-            local.set $p
+    ;;     loop $iter_ll
+    ;;         local.get $p
+    ;;         i32.eqz
+    ;;         if
+    ;;             local.get $ret
+    ;;             return
+    ;;         end
+    ;;         local.get $ret
+    ;;         i32.const 1
+    ;;         i32.add
+    ;;         local.set $ret
+    ;;         local.get $p
+    ;;         i32.load offset=8
+    ;;         local.set $p
 
-            br $iter_ll
-        end $iter_ll
-        unreachable
-    )
+    ;;         br $iter_ll
+    ;;     end $iter_ll
+    ;;     unreachable
+    ;; )
 
     ;; After minor gc, update references to values stored in the nursery
     ;; TODO ideally would be inlined within do_gc

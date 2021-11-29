@@ -6,11 +6,22 @@ import * as expr from './expr';
 import template from "./rt.wat";
 
 /**
- *
+ * Adjust compiler behavior
  */
  export interface CompilerOptions {
+    /**
+     * How aggressively should this program be optimized? (default: 1)
+     */
     optLevel?: number,
+
+    /**
+     * How many bytes should be reserved for the nursery (default: 524288)
+     */
     nurserySize?: number,
+
+    /**
+     * How many bytes should be reserved for the stack (default: 1024000)
+     */
     stackSize?: number,
 }
 
@@ -73,6 +84,11 @@ export default class ModuleManager {
      * (see planning/implementation/lm.md)
      */
     protected nurserySize: number;
+
+    /**
+     * Function ids to be added to the table
+     */
+    protected tableElems: string[] = [];
 
     /**
      * @param ctx - parser context object
@@ -289,9 +305,30 @@ export default class ModuleManager {
      * Determine the amount of memory to use
      * @returns - number of pages to start with
      */
-     initialPages(): number {
+    initialPages(): number {
         // Start out with enough pages for static data + 1
         return Math.floor(this.staticData.length / 64000 + 1);
+    }
+
+    /**
+     * Add a function to the table
+     * @param fnName identifier for function to push into the table
+     * @returns index of the function
+     */
+    addToTable(fnName: string): number {
+        return this.tableElems.push(fnName) - 1;
+    }
+
+    /**
+     * Generate code for the table section of the the runtime
+     * @returns wat code for the table section
+     */
+    genTable(): string {
+        return `(table (export "__table") ${this.tableElems.length} anyfunc ${
+            this.tableElems.length
+                ? `(elem ${this.tableElems.map(id => '$' + id).join(' ')})`
+                : ''
+        })`;
     }
 
     /**
@@ -333,6 +370,7 @@ export default class ModuleManager {
         const FREE_START = HEAP_START + OBJ_HEAD_SIZE;
         const PAGES_NEEDED = Math.ceil((FREE_START + 2 + 10) / 65536);
         const INIT_FREE_SIZE = PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE;
+        const USER_TABLE = this.genTable();
 
         // Little-endian hex-string representation
         const INIT_FREE_SIZE_STR = [
@@ -346,7 +384,7 @@ export default class ModuleManager {
             OBJ_HEAD_SIZE, STATIC_DATA_LEN, STACK_END, NURSERY_START,
             NURSERY_END, NURSERY_SP_INIT, STATIC_DATA_START, STATIC_DATA_END, HEAP_START,
             PAGES_NEEDED, INIT_FREE_SIZE, INIT_FREE_SIZE_STR, STACK_SIZE, FREE_START,
-            NURSERY_SIZE, USER_CODE_STR, USER_IMPORTS, STATIC_DATA_STR,
+            USER_TABLE, NURSERY_SIZE, USER_CODE_STR, USER_IMPORTS, STATIC_DATA_STR,
         };
 
         return Object.entries(obj).reduce(

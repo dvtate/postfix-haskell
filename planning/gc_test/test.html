@@ -18,9 +18,10 @@
 
     mod = await WebAssembly.instantiate(bin, env);
     const {
-        push_ref, pop_ref, alloc, mark, mmark, do_gc, free, coalesce, m, alloch
+        push_ref, pop_ref, alloc, mark, mmark, do_gc, free, coalesce, alloch,
+        __memory, __table
     } = mod.instance.exports;
-    window.m = m;
+    window.m = __memory;
     window.mod = mod.instance.exports;
 
     class Node {
