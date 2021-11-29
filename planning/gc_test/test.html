@@ -68,7 +68,7 @@
                     i,
                 ).addr);
             const n = new Node(pop_ref());
-            console.log(n.toString(), n);
+            // console.log(n.toString(), n);
             push_ref(n.addr);
         }
 
@@ -85,6 +85,7 @@
         let n = new Node(h);
 
         for (let i = 0; i < 200 && n.enum != 1 && n.next; i++) {
+            // console.log(n.toString(), n);
             l.push(n.value);
             n = new Node(n.next);
         }

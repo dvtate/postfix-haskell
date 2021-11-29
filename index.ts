@@ -66,12 +66,14 @@ yargs
                 },
             }),
         argv =>
-            compileFile(argv.name,
+            compileFile(
+                argv.name,
                 argv['track-time'],
                 argv.fast,
                 argv.folding,
                 argv.optimize,
                 argv['stack-size'],
-                argv['nursery-size']))
+                argv['nursery-size']),
+            )
     // .help()
     .argv;

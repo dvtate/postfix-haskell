@@ -2,9 +2,9 @@
     {{USER_IMPORTS}}
 
     ;; Import console log
-    (import "js" "log" (func $log (param f64 f64)))
-    (import "js" "log" (func $log3 (param i32 i32 i32)))
-    (import "js" "log" (func $log3i64 (param i32 i32 i64)))
+    ;; (import "js" "log" (func $log (param f64 f64)))
+    ;; (import "js" "log" (func $log3 (param i32 i32 i32)))
+    ;; (import "js" "log" (func $log3i64 (param i32 i32 i64)))
 
     ;; Memory export
     (memory (export "m") {{PAGES_NEEDED}})
@@ -53,7 +53,6 @@
 
     ;; Does the given pointer fall within the region of the nursery?
     (func $__in_nursery (param $ptr i32) (result i32)
-        (local $ret i32)
         ;; OPTIMIZATION single compare, don't need to worry about lhs check
         local.get $ptr
         i32.const {{NURSERY_START}}
@@ -62,8 +61,6 @@
         i32.const {{NURSERY_END}}
         i32.lt_u
         i32.and
-        local.tee $ret
-        ;; (call $log3 (i32.const 123) (local.get $ptr) (local.get $ret))
     )
 
     ;; Heap start
@@ -107,7 +104,6 @@
             i32.shr_u ;; 50% of nursery => put it in the heap
             i32.gt_u
             if
-                (call $log (f64.const 1) (f64.const 0))
                 ;; Allocate it onto the heap, not the nursery
                 (return (call $__alloc_heap
                     (local.get $size)
@@ -176,8 +172,6 @@
         (local $bf_cursor i64)      ;; Scanned 64bit section of ref bitfield
         (local $local_ind i32)      ;; Index within the Scanned 64bit section
 
-        ;; (call $log3 (i32.const 911) (i32.const 0) (local.get $user_ptr))
-
         ;; check nullptr
         local.get $user_ptr
         i32.eqz
@@ -219,8 +213,6 @@
             return
         end
 
-        (call $log3 (i32.const 911) (local.get $user_ptr) (local.get $m_bf_addr))
-
         loop $for_each_bit
             ;; If it's the first bit in an i64
             local.get $bit_ind
@@ -229,7 +221,6 @@
             local.tee $local_ind
             i32.eqz
             if
-
                 ;; Load the next 64 bits from the bitfield
                 local.get $bit_ind
                 i32.const 3
@@ -294,8 +285,6 @@
         (local $bf_cursor i64)  ;; Scanned 64bit section of ref bitfield
         (local $local_ind i32)  ;; Index within the Scanned 64bit sectio
 
-        ;; (call $log3 (i32.const 911) (i32.const 1) (local.get $user_ptr))
-
         ;; check nullptr
         local.get $user_ptr
         i32.eqz
@@ -344,8 +333,6 @@
         if  ;; No references (optimization)
             return
         end
-
-        (call $log3 (i32.const 911) (local.get $user_ptr) (local.get $m_bf_addr))
 
         loop $for_each_bit
             ;; If it's the first bit in an i64
@@ -434,8 +421,6 @@
         ;; local.tee $last_free_p
         local.set $free_p
 
-        (call $log (f64.const 0) (f64.const 0))
-
         loop $next_empty
             ;; (free_v = *free_ptr).size >= just_size
             ;; read freespace header
@@ -477,10 +462,6 @@
                 i32.const 1
                 i32.add             ;; guarantee there's always some free space at the end
                 local.tee $delta
-
-                ;; (call $log3 (i32.const 0) (i32.const 1) (local.get $delta))
-                ;; (call $log3 (i32.const 0) (i32.const 1) (local.get $f_size))
-                ;; (call $log3 (i32.const 0) (i32.const 1) (local.get $delta))
 
                 memory.grow
                 i32.const -1
@@ -864,7 +845,6 @@
         global.get $__nursery_sp
         local.set $p
         loop $cp_loop
-            (call $log (f64.const 2) (f64.const 0))
             ;; Load header
             local.get $p
             i32.load
@@ -877,7 +857,6 @@
             i32.const 0xc0000000
             i32.and
             if ;; Copy it into the main heap
-                (call $log3 (local.get $p) (local.get $mark_size) (local.get $bf))
                 ;; Allocate space on heap
                 local.get $mark_size
                 i32.const 0x3fffffff
@@ -885,9 +864,6 @@
                 local.get $bf
                 call $__alloc_heap
                 local.set $dest
-                (call $log3 (i32.const 233)
-                    (i32.load (i32.sub (local.get $dest) (i32.const 8)))
-                    (i32.load (i32.sub (local.get $dest) (i32.const 12))))
 
                 ;; Store address into the next pointer field
                 local.get $p
@@ -914,6 +890,8 @@
             local.get $mark_size
             i32.const 0x3fffffff
             i32.and
+            i32.const 2
+            i32.shl
             i32.add
             local.tee $p
             i32.const {{NURSERY_SP_INIT}}
@@ -924,9 +902,6 @@
         end $cp_loop
 
         ;; Update references
-
-        ;; Update references to objs previously stored in nursery
-        call $__update_nursery_refs
 
         ;; Update stack refs
         ;; for each pointer on the references stack
@@ -958,6 +933,9 @@
                 br $rsu_loop
             end
         end
+
+        ;; Update references to objs previously stored in nursery
+        call $__update_nursery_refs
 
         ;; Empty nursery: ie- allow overwrites
         i32.const {{NURSERY_SP_INIT}}
@@ -992,7 +970,8 @@
     )
 
     ;; After minor gc, update references to values stored in the nursery
-    ;; ideally would be inlined
+    ;; TODO ideally would be inlined within do_gc
+    ;; TODO this should instead operate on the nursery values before memcpy to heap
     (func $__update_nursery_refs
         (local $p i32)          ;; pointer to head of current nursery obejct
         (local $mark_size i32)  ;; mark-size field
@@ -1081,12 +1060,12 @@
                         if
                             ;; Load reference in object
                             ;; *(dest + i * 4) as i32
-                            local.get $dest
                             local.get $i
                             i32.const 2
                             i32.shl
+                            local.get $dest
                             i32.add
-                            i32.load
+                            i32.load ;;offset=12 ;; skip past header
                             local.tee $check_ptr
                             call $__in_nursery
                             if
@@ -1100,10 +1079,8 @@
                                 local.get $check_ptr
                                 i32.const 4
                                 i32.sub
-                                i32.load            ;; see __do_gc for how this works
-                                i32.const 12
-                                i32.add             ;; convert to user ptr
-                                i32.store
+                                i32.load            ;; relocation addr stored in next ptr (see __do_gc)
+                                i32.store ;;offset=12
                             end
                         end
 
@@ -1123,19 +1100,23 @@
             end
 
             ;; next p
-            ;; if (p = p + sizeof(obj_header_t) + p->size) < END_OF_NURSERY - sizeof(obj_header_t)
+            ;; if (p = p + sizeof(obj_header_t) + p->size * sizeof(i32))
+            ;;      < END_OF_NURSERY - sizeof(obj_header_t)
             local.get $p
             i32.const 12
             i32.add
             local.get $mark_size
             i32.const 0x3fffffff
             i32.and
+            i32.const 2
+            i32.shl
             i32.add
             local.tee $p
             i32.const {{NURSERY_SP_INIT}}
             i32.lt_u
             if
                 br $cp_loop
+
             end
         )
     )

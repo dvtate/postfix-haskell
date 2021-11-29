@@ -1,5 +1,3 @@
-#!/usr/bin/node
-
 // External
 import * as fs from 'fs';
 
