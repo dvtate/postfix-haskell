@@ -2,7 +2,6 @@
 (: $_ = ) $pop =				# Pop value
 (: $v = v v ) $dup =			# Duplicate value
 (: ( $a $b ) = $b ~ $a ~ ) $swap = # swap values
-(: $v = $v ~ ) $touch =			# Bad sign if this needed...
 
 # Booleans
 1 $true  =
@@ -11,8 +10,8 @@
 # Logic
 ((I32): 1 ) (: false == ) $global.! fun
 
-# And - this definition might be too clever...
-# Notice the @ for lazy evaluation
+# And
+# Notice the @ for short-circuit
 (: true ) (: pop pop false ) $global.&& fun
 (: swap ) (: swap pop @ ) $global.&& fun
 
@@ -76,7 +75,7 @@ I32 I64 | F32 F64 | | $_Scalar =
 	a type b type == !
 ) $_can_promote =
 
-# Do we know at compile time that the value is a 0/1
+# Do we know at compile time that the value is a 0/1/-1
 (: 1 ) (: 0 ) $_is_0 fun
 ((I32): is_const ) (: 0 == ) $_is_0 fun
 ((I64): is_const ) (: 0L == ) $_is_0 fun
@@ -187,6 +186,8 @@ $_can_promote ~ (: _promote * ) $global.* fun
 # TODO? maybe make the zero the same type?
 (: pop _is_0 ) (: pop pop 0 ) $global.* fun
 (: _is_0 ) (: pop pop 0 ) $global.* fun
+
+# TODO optimize to shl
 
 ##
 # Operator /

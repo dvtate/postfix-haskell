@@ -3,6 +3,7 @@ import yargs = require('yargs');
 
 import runShell from './tools/shell';
 import compileFile from './tools/file';
+import { writeFileSync } from 'fs';
 
 yargs
     .scriptName('phc')
@@ -64,16 +65,26 @@ yargs
                     type: 'number',
                     default: 524288,
                 },
+                'output' : {
+                    describe: 'output to a specific file instead of stdout',
+                    type: 'string',
+                    alias: 'o',
+                }
             }),
-        argv =>
-            compileFile(
+        async argv => {
+            const ret = await compileFile(
                 argv.name,
                 argv['track-time'],
                 argv.fast,
                 argv.folding,
                 argv.optimize,
                 argv['stack-size'],
-                argv['nursery-size']),
-            )
+                argv['nursery-size']);
+            if (!argv['output'])
+                return console.log(ret);
+            if (ret)
+                writeFileSync(argv['output'], ret);
+        },
+    )
     // .help()
     .argv;

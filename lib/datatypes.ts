@@ -39,6 +39,7 @@ export abstract class Type {
 
     /**
      * Does this type hold a value in wasm?
+     * @returns false if the value doesn't carry a value
      * @virtual
      */
     isUnit(): boolean {
@@ -53,6 +54,14 @@ export abstract class Type {
     check(type : Type): boolean {
         // Default behavior is to act as a wildcard
         return type != null;
+    }
+
+    /**
+     * Returns true if type contains a wildcard
+     * @virtual
+     */
+    isWild(): boolean {
+        return true;
     }
 }
 
@@ -155,6 +164,13 @@ export class ClassType<T extends Type> extends Type {
      */
     isUnit() {
         return this.getBaseType().isUnit();
+    }
+
+    /**
+     * @override
+     */
+    isWild() {
+        return this.getBaseType().isWild();
     }
 }
 
@@ -270,6 +286,13 @@ export class TupleType extends Type {
                 return false;
         return true;
     }
+
+    /**
+     * @override
+     */
+    isWild() {
+        return this.types.some(t => t.isWild());
+    }
 }
 
 /**
@@ -324,6 +347,13 @@ export class PrimitiveType extends Type {
      */
     flatPrimitiveList(): PrimitiveType[] {
         return [this]
+    }
+
+    /**
+     * @override
+     */
+    isWild() {
+        return false;
     }
 }
 
@@ -380,5 +410,13 @@ export class ArrowType extends Type {
             && types
                 .slice(-this.inputTypes.length)
                 .every((t, i) => this.inputTypes[i].check(t));
+    }
+
+    /**
+     * @override
+     */
+    isWild() {
+        return this.inputTypes.some(t => t.isWild())
+            || this.outputTypes.some(t => t.isWild());
     }
 }

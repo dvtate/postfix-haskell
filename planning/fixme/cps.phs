@@ -1,0 +1,19 @@
+"../stdlib/prelude.phs" require use
+
+((I32 (I32) (Any) Arrow) rec:
+    ( $n $k ) =
+    (: 1 ) (:
+        n 1 -
+        (: $a =
+            n 2 -
+            (: a + k )
+            fib_cps
+        )
+        fib_cps
+    ) $branch fun
+    (: n 1 <= ) (: n k ) $branch fun
+    branch
+) $fib_cps =
+
+
+5 ((I32): ) fib_cps

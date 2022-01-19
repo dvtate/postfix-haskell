@@ -1,0 +1,16 @@
+"../stdlib/prelude.phs" require use
+
+((I32 I32):
+    ( $a $b ) =
+    ((I32):
+        (: pop true) (: -1 ) $branch fun
+        (: 1 == ) (: a ) $branch fun
+        (: 0 == ) (: b ) $branch fun
+        branch
+    )
+) $mk_pair =
+
+
+0 1 mk_pair $p =
+
+(I32 I32 I32) (: mk_pair @ ) "abc" export

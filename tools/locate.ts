@@ -1,6 +1,13 @@
 import { LexerToken } from "../lib/scan";
 import { formatErrorPos, fileLocate } from "./util";
 
+// Help message
+if (process.argv.length < 5) {
+    console.error("usage: file position length")
+    process.exit(1);
+}
+
+// Get args
 const file = process.argv[2];
 const position = Number(process.argv[3]);
 const tokenLength = Number(process.argv[4]);

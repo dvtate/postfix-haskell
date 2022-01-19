@@ -466,7 +466,7 @@ export default class Context {
 
             return this;
         } else if (tResults.result === null) {
-            // Recursive tracing (bad!)
+            // Recursive tracing
             // console.log('already tracing!', token.token);
             // console.log('already tracing!', token);
             // console.log(new Error().stack);

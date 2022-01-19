@@ -38,4 +38,29 @@
     (T T BTree T BTree) class $Node =
     Unit class $Nil =
     Node Nil |
-) class
+) class $BTree =
+
+
+# Type
+# rec: managed by gc so only have references
+#     - how to do reference type? hidden from user, bool flag (?)
+# enum: fields in sum type made into class namespace members
+#     - EnumClassType: compiles to tagged union
+#     - when UnionType returned, go through members, find local identifiers
+(rec:
+    $T =
+    Unit class $End =
+    ( T T List ) class $Node =
+    Node End |
+) enum $List =
+
+# Instance
+# Note that enum member instances are also of the enum class
+( 1 ( 2 () I32 List.End make
+    ) I32 List.Node make
+) I32 List.Node make $l =
+
+
+((Any List) rec:
+
+)

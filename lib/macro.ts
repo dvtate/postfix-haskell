@@ -69,6 +69,9 @@ export abstract class Macro extends value.Value {
         // if (cached)
         //     return cached;
 
+        if (inputTypes.some(t => t.isWild()))
+            return 'wild inputs';
+
         // Generate dummy inputs
         const inputs = inputTypes.map(t => expr.DummyDataExpr.create(token, t));
         ctx.stack.push(...inputs);
@@ -108,6 +111,7 @@ export abstract class Macro extends value.Value {
      * @param ctx parser context
      * @param datatype type to check against
      * @param token location in code where check is required
+     * @param safe
      * @returns true/false if checks or not or a syntax error
      */
     typeCheck(
@@ -155,6 +159,15 @@ export abstract class Macro extends value.Value {
         return false;
         // return new error.SyntaxError('could not infer partial type: ' + (dt || ''), token, ctx);
     }
+
+    /**
+     * Typecheck inputs to this macro
+     * @param stack stack at point of invocation
+     * @returns false if invalid true otherwise
+     */
+    checkInputs(stack: value.Value[]) {
+        return !this.datatype || this.datatype.checkInputs(stack);
+    }
 }
 
 /**
@@ -193,6 +206,10 @@ export abstract class Macro extends value.Value {
 export class LiteralMacro extends Macro {
     body: LexerToken[];
     scopes: Array<{ [k: string] : value.Value }>;
+
+    // Cannot infer return type for wildcards so can't make arrow type
+    // But still we want to verify the input matches
+    inputTypes?: types.Type[];
 
     /**
      * Construct Macro object from literal token
@@ -275,8 +292,14 @@ export class LiteralMacro extends Macro {
      * @returns void if successful, anything else if error
      */
     applyType(ctx: Context, inputs: types.TupleType, outputs?: types.TupleType): void | error.SyntaxError | string[] | types.ArrowType {
-        // Infer output types from inputs
+        // Attempt to infer output types from inputs
         const type = this.inferDatatype(ctx, inputs.types, this.token);
+        this.inputTypes = inputs.types;
+
+        // Cannot infer output types when wildcards given as input
+        if (type === 'wild inputs')
+            return;
+
         if (typeof type == 'string')
             return new error.SyntaxError(type, this.token, ctx);
         if (type instanceof error.SyntaxError)
@@ -295,6 +318,20 @@ export class LiteralMacro extends Macro {
 
     toString() {
         return `LiteralMacro { ${this.token.file || ''}:${this.token.position} }`;
+    }
+
+    /**
+     * @override
+     */
+    checkInputs(stack: value.Value[]) {
+        // add check for partially typed macros in order to support wildcards
+        return super.checkInputs(stack) || (
+            this.inputTypes
+            && stack.length >= this.inputTypes.length
+            && stack
+                .slice(-this.inputTypes.length)
+                .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype))
+        );
     }
 }
 

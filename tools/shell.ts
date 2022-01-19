@@ -39,18 +39,22 @@ export default function runShell(lexFlag = false, verboseFlag = true) {
 
         // Parse
         if (!lexFlag) {
-            const e = parse(toks, ctx);
-            if (verboseFlag)
-                return console.log(e);
+            try {
+                const e = parse(toks, ctx);
+                if (verboseFlag)
+                    return console.log(e);
 
-            if (e instanceof Context) {
-                if (e.stack.length)
-                    console.log(e.stack);
-                return;
+                if (e instanceof Context) {
+                    if (e.stack.length)
+                        console.log(e.stack);
+                    return;
+                }
+
+                // Print errors and stuff
+                console.log(e);
+            } catch (e) {
+                console.log('thrown', e);
             }
-
-            // Print errors and stuff
-            console.log(e);
         }
     });
 }

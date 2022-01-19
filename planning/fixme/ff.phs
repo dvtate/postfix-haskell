@@ -1,0 +1,20 @@
+"../stdlib/prelude.phs" require use
+
+(: ( $cond $t $f ) =
+    (: true ) (: f ) $b fun
+    (: cond ) (: t ) $b fun
+    b
+) $select =
+
+(rec:
+    $arg =
+    arg 0 >
+        (: arg 1 - fac arg * )
+        1
+        select
+) $fac =
+
+10 fac :data
+
+# (I32) (: fac ) "fac" export
+
