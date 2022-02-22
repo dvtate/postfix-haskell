@@ -615,7 +615,7 @@ export default class Context {
                 gc: true,
             });
         } catch(e) {
-            console.error('parse failed!');
+            console.error('parse failed!', e);
             return src;
         }
 

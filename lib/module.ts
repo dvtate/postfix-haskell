@@ -326,7 +326,7 @@ export default class ModuleManager {
      * @returns wat code for the table section
      */
     genTable(): string {
-        return `(table (export "__table") ${this.tableElems.length} anyfunc ${
+        return `(table (export "__table") ${this.tableElems.length} funcref ${
             this.tableElems.length
                 ? `(elem ${this.tableElems.map(id => '$' + id).join(' ')})`
                 : ''
