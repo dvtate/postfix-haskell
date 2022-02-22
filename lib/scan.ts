@@ -60,7 +60,7 @@ export class NumberToken extends LexerToken {
 
 /**
  * The Token is initialized as a container open/close token
- * later it's converted to a block and the body is assgined
+ * later it's converted to a block and the body is assigned
  */
 export class BlockToken extends LexerToken {
     subtype: ContainerType;
@@ -118,6 +118,21 @@ export class BlockToken extends LexerToken {
             recursive
         );
     }
+
+    /**
+     * Get a list of identifiers referenced within the body of this block
+     * @returns array of identifier tokens in the body
+     */
+    referencedIds(): IdToken[] {
+        const ret: IdToken[] = [];
+        this.body.forEach(tok => {
+            if (tok instanceof BlockToken)
+                ret.push(...tok.referencedIds())
+            else if (tok instanceof IdToken)
+                ret.push(tok);
+        });
+        return ret;
+    }
 }
 
 export class MacroToken extends LexerToken {
@@ -161,7 +176,7 @@ function toToken(token: string, position: number, file: string): LexerToken {
 
     // String
     if (token[0] === '"')
-        return new LexerToken(token.substr(1, token.length - 2), TokenType.String, position, file);
+        return new LexerToken(token.substring(1, token.length - 1), TokenType.String, position, file);
 
     // Number (note this makes NaN an identifier)
     if (!isNaN(parseFloat(token)))

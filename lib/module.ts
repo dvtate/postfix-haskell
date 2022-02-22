@@ -26,7 +26,9 @@ import template from "./rt.wat";
 }
 
 /**
- * Manges module imports & exports
+ * Manage relevant components of WASM module, needed for compilation
+ *
+ * Note: Could rename to Compiler but too abstract
  */
 export default class ModuleManager {
     /**

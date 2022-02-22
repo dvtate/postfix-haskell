@@ -1,0 +1,12 @@
+"./stdlib/prelude.phs" require use
+
+# Macro which returns a closure
+((I32 I32)((I32) (I32) Arrow):
+    ( $a $b ) =
+    ((I32) (I32):
+        $in =
+        (: true ) (: a ) $branch fun
+        (: in ) (: b ) $branch fun
+        branch
+    )
+) $mk_pair =

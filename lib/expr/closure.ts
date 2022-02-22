@@ -13,9 +13,16 @@ import {
 import { LiteralMacro, Macro } from '../macro';
 
 /**
- * Capture lexically scoped variables around a macro
+ * Capture lexically scoped variables and store them into a new closure object
+ * Leaves address of the closure object on the stack
  */
-export class ClosureExpr extends DataExpr {
+export class ClosureCreateExpr extends DataExpr {
+    /**
+     * Lexically scoped variables to be captured
+     */
+    public captured: DataExpr[];
+
+
     constructor(public macro: LiteralMacro) {
         super(macro.token, macro.datatype);
     }
@@ -27,6 +34,16 @@ export class ClosureExpr extends DataExpr {
             // this is super painful ... maybe check to see if they've been compiled yet?
             // maybe extend expressions?
 
+        return '';
+    }
+}
+
+export class ClosureInvokeExpr extends DataExpr {
+
+    out(ctx: ModuleManager, fun: FunExportExpr) {
+        // Load function index from closure object pointer
+        // Put closure object pointer back onto stack
+        // Invoke function in via function table
         return '';
     }
 }

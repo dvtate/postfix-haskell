@@ -12,7 +12,7 @@ import WasmNumber from "./numbers";
 import debugMacros from './debug_macros';
 import globalOps from './globals';
 import ModuleManager, { CompilerOptions } from "./module";
-import { CompilerMacro, LiteralMacro, Macro } from "./macro";
+import { LiteralMacro, Macro } from "./macro";
 import { formatErrorPos } from '../tools/util';
 import { Namespace } from './namespace';
 import Fun from './function';
@@ -351,7 +351,7 @@ export default class Context {
             throw new Error('wtf?');
 
         // Type check
-        if (v.datatype && !v.datatype.checkInputs(this.stack))
+        if (!v.checkInputs(this.stack))
             return new error.SyntaxError('Type mismatch', token, this);
 
         // TODO handle constexprs specially

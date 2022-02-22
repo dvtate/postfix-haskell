@@ -105,7 +105,7 @@ After sweep, go through nursery, any values marked get copied into the main heap
 - Segregation based on the size of the values being stored
 - Probably a lot of room for optimization and reduce number of linked lists
 
-## ABI
+## API
 Rough ideas for the implmentation
 ### User-facing
 - `fun $__gc_alloc (param i32 $size, i32 $bitmask_adddr) (result i32 $address)`:

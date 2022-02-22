@@ -16,14 +16,22 @@ export abstract class Type {
 
     /**
      * Gives type that class refers to
-     * @returns {Type} - Underlying datatype
+     * @returns - Underlying datatype
      * @virtual
      */
+    // TODO rename to 'dropClasses'
     getBaseType(): Type { return this; }
 
     /**
+     * Remove references
+     * @returns underlying datatype
+     * @virtual
+     */
+    dropRefs(): Type { return this; }
+
+    /**
      * Gives the wasm typename for given type
-     * @returns {string} - typename
+     * @returns - typename
      * @virtual
      */
     getWasmTypeName(name?: string): string { return ''; }
@@ -310,7 +318,7 @@ export class PrimitiveType extends Type {
     };
 
     /**
-     * @param {String} name - formal name for type in target spec
+     * @param name - formal name for type in target spec
      */
     constructor(name: string) {
         super();
@@ -400,7 +408,7 @@ export class ArrowType extends Type {
         return stack.length >= this.inputTypes.length
             && stack
                 .slice(-this.inputTypes.length)
-                .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype))
+                .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype));
     }
 
     checkInputTypes(types: Type[]): boolean {
@@ -418,5 +426,51 @@ export class ArrowType extends Type {
     isWild() {
         return this.inputTypes.some(t => t.isWild())
             || this.outputTypes.some(t => t.isWild());
+    }
+}
+
+/**
+ * Reference for a value of a given type T
+ */
+export class RefType<T extends Type> extends Type {
+    /**
+     * @param token location in source code
+     * @param type type of value being referenced
+     */
+    constructor(token: LexerToken, public type: T) {
+        super(token);
+    }
+
+    /**
+     * @override
+     */
+    check(type: Type): boolean {
+        return this.type.check(type);
+    }
+
+    /**
+     * @override
+     */
+    dropRefs(): Type {
+        // I don't think it makes sense for language to support referencing a reference type tbh
+        if (this.type instanceof RefType)
+            return this.type.dropRefs();
+        return this.type;
+    }
+
+    /**
+     * @override
+     */
+    getBaseType(): Type {
+        // Drop classes from the referenced type
+        return new RefType(this.token, this.type.getBaseType());
+    }
+
+    /**
+     * @override
+     */
+    getWasmTypeName(name?: string): string {
+        // i32 = pointer type
+        return 'i32';
     }
 }
