@@ -347,9 +347,11 @@ const operators : MacroOperatorsSpec = {
             const inTypes = args.value.types;
 
             // Put param exprs onto stack
+            // TODO this only works with primitive types and unit
             const out = new expr.FunExportExpr(token, sym, inTypes);
             let nonUnitIndex = 0;
-            const pes = inTypes.map((t) => new expr.ParamExpr(token, t, out, t.isUnit() ? -1 : nonUnitIndex++));
+            const pes = inTypes.map(t =>
+                new expr.ParamExpr(token, t as types.PrimitiveType, out, t.isUnit() ? -1 : nonUnitIndex++));
             ctx.push(...pes);
 
             // Invoke macro to determine structure of fxn

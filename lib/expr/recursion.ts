@@ -93,25 +93,23 @@ export class RecursiveBodyExpr extends Expr {
 
         // Store inputs in locals
         this.takeExprs.forEach(e => {
-            e.index = fun.addLocal(e.datatype);
+            e.inds = fun.addLocal(e.datatype);
         });
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${this.takes[i].out(ctx, fun)}${e.datatype.isUnit() ? '' : `\n\t(local.set ${e.index})`}`
+            `${this.takes[i].out(ctx, fun)}${fun.setLocalWat(e.inds)}`
         ).join('\n\t')}\n\t`;
 
         // Create place to store outputs
         this.giveExprs.forEach(e => {
-            e.index = fun.addLocal(e.datatype);
+            e.inds = fun.addLocal(e.datatype);
         });
 
         // Body
         const retType = this.gives.map(e => e.datatype.getWasmTypeName()).join(' ');
-        ret += `(loop ${this.label} (result ${retType})\n\t`;
-        ret += this.gives.map(e => e.out(ctx, fun)).join('\n\t');
-        ret += `)\n\t${
-            this.giveExprs.map(e =>
-                e.datatype.isUnit() ? '' : `(local.set ${e.index})`
-            ).join(' ')
+        ret += `(loop ${this.label} (result ${retType})\n\t${
+            this.gives.map(e => e.out(ctx, fun)).join('\n\t')
+        })\n\t${
+            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join(' ')
         }\n\t`;
 
         // console.log('RecursiveBodyExpr', ret);
@@ -132,8 +130,8 @@ export class RecursiveBodyExpr extends Expr {
                     return true;
 
                 // Should not already be bound, right?
-                if ((e instanceof DependentLocalExpr && e.index !== -1)
-                    || (e instanceof TeeExpr && e.local !== null))
+                if ((e instanceof DependentLocalExpr && e.inds)
+                    || (e instanceof TeeExpr && e.locals))
                 {
                     console.error(e);
                     throw new Error("wtf?");
@@ -155,7 +153,7 @@ export class RecursiveBodyExpr extends Expr {
 
         // Create place to store outputs
         this.giveExprs.forEach(e => {
-            e.index = fun.addLocal(e.datatype);
+            e.inds = fun.addLocal(e.datatype);
         });
 
         // Invoke helper function and capture return values into dependent locals
@@ -164,7 +162,7 @@ export class RecursiveBodyExpr extends Expr {
         }${
             captureExprs.map((e: DataExpr) => e.out(ctx, fun)).join('')
         }\n\t(call ${this.label})${
-            this.giveExprs.map(e => e.datatype.isUnit() ? '' : `(local.set ${e.index})`).join('')
+            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join('')
         }`;
     }
 
@@ -223,7 +221,10 @@ export class RecFunExpr extends FunExportExpr {
         super(
             token,
             name,
-            takeExprs.map(e => e.datatype).concat(copiedParams.map(p => p.datatype))
+            takeExprs
+                .map(e => e.datatype.flatPrimitiveList())
+                .concat(copiedParams.map(p => p.datatype.flatPrimitiveList()))
+                .reduce((a, b) => a.concat(b), []),
         );
 
         this.takeExprs = takeExprs;
@@ -235,8 +236,15 @@ export class RecFunExpr extends FunExportExpr {
         const originalIndicies = this.copiedParams.map(e => e.position);
 
         // Alias our DependentLocalExpr inputs to params
-        this.takeExprs.forEach((e, i) => {
-                e.index = i;
+        let ind = 0;
+        const paramsRange = (len: number) => {
+            const ret: number[] = [];
+            for (; len > 0; len--)
+                ret.push(ind++);
+            return ret;
+        };
+        this.takeExprs.forEach(e => {
+            e.inds = paramsRange(e.datatype.flatPrimitiveList().length);
         });
 
         // Temporarily update indicies to refer to our params
@@ -299,8 +307,9 @@ export class RecursiveCallExpr extends Expr {
             // Set arg locals
             let ret = `\n\t${this.takeExprs.map((e, i) =>
                 `${e.out(ctx, fun)}${
-                    (!this.body.takeExprs[i] || e.datatype.getBaseType().isUnit())
-                        ? '' : `\n\t(local.set ${this.body.takeExprs[i].index})`}`
+                    !this.body.takeExprs[i] || !this.body.takeExprs[i].inds
+                        ? ''
+                        : fun.setLocalWat(this.body.takeExprs[i].inds)}`
             ).join('\n\t')}\n\t`;
 
             // Invoke function

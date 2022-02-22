@@ -141,12 +141,11 @@ export class DependentLocalExpr extends DataExpr {
     source: Expr;
 
     // Local variable index to which this value is stored
-    index: number;
+    inds: number[] = null;
 
     constructor(token: LexerToken, datatype: types.Type, source: Expr) {
         super(token, datatype);
         this.source = source;
-        this.index = -1;
     }
 
     out(ctx: ModuleManager, fun: FunExportExpr) {
@@ -154,9 +153,7 @@ export class DependentLocalExpr extends DataExpr {
         // into our local
         const ret = `${
             !this.source._isCompiled ? this.source.out(ctx, fun) : ''
-        } ${
-            this.datatype.getBaseType().isUnit() ? '' : `(local.get ${this.index})`
-        }`;
+        } ${fun.getLocalWat(this.inds)}`;
         this.source._isCompiled = true;
         return ret;
     }
@@ -180,7 +177,7 @@ export class FunExportExpr extends Expr {
     outputs: Array<DataExpr | value.NumberValue> = [];
 
     // Locals
-    _locals: Array<null|types.PrimitiveType>;
+    _locals: Array<types.PrimitiveType>;
 
     /**
      * @param token - Source location
@@ -196,32 +193,51 @@ export class FunExportExpr extends Expr {
     }
 
     /**
-     * @param type - storage type for local
-     * @returns - local index
+     * Declare a new local variable
+     * @param type type of the value to be stored in locals
+     * @returns array of locals indicies designated
      */
-    addLocal(type: types.Type /*types.PrimitiveType*/): number {
-        // Don't add locals for void types
-        if (type.isUnit())
-            return -1;
-        // TODO when given non-primitive type expand it to a list of primitives
-        // new return type will be array
-        return this._locals.push(type as types.PrimitiveType) - 1;
+    addLocal(type: types.Type): number[] {
+        // For references we need to store the address
+        if (type instanceof types.RefType)
+            return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
+
+        // Add relevant locals
+        const baseType = type.getBaseType();
+        if (baseType instanceof types.TupleType) {
+            let i = this._locals.length;
+            const prims = baseType.flatPrimitiveList();
+            this._locals.push(...prims);
+            return prims.map(() => i++);
+        }
+        if (baseType instanceof types.PrimitiveType)
+            return [this._locals.push(baseType) - 1];
+
+        // Can't be stored
+        if (baseType.isWild() || baseType instanceof types.UnionType || baseType instanceof types.ArrowType) {
+            console.error(type, baseType);
+            throw new error.SyntaxError("invalid local type", this.token);
+        }
+        console.error(type, baseType);
+        throw new error.SyntaxError("WTF??: invalid local type", this.token);
     }
 
     /**
-     * Reserve space for value
-     * @param type storage type for local
-     * @param token source location
-     * @returns local indicies
+     * Generate webassembly to capture locals from stack
+     * @param indicies local indicies to set
+     * @returns webassembly text
      */
-    addLocals(type: types.Type, token: LexerToken | LexerToken[]): number[] {
-        try {
-            return type.flatPrimitiveList().map(this.addLocal);
-        } catch (e) {
-            throw e === 'union'
-                ? new error.SyntaxError('Invalid union type', token)
-                : e;
-        }
+    setLocalWat(indicies: number[]): string {
+        return indicies.map(ind => `(local.set ${ind})`).reverse().join(' ');
+    }
+
+    /**
+     * Generate webassembly to push locals onto the stack
+     * @param indicies locals to push onto stack
+     * @returns webassembly text
+     */
+    getLocalWat(indicies: number[]): string {
+        return indicies.map(ind => `(local.get ${ind})`).join(' ');
     }
 
     // TODO should make apis to help lift nested functions/closures
@@ -247,6 +263,7 @@ export class FunExportExpr extends Expr {
 /**
  * Function parameters expression
  */
+// TODO there should be distinct version of this for handling non-primitive types
 export class ParamExpr extends DataExpr {
     // Origin FuncExportExpr
     source: FunExportExpr;
@@ -260,7 +277,7 @@ export class ParamExpr extends DataExpr {
      * @param source - Origin expression
      * @param position - Stack index (0 == left)
      */
-    constructor(token: LexerToken, datatype: types.Type, source: FunExportExpr, position: number) {
+    constructor(token: LexerToken, datatype: types.PrimitiveType | types.UnitType, source: FunExportExpr, position: number) {
         super(token, datatype);
         this.source = source;
         this.position = position;
@@ -344,7 +361,7 @@ export class InstrExpr extends DataExpr {
  * After that it just does local.get
  */
 export class TeeExpr extends DataExpr {
-    local: null | number = null;
+    locals: number[] = null;
 
     /**
      * @param token - origin in source code
@@ -359,13 +376,15 @@ export class TeeExpr extends DataExpr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExportExpr) {
-        if (this.local === null) {
-            this.local = fun.addLocal(this.datatype);
-            return `${this.value.out(ctx, fun)}\n\t${
-                this.datatype.getBaseType().isUnit() ? '' : `(local.tee ${this.local})`
-            }`;
+        if (this.locals === null) {
+            this.locals = fun.addLocal(this.datatype);
+            if (this.locals.length === 1)
+                return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0]})`;
+            else
+                return '\n\t' + fun.setLocalWat(this.locals)
+                    + '\n\t' + fun.getLocalWat(this.locals);
         }
-        return this.datatype.getBaseType().isUnit() ? '' : `(local.get ${this.local})`;
+        return fun.getLocalWat(this.locals);
     }
 
     // Prevent this from getting re-tee'd
@@ -379,13 +398,19 @@ export class TeeExpr extends DataExpr {
  */
 export function fromDataValue(vs: Array<DataExpr | value.Value>): DataExpr[] {
     return vs.map(v => {
+        // Already an expression
         if (v instanceof DataExpr)
             return v;
 
+        // Wrap numbers
         if (v instanceof value.NumberValue)
             return new NumberExpr(v.token, v);
+
+        // Recursively wrap tuple members
         if (v instanceof value.TupleValue)
             return fromDataValue(v.value);
+
+        // If a macro gets here it's because it should be a rt closure
 
         // Eww runtime error...
         throw new error.TypeError("incompatible type", v.token, v, null);
@@ -427,15 +452,14 @@ export class MultiInstrExpr extends Expr {
         // Get locals
         this.results.forEach(e => {
             if (!e.datatype.isUnit())
-                e.index = fun.addLocal(e.datatype);
+                e.inds = fun.addLocal(e.datatype);
         });
-        const inds = this.results.map(e => e.index).filter(i => i !== -1);
 
         // Instruction + capture results
         return `(${this.instr} ${
             this.args.map(e => e.out(ctx, fun)).join(' ')
         })\n${
-            inds.map(i => `(local.set ${i})`)
+            this.results.map(e => fun.setLocalWat(e.inds)).join(' ')
         }`;
     }
 

@@ -106,7 +106,7 @@ export default class Fun {
         // TODO stop at first else statement
         const conds = this.conditions.map(cond => {
             // Typecheck vs pattern matching
-            if (cond.datatype && !cond.datatype.checkInputs(ctx.stack))
+            if (cond.datatype && !cond.checkInputs(ctx.stack))
                 return new value.NumberValue(null, new WasmNumber(WasmNumber.Type.I32, 0));
 
             // Copy stack

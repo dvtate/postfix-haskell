@@ -69,8 +69,8 @@ export abstract class Macro extends value.Value {
         // if (cached)
         //     return cached;
 
-        if (inputTypes.some(t => t.isWild()))
-            return 'wild inputs';
+        // if (inputTypes.some(t => t.isWild()))
+        //     return 'wild inputs';
 
         // Generate dummy inputs
         const inputs = inputTypes.map(t => expr.DummyDataExpr.create(token, t));
@@ -295,6 +295,8 @@ export class LiteralMacro extends Macro {
         // Attempt to infer output types from inputs
         const type = this.inferDatatype(ctx, inputs.types, this.token);
         this.inputTypes = inputs.types;
+        // if (this.inputTypes.length == 2)
+        //     console.log(type);
 
         // Cannot infer output types when wildcards given as input
         if (type === 'wild inputs')

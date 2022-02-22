@@ -1,0 +1,5 @@
+
+"stdlib/io.phs"    require use #"IO|print" ""  use_some
+( Unit IO ) (:
+    123.5 print
+) $main export

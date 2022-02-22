@@ -263,7 +263,7 @@ export class TupleType extends Type {
     flatPrimitiveList(): PrimitiveType[] {
         return this.types
             .map(t => t.flatPrimitiveList())
-            .reduce((a,b) => a.concat(b));
+            .reduce((a,b) => a.concat(b), []);
     }
 
     /**
@@ -301,6 +301,13 @@ export class TupleType extends Type {
     isWild() {
         return this.types.some(t => t.isWild());
     }
+}
+
+/**
+ * Tuple type but with no elements
+ */
+export class UnitType extends TupleType {
+    types: []
 }
 
 /**
@@ -472,5 +479,9 @@ export class RefType<T extends Type> extends Type {
     getWasmTypeName(name?: string): string {
         // i32 = pointer type
         return 'i32';
+    }
+
+    flatPrimitiveList(): PrimitiveType[] {
+        return [PrimitiveType.Types.I32];
     }
 }

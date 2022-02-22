@@ -20,7 +20,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * Id for local variable into which it should be stored
      */
-    index = -1;
+    index: number[] = null;
 
     /**
      * Expression that this should capture
@@ -33,32 +33,27 @@ export class BranchInputExpr extends DataExpr {
     }
 
     /**
-     *
+     * Store into locals
      * @param ctx
      * @param fun
-     * @returns
+     * @returns WAT
      */
     capture(ctx: ModuleManager, fun: FunExportExpr) {
-        // if (this.index !== -1)
+        // if (this.index)
         //     return '';
-        // If it's void no need to capture it
-        if (this.datatype.isUnit())
-            return this.value.out(ctx, fun);
-
-        //
         this.index = fun.addLocal(this.value.datatype);
-        return `${this.value.out(ctx, fun)}\n(local.set ${this.index})`;
+        return `${this.value.out(ctx, fun)}\n${fun.setLocalWat(this.index)}`;
     }
 
     /**
      * @override
      */
-    out() {
-        if (!this.datatype.isUnit() && this.index == -1) {
+    out(ctx: ModuleManager, fun: FunExportExpr) {
+        if (!this.datatype.isUnit() && !this.index) {
             console.log(this.value);
             console.log(new Error('bt'));
         }
-        return this.datatype.isUnit() ? '' : `(local.get ${this.index})`;
+        return fun.getLocalWat(this.index);
     }
 
     static expensive = false;
@@ -141,11 +136,9 @@ export class BranchExpr extends Expr {
         const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
 
         // Set up dependent locals
-        const results = this.results.filter(r => !r.datatype.getBaseType().isUnit());
+        const results = this.results;
         results.forEach(r => {
-            if (r.datatype instanceof types.PrimitiveType)
-                r.index = fun.addLocal(r.datatype);
-            // TODO handle others
+            r.inds = fun.addLocal(r.datatype);
         });
 
         // Last condition must be else clause
@@ -180,7 +173,7 @@ export class BranchExpr extends Expr {
 
         // Compile to (if (...) (result ...) (then ...) (else ...))
         // Note that there's some BS done here to work around multi-return if statements not being allowed :(
-        const retSet = results.map(r => `(local.set ${r.index})`).join('');
+        const retSet = results.map(r => fun.setLocalWat(r.inds)).join('');
         let ret: string = inputs + (function compileIf(i): string {
             return i + 1 >= acts.length
                 ? acts[i] + retSet

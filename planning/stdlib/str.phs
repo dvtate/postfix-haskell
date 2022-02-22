@@ -6,7 +6,7 @@
 ((Str): 1 ) (: unpack swap pop ) $addr fun
 
 # Overload as operator to convert string literals
-(: ( $lit $t ) = t type Str == ) (:
+(: ( $lit $t ) = t Str == ) (:
     $lit =
     ( lit ) Str make
 ) $global.as fun

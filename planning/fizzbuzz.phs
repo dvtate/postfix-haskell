@@ -21,7 +21,7 @@
     ) (: pop fizzbuzz print ) $fb fun
 
     # from 1 - n do fizzbuzz
-    (:
+    (rec:
         (: $n $i ) =
         (: true ) (: @ ) $cond fun
         (: i n <= ) (:
@@ -29,6 +29,6 @@
             n  i 1 +  iter
         ) $cond fun
         cond
-    ) rec $iter =
+    ) $iter =
     n 1 iter
 ) $main export
