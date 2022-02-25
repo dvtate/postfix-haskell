@@ -20,7 +20,7 @@ export default function runShell(lexFlag = false, verboseFlag = true) {
     });
 
     // Preserve context
-    const ctx = new Context();
+    const ctx = new Context(undefined, { noRuntime: true });
 
     // For each line
     rl.on('line', line => {

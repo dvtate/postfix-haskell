@@ -3,7 +3,7 @@ import * as types from "./datatypes";
 import * as expr from './expr';
 
 // Import WAST template as a string
-import template from "./rt.wat";
+import template, { noRuntime as noRuntimeTemplate } from "./rt.wat";
 
 /**
  * Adjust compiler behavior
@@ -23,6 +23,13 @@ import template from "./rt.wat";
      * How many bytes should be reserved for the stack (default: 1024000)
      */
     stackSize?: number,
+
+    /**
+     * Should we not include the normal runtime boilerplate in the output wat?
+     *
+     * Program unlikely to run but useful for debugging
+     */
+    noRuntime?: boolean,
 }
 
 /**
@@ -93,6 +100,11 @@ export default class ModuleManager {
     protected tableElems: string[] = [];
 
     /**
+     * Don't include normal runtime boilerplate
+     */
+    protected noRuntime: boolean;
+
+    /**
      * @param ctx - parser context object
      * @param opts - compilation options
      */
@@ -103,6 +115,7 @@ export default class ModuleManager {
         this.optLevel = opts.optLevel || (ctx ? ctx.optLevel : 1);
         this.stackSize = opts.stackSize || 1024000;
         this.nurserySize = opts.nurserySize || 524288;
+        this.noRuntime = !!opts.noRuntime;
     }
 
     /**
@@ -391,7 +404,7 @@ export default class ModuleManager {
 
         return Object.entries(obj).reduce(
             (r, [k, v]) => r.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v)),
-            template,
+            this.noRuntime ? noRuntimeTemplate : template,
         );
     }
 }

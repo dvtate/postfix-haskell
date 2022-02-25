@@ -69,7 +69,12 @@ yargs
                     describe: 'output to a specific file instead of stdout',
                     type: 'string',
                     alias: 'o',
-                }
+                },
+                'no-rt' : {
+                    describe: 'do not include boilerplate code which might be required for program to run',
+                    type: 'boolean',
+                    default: false,
+                },
             }),
         async argv => {
             const ret = await compileFile(
@@ -79,7 +84,9 @@ yargs
                 argv.folding,
                 argv.optimize,
                 argv['stack-size'],
-                argv['nursery-size']);
+                argv['nursery-size'],
+                argv['no-rt'],
+            );
             if (!argv['output'])
                 return console.log(ret);
             if (ret)

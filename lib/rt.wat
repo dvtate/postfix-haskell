@@ -1,11 +1,8 @@
 (module
+    ;; Imported functions from the host
     {{USER_IMPORTS}}
 
-    ;; Import console log
-    ;; (import "js" "log" (func $log (param f64 f64)))
-    ;; (import "js" "log" (func $log3 (param i32 i32 i32)))
-    ;; (import "js" "log" (func $log3i64 (param i32 i32 i64)))
-
+    ;; Function reference table
     {{USER_TABLE}}
 
     ;; Memory export
@@ -1168,15 +1165,15 @@
     )
 
     ;; Debugging
-    (export "push_ref" (func $__ref_stack_push))
-    (export "pop_ref" (func $__ref_stack_pop))
-    (export "alloc" (func $__alloc))
-    (export "alloch" (func $__alloc_heap))
-    (export "mark" (func $__mark))
-    (export "mmark" (func $__minor_mark))
-    (export "do_gc" (func $__do_gc))
-    (export "free" (func $__heap_free))
-    (export "coalesce" (func $__coalesce))
+    ;; (export "push_ref" (func $__ref_stack_push))
+    ;; (export "pop_ref" (func $__ref_stack_pop))
+    ;; (export "alloc" (func $__alloc))
+    ;; (export "alloch" (func $__alloc_heap))
+    ;; (export "mark" (func $__mark))
+    ;; (export "mmark" (func $__minor_mark))
+    ;; (export "do_gc" (func $__do_gc))
+    ;; (export "free" (func $__heap_free))
+    ;; (export "coalesce" (func $__coalesce))
 
     {{USER_CODE_STR}}
 )

@@ -27,6 +27,7 @@ export default async function compileFile(
     optimize = false,
     stackSize: number = undefined,
     nurserySize: number = undefined,
+    noRuntime = false,
 ) {
     // Replace with full, absolute path
     fname = fs.realpathSync(fname);
@@ -57,7 +58,10 @@ export default async function compileFile(
     try {
         // Parse (weird meaning here, more like "interpret phase")
         start = performance.now();
-        const ctx = parse(ptree, new Context(fname, { stackSize, nurserySize, optLevel: optimize ? 3 : fast ? 1 : 2 }));
+        const ctx = parse(ptree, new Context(fname, {
+            stackSize, nurserySize, noRuntime,
+            optLevel: optimize ? 3 : fast ? 1 : 2,
+        }));
         if (ctx instanceof error.SyntaxError) {
             // console.log(ctx.tokens);
             console.log(util.formatErrorPos([ctx]));
