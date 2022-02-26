@@ -32,7 +32,7 @@ export abstract class Expr extends value.Value {
      * @param fun - function export context
      * @returns - wasm translation
      */
-    abstract out(ctx: ModuleManager, fun?: FunExportExpr): string;
+    abstract out(ctx: ModuleManager, fun?: FunExpr): string;
 
     /**
      * Get all expressions which constitute this one
@@ -148,7 +148,7 @@ export class DependentLocalExpr extends DataExpr {
         this.source = source;
     }
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         // source.out() will update our index to be valid and capture relevant values
         // into our local
         const ret = `${
@@ -164,9 +164,9 @@ export class DependentLocalExpr extends DataExpr {
 }
 
 /**
- * Function Export expression
+ * `func` expressions. Compilation contexts
  */
-export class FunExportExpr extends Expr {
+export abstract class FunExpr extends Expr {
     // Exported symbol
     name: string;
 
@@ -183,7 +183,6 @@ export class FunExportExpr extends Expr {
      * @param token - Source location
      * @param name - Export label
      * @param inputTypes - Types for input values
-     * @param outputs - Generated exprs for return values
      */
     constructor(token: LexerToken, name: string, inputTypes: types.Type[]) {
         super(token);
@@ -239,7 +238,12 @@ export class FunExportExpr extends Expr {
     getLocalWat(indicies: number[]): string {
         return indicies.map(ind => `(local.get ${ind})`).join(' ');
     }
+}
 
+/**
+ * Function Export expression
+ */
+export class FunExportExpr extends FunExpr {
     // TODO should make apis to help lift nested functions/closures
 
     out(ctx: ModuleManager) {
@@ -277,7 +281,7 @@ export class ParamExpr extends DataExpr {
      * @param source - Origin expression
      * @param position - Stack index (0 == left)
      */
-    constructor(token: LexerToken, datatype: types.PrimitiveType | types.UnitType, source: FunExportExpr, position: number) {
+    constructor(token: LexerToken, datatype: types.PrimitiveType | types.UnitType, source: FunExpr, position: number) {
         super(token, datatype);
         this.source = source;
         this.position = position;
@@ -343,8 +347,10 @@ export class InstrExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExportExpr) {
-        return `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
+    out(ctx: ModuleManager, fun: FunExpr) {
+        const ret = `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
+        // console.log(this.constructor.name, ret);
+        return ret;
     }
 
     static expensive = true;
@@ -375,14 +381,14 @@ export class TeeExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         if (this.locals === null) {
             this.locals = fun.addLocal(this.datatype);
             if (this.locals.length === 1)
                 return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0]})`;
             else
-                return '\n\t' + fun.setLocalWat(this.locals)
-                    + '\n\t' + fun.getLocalWat(this.locals);
+                return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)
+                    }\n\t${fun.getLocalWat(this.locals)}`;
         }
         return fun.getLocalWat(this.locals);
     }
@@ -446,7 +452,7 @@ export class MultiInstrExpr extends Expr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         this._isCompiled = true;
 
         // Get locals

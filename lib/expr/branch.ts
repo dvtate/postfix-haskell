@@ -7,7 +7,7 @@ import ModuleManager from '../module';
 import {
     DataExpr,
     Expr,
-    FunExportExpr,
+    FunExpr,
     DependentLocalExpr,
 } from './expr';
 
@@ -38,7 +38,7 @@ export class BranchInputExpr extends DataExpr {
      * @param fun
      * @returns WAT
      */
-    capture(ctx: ModuleManager, fun: FunExportExpr) {
+    capture(ctx: ModuleManager, fun: FunExpr) {
         // if (this.index)
         //     return '';
         this.index = fun.addLocal(this.value.datatype);
@@ -48,7 +48,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         if (!this.datatype.isUnit() && !this.index) {
             console.log(this.value);
             console.log(new Error('bt'));
@@ -115,7 +115,7 @@ export class BranchExpr extends Expr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
         const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n');

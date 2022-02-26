@@ -10,7 +10,6 @@
     )
 ) $mk_pair =
 
-
 0 1 mk_pair $p =
 
 (I32 I32 I32) (: mk_pair @ ) "abc" export

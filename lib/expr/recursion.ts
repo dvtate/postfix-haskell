@@ -6,7 +6,7 @@ import ModuleManager from '../module';
 import {
     Expr,
     DataExpr,
-    FunExportExpr,
+    FunExpr,
     DependentLocalExpr,
     ParamExpr,
     TeeExpr,
@@ -32,7 +32,7 @@ export class RecursiveTakesExpr extends DataExpr {
         this.value = value;
     }
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         return this.value.out(ctx, fun);
     }
 }
@@ -76,7 +76,7 @@ export class RecursiveBodyExpr extends Expr {
         this.label = `$rec_${this.id}`;
     }
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
 
@@ -119,7 +119,7 @@ export class RecursiveBodyExpr extends Expr {
     /**
      * Version of this.out() for when it's not tail-recursive
      */
-    outFn(ctx: ModuleManager, fun: FunExportExpr) {
+    outFn(ctx: ModuleManager, fun: FunExpr) {
         // Since we're moving body to another function we have to move locals
         const captureExprs = this.gives
             .map(e => e.getLeaves())
@@ -200,11 +200,10 @@ export class RecursiveBodyExpr extends Expr {
     }
 }
 
-// TODO swap extension order with FunExportExpr
 /**
  * Function that gets added to module but isn't exported
  */
-export class RecFunExpr extends FunExportExpr {
+export class RecFunExpr extends FunExpr {
     public takeExprs: DependentLocalExpr[];
     public copiedParams: ParamExpr[];
 
@@ -300,7 +299,10 @@ export class RecursiveCallExpr extends Expr {
             new RecursiveResultExpr(token, e.datatype, this, i));
     }
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
+        // Prevent recompiling
+        this._isCompiled = true;
+
         // TCO behavior
         if (this.body.isTailRecursive) {
             // console.log('call', this.giveExprs);
@@ -360,7 +362,7 @@ export class RecursiveResultExpr extends DataExpr {
         this.position = position;
     }
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         let ret = '';
         if (!this.source._isCompiled)
             ret += this.source.out(ctx, fun);
