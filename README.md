@@ -110,7 +110,7 @@ You can embed the language in JavaScript or TypeScript. See a demo in `planning/
 # equiv to `let a = 4 * (1 + 2)`
 1 2 + 4 * $a =
 
-# Prints `:data - 12`
+# Prints `:data - 12` at compile time
 a :data
 ```
 

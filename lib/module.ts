@@ -172,6 +172,7 @@ export default class ModuleManager {
         // Compile exports
         // Some expressions add helper funcitons so we have to compile
         //   until there are no more
+        // Error.stackTraceLimit = Infinity;
         do {
             const exports = this.functions;
             this.functions = [];
@@ -206,13 +207,14 @@ export default class ModuleManager {
      * Make a copy
      */
     clone(): ModuleManager {
-        //
+        // Make new module
         const ret = new ModuleManager(this.ctx, {
             optLevel: this.optLevel,
             stackSize: this.stackSize,
             nurserySize: this.nurserySize,
         });
-        // Slice exports
+
+        // Shallow-Copy exports
         ret.functions = { ...this.functions };
 
         // These properties are only referenced as we want to keep changes from smaller scopes

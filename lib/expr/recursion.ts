@@ -38,29 +38,44 @@ export class RecursiveTakesExpr extends DataExpr {
 }
 
 /**
- * The body of the inlined, TCO'd recursive function
+ * The body of the recursive function
  * (replaces call that initiates the recursion)
  */
 export class RecursiveBodyExpr extends Expr {
-    // Input expressions
+    /**
+     * Input expressions
+     */
     takes: Array<DataExpr> = null;
 
-    // Input Locals
+    /**
+     * Input Locals
+     */
     takeExprs: DependentLocalExpr[] = null;
 
-    // Output expressions
+    /**
+     * Output expressions
+     */
     gives: Array<DataExpr> = null;
 
-    // Output locals
+    /**
+     * Output locals
+     */
     giveExprs: DependentLocalExpr[] = null;
 
-    // Unique labels
+    /**
+     * Unique labels
+     */
     id: number;
     label: string;
 
-    // Used to make unique label
+    /**
+     * Used to make unique label
+     */
     static _uid = 0;
 
+    /**
+     * Can we TCO?
+     */
     isTailRecursive = false;
 
     /**
@@ -213,10 +228,6 @@ export class RecFunExpr extends FunExpr {
         takeExprs: DependentLocalExpr[],
         copiedParams: ParamExpr[],
     ) {
-        // Filter void
-        takeExprs = takeExprs.filter(e => !e.datatype.isUnit());
-        copiedParams = copiedParams.filter(e => !e.datatype.isUnit());
-
         super(
             token,
             name,
@@ -227,7 +238,7 @@ export class RecFunExpr extends FunExpr {
         );
 
         this.takeExprs = takeExprs;
-        this.copiedParams = copiedParams;
+        this.copiedParams = copiedParams.filter(e => !e.datatype.isUnit());
     }
 
     out(ctx: ModuleManager) {
@@ -295,7 +306,7 @@ export class RecursiveCallExpr extends Expr {
 
         // Here we can use ResultExpr's because using it violates tail-recursion
         //  thus we don't have to worry about them getting out of order
-        this.giveExprs = body.giveExprs.map((e: Expr, i: number) =>
+        this.giveExprs = body.giveExprs.map((e: DataExpr, i: number) =>
             new RecursiveResultExpr(token, e.datatype, this, i));
     }
 
