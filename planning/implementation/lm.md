@@ -72,6 +72,7 @@ We have to keep the sizes of heap allocations aligned to 64 bits
 
 ```C++
 void coalesce_heap() {
+    sort_freelist_by_address();
     for (auto* p = start; p->next; p = p->next)
         if (p + p->size === p->next) {
             p->size += p->next->size;

@@ -939,6 +939,9 @@
         ;; Empty nursery: ie- allow overwrites
         i32.const {{NURSERY_SP_INIT}}
         global.set $__nursery_sp
+
+        ;; Coalese adjacent free spaces
+        call $__coalesce
     )
 
     ;; (func (export "heapLen") (result i32)
@@ -1153,27 +1156,256 @@
 
     ;; Coalesce free spaces
     (func $__coalesce
-        (local $cur_ptr i32)
-        global.get $__free_head
-        local.set $cur_ptr
+        (local $p i32) ;; current pointer
+        (local $next i32) ;; p -> next
+        (local $size i32) ;; p -> size
 
-        ;; Algorithm O(N * log(N) + N)
+        ;; Algorithm: O(N * log(N) + N)
         ;; 1. Merge sort free-list by memory address
             ;; Note this leaves __free_tail intact
         ;; 2. Iterate through free-list, mergeing adjacent blocks
-        ;; Steps 1 and 2 could maybe be done simultaneously
+
+        ;; Sort freelist by memory address
+        call $___sort_freelist
+
+        ;; Iterate through free list, Combine adjacent free regions
+        global.get $__free_head
+        local.set $p
+        loop $walk
+            ;; if (p + p->size === p->next)
+            local.get $p
+            local.get $p
+            i32.load
+            local.tee $size
+            i32.add
+            local.get $p
+            i32.load offset=4
+            local.tee $next
+            i32.eq
+            if
+                ;; p->size = p->size + p->next->size
+                local.get $p
+                local.get $next
+                i32.load
+                local.get $size
+                i32.add
+                i32.store
+
+                ;; p->next = p->next->next
+                local.get $p
+                local.get $next
+                i32.load offset=4
+                local.tee $next
+                i32.store offset=4
+            end
+
+            ;; Repeat while ((p = p->next))
+            local.get $next
+            local.tee $p
+            if
+                br $walk
+            end
+        end
+    )
+
+    ;; Sort freelist such that elements are in order by memory address
+    (func $___sort_freelist
+        (local $list i32) ;; list head (always = $global.__free_head)
+        (local $p i32) ;; merge list p
+        (local $q i32) ;; merge list q
+        (local $e i32) ;; element
+        (local $tail i32) ;; end of the merged list
+        (local $insize i32)
+        (local $nmerges i32)
+        (local $psize i32) ;; items left in p
+        (local $qsize i32) ;; items left in q
+        (local $i i32) ;; iterator
+
+        global.get $__free_head
+        local.set $list
+
+        i32.const 1
+        local.set $insize
+
+        loop $pass
+            local.get $list
+            local.set $p       ;; p = list
+            i32.const 0
+            local.tee $list     ;; list = null
+            local.tee $tail     ;; tail = null
+            local.set $nmerges  ;; nmerges = 0
+
+            loop $merge
+                ;; There exists a merge to be done
+                ;; nmerges++
+                local.get $nmerges
+                i32.const 1
+                i32.add
+                local.set $nmerges
+
+                ;; step insize places along from p
+                local.get $p
+                local.set $q        ;; q = p
+                i32.const 0
+                local.set $psize    ;; psize = 0
+                ;; for (i = 0; i < insize; i++)
+                loop $step
+                    ;; psize++
+                    local.get $psize
+                    i32.const 1
+                    i32.add
+                    local.set $psize
+                    ;; if ((q = q->next))
+                    local.get $q
+                    i32.load offset=4
+                    local.tee $q
+                    if
+                        ;; if (++i < insize) continue
+                        local.get $i
+                        i32.const 1
+                        i32.add
+                        local.tee $i
+                        local.get $insize
+                        i32.lt_u
+                        if
+                            br $step
+                        end
+                    end
+                end
+
+                ;; size of the 2 lists
+                ;; qsize = insize
+                local.get $insize
+                local.set $qsize
+
+                ;; merge the 2 lists
+                ;; while (psize > 0 || (qsize > 0 && q))
+                ;; =>  if (q ? qsize : psize) { do {...} while (...) }
+                local.get $qsize
+                local.get $psize
+                local.get $q
+                select
+                if
+                    loop $merge_loop
+                        block $cond
+                            block $take_p
+                                block $take_q
+                                    ;; Emptiness checks
+                                    local.get $psize
+                                    i32.eqz
+                                    br_if $take_q
+                                    local.get $qsize
+                                    i32.eqz
+                                    br_if $take_p
+                                    local.get $q
+                                    i32.eqz
+                                    br_if $take_p
+
+                                    ;; p <= q
+                                    local.get $p
+                                    local.get $q
+                                    i32.le_u
+                                    br_if $take_p
+
+                                    ;; else: q < p
+                                    ;; fall through to take from q
+                                end
+                                ;; take from q
+                                ;; q = (e = q)->next; qsize--;
+                                local.get $q
+                                local.tee $e
+                                i32.load offset=4
+                                local.set $q
+                                local.get $qsize
+                                i32.const 1
+                                i32.sub
+                                local.set $qsize
+                                br $cond
+                            end
+                            ;; take from p
+                            ;; p = (e = p)->next; psize--;
+                            local.get $p
+                            local.tee $e
+                            i32.load offset=4
+                            local.set $p
+                            local.get $psize
+                            i32.const 1
+                            i32.sub
+                            local.set $psize
+                        end
+
+                        ;; add next element to merged list
+                        local.get $tail
+                        if
+                            ;; tail->next = e
+                            local.get $tail
+                            local.get $e
+                            i32.store offset=4
+                        else
+                            local.get $e
+                            local.set $list
+                        end
+                        local.get $e
+                        local.set $tail
+
+                        ;; continue if ...
+                        ;; psize > 0 || (qsize > 0 && q)
+                        ;; =>  q ? qsize : psize
+                        local.get $qsize
+                        local.get $psize
+                        local.get $q
+                        select
+                        if
+                            br $merge_loop
+                        end
+                    end
+                end
+
+                ;; Now p&q have stepped `insize` places
+                local.get $q
+                local.set $p
+            end
+
+            ;; tail->next = NULL
+            local.get $tail
+            i32.const 0
+            i32.store offset=4
+
+            ;; finished when only one merge needed
+            local.get $nmerges
+            i32.const 1
+            i32.le_u
+            if
+                ;; By design, neither of these should be modified
+                ;; local.get $list
+                ;; global.set $__free_head
+                ;; local.get $tail
+                ;; global.set $__free_tail
+                return
+            end
+
+            ;; not done repeat merging 2x size lists
+            ;; insize *= 2
+            local.get $insize
+            i32.const 1
+            i32.shl
+            local.set $insize
+
+            ;; infinite loop
+            br $pass
+        end
     )
 
     ;; Debugging
-    ;; (export "push_ref" (func $__ref_stack_push))
-    ;; (export "pop_ref" (func $__ref_stack_pop))
-    ;; (export "alloc" (func $__alloc))
-    ;; (export "alloch" (func $__alloc_heap))
-    ;; (export "mark" (func $__mark))
-    ;; (export "mmark" (func $__minor_mark))
-    ;; (export "do_gc" (func $__do_gc))
-    ;; (export "free" (func $__heap_free))
-    ;; (export "coalesce" (func $__coalesce))
+    (export "push_ref" (func $__ref_stack_push))
+    (export "pop_ref" (func $__ref_stack_pop))
+    (export "alloc" (func $__alloc))
+    (export "alloch" (func $__alloc_heap))
+    (export "mark" (func $__mark))
+    (export "mmark" (func $__minor_mark))
+    (export "do_gc" (func $__do_gc))
+    (export "free" (func $__heap_free))
+    (export "coalesce" (func $__coalesce))
 
     {{USER_CODE_STR}}
 )
