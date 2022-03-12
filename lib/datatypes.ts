@@ -452,6 +452,7 @@ export class RefType<T extends Type> extends Type {
      * @override
      */
     check(type: Type): boolean {
+        // Interchangeable with base type
         return this.type.check(type);
     }
 
@@ -477,11 +478,49 @@ export class RefType<T extends Type> extends Type {
      * @override
      */
     getWasmTypeName(name?: string): string {
+        // TODO think
+        // Note that the object is on ref_stack and only used as needed so this is typename tho kinda weird
         // i32 = pointer type
-        return 'i32';
+        return '';
     }
 
     flatPrimitiveList(): PrimitiveType[] {
+        // TODO ???
         return [PrimitiveType.Types.I32];
     }
+
+    /**
+     * Determines if objects of this type need to be stored on separate stack or not
+     * @returns true if the type contains reference fields
+     */
+    hasRefs(): boolean {
+        const bt = this.type.getBaseType();
+        if (bt instanceof UnionType)
+            return bt.types.some(t => t instanceof RefType || t instanceof RefRefType)
+        // TODO arrow types gonna be painful!
+        return false;
+    }
+}
+
+/**
+ * Reference to a pointer which is stored on ref_stack to an object managed by gc
+ */
+export class RefRefType<T extends RefType<Type>> extends Type {
+    /**
+     * @param token location in source code
+     * @param type type of value being referenced
+     */
+    constructor(token: LexerToken, public type: T) {
+        super(token);
+    }
+
+    /**
+     * @override
+     */
+    check(type: Type): boolean {
+        // Interchangeable with base type
+        return this.type.check(type);
+    }
+
+    // TODO other parts similar to RefType
 }

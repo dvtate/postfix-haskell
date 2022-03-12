@@ -40,6 +40,26 @@ struct closure_t {
 - We only know that it's a runtime closure after it get's used in one of the above cases
 
 ## Compiler Backend
+
+### How to make a closure?
+Assuming that we already know that the macro is going to be a runtime closure the process for converting it isn't too bad.
+
+#### 1. Push inputs onto stack
+Dummy `Value`s are pushed onto the stack having the relevant types specified by input types, these would be replaced by
+
+#### 2. Modified traceIO
+Similar to normal trace/typecheck except when an identifier holding an `Expr` which was defined in an external scope gets used we need to reference it as a captured value instead. Thus the macro would need to track captured expressions and the reference the Context frame which created it.
+
+#### 3. Use ClosureExpr instead of Macro value
+All subsequent uses of the relevant Macro value would be replaced with a `ClosureExpr` instance which has a `.out()` method defined as follows:
+- capture all exprs
+- add function to module
+- create closure object and put it on gc ref_stack
+
+#### 4. ClosureInvokeExpr
+It calls the helper function created by (3), passing in the closure object reference itself as it's argument.
+
+### Drunk Plan I'm afraid to delete
 - Augment context class + invoke/trace
     - Augment branches with captured local exprs(`Function`)
         - Note branching with

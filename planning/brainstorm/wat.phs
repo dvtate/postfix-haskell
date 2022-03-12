@@ -1,9 +1,0 @@
-
-# Make overloadable operators using imported instructions
-{ $b = $a =
-	a type I32 ==
-	b type I32 == &&
-} {
-	$b = $a =
-	{ a b } $i32.add wasm @
-} $global.+ fun

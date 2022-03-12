@@ -836,6 +836,9 @@
                     br $sweep
                 end
             end $sweep
+
+            ;; Coalese adjacent free spaces
+            call $__coalesce
         end
 
         ;; Move marked stuff from nursery to the main heap
@@ -939,9 +942,6 @@
         ;; Empty nursery: ie- allow overwrites
         i32.const {{NURSERY_SP_INIT}}
         global.set $__nursery_sp
-
-        ;; Coalese adjacent free spaces
-        call $__coalesce
     )
 
     ;; (func (export "heapLen") (result i32)
@@ -1397,15 +1397,15 @@
     )
 
     ;; Debugging
-    (export "push_ref" (func $__ref_stack_push))
-    (export "pop_ref" (func $__ref_stack_pop))
-    (export "alloc" (func $__alloc))
-    (export "alloch" (func $__alloc_heap))
-    (export "mark" (func $__mark))
-    (export "mmark" (func $__minor_mark))
-    (export "do_gc" (func $__do_gc))
-    (export "free" (func $__heap_free))
-    (export "coalesce" (func $__coalesce))
+    ;; (export "push_ref" (func $__ref_stack_push))
+    ;; (export "pop_ref" (func $__ref_stack_pop))
+    ;; (export "alloc" (func $__alloc))
+    ;; (export "alloch" (func $__alloc_heap))
+    ;; (export "mark" (func $__mark))
+    ;; (export "mmark" (func $__minor_mark))
+    ;; (export "do_gc" (func $__do_gc))
+    ;; (export "free" (func $__heap_free))
+    ;; (export "coalesce" (func $__coalesce))
 
     {{USER_CODE_STR}}
 )
