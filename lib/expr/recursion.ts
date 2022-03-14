@@ -343,8 +343,12 @@ export class RecursiveCallExpr extends Expr {
         } (call ${this.body.label})`;
     }
 
-    // Shouldn't matter because result shouldn't get used
-    static expensive = true;
+    /**
+     * @override
+     */
+    get expensive(): boolean {
+        return true;
+    }
 
     children(): Expr[] {
         return this.body.children().concat(this.takeExprs).concat(this.giveExprs);

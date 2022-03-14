@@ -36,9 +36,7 @@ I32 I64 | F32 F64 | | $Num =
     (: v pv < ) (: pv n min' ) $branch fun
     branch
 ) $min' fun
-((Any List.Nil): 1 ) (:
-    pop
-) $min' fun
+((Any List.Nil): 1 ) (: pop ) $min' fun
 
 # Make LL
 ( 3 ( 4 ( 0

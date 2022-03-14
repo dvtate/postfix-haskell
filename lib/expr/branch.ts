@@ -56,7 +56,12 @@ export class BranchInputExpr extends DataExpr {
         return fun.getLocalWat(this.index);
     }
 
-    static expensive = false;
+    /**
+     * @override
+     */
+    get expensive(): boolean {
+        return false;
+    }
 }
 
 /**

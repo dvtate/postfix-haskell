@@ -3,6 +3,7 @@ import * as types from '../datatypes';
 import * as error from '../error';
 import { LexerToken } from '../scan';
 import ModuleManager from '../module';
+import { TraceResults } from '../context';
 
 /**
  * This stores expressions that we can reason about
@@ -45,9 +46,12 @@ export abstract class Expr extends value.Value {
 
     /**
      * Would it be better to store the value in a local or inline it multiple times?
+     * @returns true if performance would improve with caching false if inlining better
      * @virtual
      */
-    static expensive = true;
+    get expensive() {
+        return true;
+    }
 
     /**
      * Exhaustive version of .children()
@@ -96,7 +100,12 @@ export abstract class DataExpr extends Expr {
         super(token);
     }
 
-    static expensive = false;
+    /**
+     * @override
+     */
+    get expensive(): boolean {
+        return false;
+    }
 }
 
 /**
@@ -353,7 +362,12 @@ export class InstrExpr extends DataExpr {
         return ret;
     }
 
-    static expensive = true;
+    /**
+     * @override
+     */
+    get expensive(): boolean {
+        return true;
+    }
 
     children() {
         return this.args;
@@ -394,7 +408,12 @@ export class TeeExpr extends DataExpr {
     }
 
     // Prevent this from getting re-tee'd
-    static expensive = false;
+    /**
+     * @override
+     */
+    get expensive(): boolean {
+        return false;
+    }
 }
 
 /**
@@ -469,7 +488,12 @@ export class MultiInstrExpr extends Expr {
         }`;
     }
 
-    static expensive = true;
+    /**
+     * @override
+     */
+    get expensive(): boolean {
+        return true;
+    }
 
     children() {
         return this.args;

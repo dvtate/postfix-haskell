@@ -98,7 +98,7 @@ export default class Fun {
         ctx.stack = ctx.stack.map(v =>
             v instanceof expr.DataExpr
                 // @ts-ignore typescript doesn't understand `.constructor`
-                && v.constructor.expensive
+                && v.expensive
                     ? new expr.BranchInputExpr(v.token, v)
                     : v);
 
