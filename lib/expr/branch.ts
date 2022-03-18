@@ -3,13 +3,8 @@ import * as types from '../datatypes';
 import * as error from '../error';
 import { LexerToken } from '../scan';
 import ModuleManager from '../module';
-
-import {
-    DataExpr,
-    Expr,
-    FunExpr,
-    DependentLocalExpr,
-} from './expr';
+import { DataExpr, Expr, FunExpr } from './expr';
+import { DependentLocalExpr } from './util';
 
 /**
  * Describes expensive expressions which were on the stack before a branch was invoked

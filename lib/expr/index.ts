@@ -1,6 +1,7 @@
 export * from './expr';
 export * from './branch';
 export * from './recursion';
+export * from './util';
 
 /*
  * This directory contains datatypes related to a graph IR used to output webassembly

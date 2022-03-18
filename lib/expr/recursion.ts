@@ -2,15 +2,8 @@ import * as value from '../value';
 import * as types from '../datatypes';
 import { LexerToken } from '../scan';
 import ModuleManager from '../module';
-
-import {
-    Expr,
-    DataExpr,
-    FunExpr,
-    DependentLocalExpr,
-    ParamExpr,
-    TeeExpr,
-} from './expr';
+import { Expr, DataExpr, FunExpr, ParamExpr } from './expr';
+import { TeeExpr, DependentLocalExpr, } from './util';
 
 /**
  * Used to wrap arguments passed to recursive functions as they are being tracd in a way that

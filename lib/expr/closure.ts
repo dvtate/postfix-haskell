@@ -8,7 +8,6 @@ import {
     DataExpr,
     Expr,
     FunExportExpr,
-    DependentLocalExpr,
 } from './expr';
 import { LiteralMacro, Macro } from '../macro';
 
