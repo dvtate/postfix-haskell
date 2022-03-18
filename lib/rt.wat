@@ -9,7 +9,8 @@
     (memory (export "__memory") {{PAGES_NEEDED}})
 
     ;; Reference stack pointer
-    (global $__ref_sp (mut i32) (i32.const {{STACK_SIZE}}))
+    (global $__ref_sp (mut i32) (i32.const {{STACK_END}}))
+    (global $__rv_sp (mut i32) (i32.const {{RV_STACK_END}}))
 
     ;; Push a pointer onto the reference stack
     (func $__ref_stack_push (param $ptr i32)
@@ -39,6 +40,33 @@
         global.set $__ref_sp
 
         ;; return ret
+    )
+
+    ;; Store a reference on the rv stack
+    (func $__rv_stack_push (result i32)
+        ;; return *(--__rv_sp) = ref_stack_pop()
+
+        global.get $__rv_sp
+        i32.const 4
+        i32.sub
+        global.set $__rv_sp
+
+        global.get $__rv_sp
+        call $__ref_stack_pop
+        i32.store
+
+        global.get $__ref_sp
+    )
+
+    ;; Pop N references from the rv stack
+    (func $__rv_stack_pop (param $n i32)
+        ;; __rv_sp += 4*n
+        global.get $__rv_sp
+        local.get $n
+        i32.const 2
+        i32.shl
+        i32.add
+        global.set $__rv_sp
     )
 
     ;; Initialize static data
@@ -640,6 +668,7 @@
         unreachable
     )
 
+    ;; Similar to memcpy but works in multiples of 32 bits for improved performance
     ;; note that len is in multiples of 32 bits
     ;; could maybe optimize by using a 64 bit read head but eh
     (func $memcpy32 (param $dest i32) (param $src i32) (param $len i32)
@@ -698,9 +727,13 @@
         local.tee $p
 
         ;; If there's nothing to mark, delete everything
-        ;; if p == reference stack pointer
+        ;; if p == reference stack end && rv_sp == ref vars stack end
         i32.const {{STACK_SIZE}}
         i32.eq
+        global.get $__rv_sp
+        i32.const {{RV_STACK_END}}
+        i32.eq
+        i32.and
         if  ;; stack is empty -> everything is garbage
             ;; Reset globals
             i32.const {{NURSERY_SP_INIT}}
@@ -757,7 +790,7 @@
                 i32.const 4
                 i32.add
                 local.tee $p
-                i32.const {{STACK_SIZE}}
+                i32.const {{STACK_END}}
                 i32.lt_u
                 if
                     br $mark_loop
@@ -775,12 +808,56 @@
                 i32.const 4
                 i32.add
                 local.tee $p
-                i32.const {{STACK_SIZE}}
+                i32.const {{STACK_END}}
                 i32.lt_u
                 if
                     br $mark_loop
                 end
             end $mark_loop
+        end
+
+        ;; p = ref var stack pointer
+        global.get $__rv_sp
+        local.get $p
+
+        ;; for each pointer on the ref var stack
+        local.get $is_major
+        if
+            loop $mark_loop2
+                ;; mark(*p)
+                local.get $p
+                i32.load
+                call $__mark
+
+                ;; do while (++p < end_of_stack)
+                local.get $p
+                i32.const 4
+                i32.add
+                local.tee $p
+                i32.const {{RV_STACK_END}}
+                i32.lt_u
+                if
+                    br $mark_loop2
+                end
+            end $mark_loop2
+        else
+            loop $mark_loop2
+                ;; mark(*p)
+                local.get $p
+                i32.load
+                call $__minor_mark
+
+                ;; do while (++p < end_of_stack)
+                local.get $p
+                i32.const 4
+                i32.add
+                local.tee $p
+                i32.const {{RV_STACK_END}}
+                i32.lt_u
+                if
+                    br $mark_loop2
+                end
+            end $mark_loop2
         end
 
         ;; If major gc, sweep the heap before emptying the nursery
@@ -975,7 +1052,7 @@
     ;; TODO ideally would be inlined within do_gc
     ;; TODO this should instead operate on the nursery values before memcpy to heap
     (func $__update_nursery_refs
-        (local $p i32)          ;; pointer to head of current nursery obejct
+        (local $p i32)          ;; pointer to head of current nursery object
         (local $mark_size i32)  ;; mark-size field
         (local $size i32)       ;; size extracted
         (local $dest i32)       ;; where object p has been relocated to

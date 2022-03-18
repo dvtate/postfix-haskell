@@ -6,6 +6,9 @@ Note that for some of this we might be able to define [custom sections](https://
 - Pointers cannot be on WASM stack because we need to be able to mark and update them
 - Will need associated mutable global `$ref_sp`
 - Size: Probably fixed 1-3 mb, modifyable via compiler flag
+#### Addendum 2022.3.17
+- Upon further [review](../brainstorm/ref_stack_vars.md) it was determined that a second stack is required for storing locals with the original stack being devoted for roots associated with temporary operations
+- Both stacks contain roots and thus all pointers should be marked
 
 ### User Static Data
 - Used for storing things like string literals and `static_region` + `static_init_byte`
@@ -104,7 +107,7 @@ After sweep, go through nursery, any values marked get copied into the main heap
 
 ## Room for Improvement
 - Segregation based on the size of the values being stored
-- Probably a lot of room for optimization and reduce number of linked lists
+- Probably a lot of room for optimization and avoiding linked list walks
 
 ## API
 Rough ideas for the implmentation

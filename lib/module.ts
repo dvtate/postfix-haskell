@@ -378,6 +378,7 @@ export default class ModuleManager {
         const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
         // const STACK_START = 0;
         const STACK_END = STACK_SIZE;
+        const RV_STACK_END = STACK_END / 2;
         const NURSERY_START = STACK_SIZE + STATIC_DATA_LEN;
         const NURSERY_END = STACK_SIZE + NURSERY_SIZE;
         const NURSERY_SP_INIT = NURSERY_END - OBJ_HEAD_SIZE;
@@ -402,6 +403,7 @@ export default class ModuleManager {
             NURSERY_END, NURSERY_SP_INIT, STATIC_DATA_START, STATIC_DATA_END, HEAP_START,
             PAGES_NEEDED, INIT_FREE_SIZE, INIT_FREE_SIZE_STR, STACK_SIZE, FREE_START,
             USER_TABLE, NURSERY_SIZE, USER_CODE_STR, USER_IMPORTS, STATIC_DATA_STR,
+            RV_STACK_END,
         };
 
         return Object.entries(obj).reduce(
