@@ -236,10 +236,11 @@ export class RecFunExpr extends FunExpr {
 
     out(ctx: ModuleManager) {
         // Capture original positions so that we can revert later so that old references don't break
-        const originalIndicies = this.copiedParams.map(e => e.position);
+        const originalIndicies = this.copiedParams.map(e => e.localInds);
 
         // Alias our DependentLocalExpr inputs to params
         let ind = 0;
+        // len => [ind .. ind += len]
         const paramsRange = (len: number) => {
             const ret: number[] = [];
             for (; len > 0; len--)
@@ -251,15 +252,17 @@ export class RecFunExpr extends FunExpr {
         });
 
         // Temporarily update indicies to refer to our params
-        this.copiedParams.forEach((e, i) => {
-            e.position = this.takeExprs.length + i;
+        this.copiedParams.forEach(e => {
+            e.localInds = paramsRange(e.localInds.length);
         });
 
         // Compile body & generate type signatures
         // TODO tuples
-        const outs = this.outputs.map(o => o.out(ctx, this));
-        const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
-        const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
+        const outs = this.outputs.map(o => o.out(ctx, this)); // Body of fxn
+        const paramTypes = this.inputTypes.map(t =>
+            t.getWasmTypeName()).filter(Boolean).join(' ');
+        const resultTypes = this.outputs.map(r =>
+            r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
         // Generate output wat
         const ret = `(func ${this.name} ${
@@ -278,7 +281,7 @@ export class RecFunExpr extends FunExpr {
 
         // Revert modifications to the exprs so that other places they're referenced don't break
         this.copiedParams.forEach((e, i) => {
-            e.position = originalIndicies[i];
+            e.localInds = originalIndicies[i];
         });
         return ret;
     }

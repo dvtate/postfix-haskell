@@ -145,10 +145,10 @@ export class DummyDataExpr extends DataExpr {
  */
 export abstract class FunExpr extends Expr {
     // Exported symbol
-    name: string;
+    readonly name: string;
 
     // Parameter types
-    inputTypes: types.Type[];
+    readonly inputTypes: types.Type[];
 
     // Output expressions
     outputs: Array<DataExpr | value.NumberValue> = [];
@@ -157,7 +157,10 @@ export abstract class FunExpr extends Expr {
     _locals: Array<
         types.PrimitiveType
         | types.RefType<types.Type>
-        | types.RefRefType<types.RefType<types.Type>>>;
+        | types.RefRefType<types.RefType<types.Type>>> = [];
+
+    // Parameter expressions
+    readonly params: ParamExpr[];
 
     /**
      * @param token - Source location
@@ -168,7 +171,8 @@ export abstract class FunExpr extends Expr {
         super(token);
         this.name = name;
         this.inputTypes = inputTypes.filter(t => !t.getBaseType().isUnit());
-        this._locals = inputTypes.filter(t => !t.getBaseType().isUnit()).map(() => null);
+        this.params = this.inputTypes.map(t =>
+            new ParamExpr(token, t, this, t.isUnit() ? [] : this.addLocal(t)));
     }
 
     /**
@@ -191,9 +195,11 @@ export abstract class FunExpr extends Expr {
         }
         if (baseType instanceof types.PrimitiveType)
             return [this._locals.push(baseType) - 1];
+        if (baseType instanceof types.ArrowType)
+            return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
 
         // Can't be stored
-        if (baseType.isWild() || baseType instanceof types.UnionType || baseType instanceof types.ArrowType) {
+        if (baseType.isWild() || baseType instanceof types.UnionType) {
             console.error(type, baseType);
             throw new error.SyntaxError("invalid local type", this.token);
         }
@@ -247,32 +253,33 @@ export class FunExportExpr extends FunExpr {
 /**
  * Function parameters expression
  */
-// TODO there should be distinct version of this for handling non-primitive types
 export class ParamExpr extends DataExpr {
-    // Origin FuncExportExpr
+    /**
+     * Function that this is a parameter of
+     */
     source: FunExportExpr;
 
-    // Parameter Index
-    position: number;
+    /**
+     * Indicies for access
+     */
+    localInds: number[];
 
     /**
      * @param token - Locaation in code
      * @param datatype - Datatype for expr
      * @param source - Origin expression
-     * @param position - Stack index (0 == left)
+     * @param localInds - Stack index (0 == left)
      */
-    constructor(token: LexerToken, datatype: types.PrimitiveType | types.UnitType, source: FunExpr, position: number) {
+    constructor(token: LexerToken, datatype: types.Type, source: FunExpr, localInds: number[]) {
         super(token, datatype);
         this.source = source;
-        this.position = position;
+        this.localInds = localInds;
     }
 
     /**
      * @override
      */
     out() {
-        if (this.datatype.getBaseType().isUnit())
-            return '';
-        return `(local.get ${this.position})`;
+        return this.source.getLocalWat(this.localInds);
     }
 }

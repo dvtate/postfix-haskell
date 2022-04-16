@@ -24,7 +24,6 @@ Unit class $World =
     )
 ) $get =
 
-
 5 $width =
 3 $speed =
 

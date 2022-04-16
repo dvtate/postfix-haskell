@@ -4,11 +4,7 @@ import * as error from '../error';
 import { LexerToken } from '../scan';
 import ModuleManager from '../module';
 
-import {
-    DataExpr,
-    Expr,
-    FunExportExpr,
-} from './expr';
+import { DataExpr, Expr, FunExpr } from './expr';
 import { LiteralMacro, Macro } from '../macro';
 
 /**
@@ -26,7 +22,7 @@ export class ClosureCreateExpr extends DataExpr {
         super(macro.token, macro.datatype);
     }
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         // Create new function for it's body
         // Add function to module table
         // Capture lexically scoped vars and convert them to args/lm addr?
@@ -39,7 +35,7 @@ export class ClosureCreateExpr extends DataExpr {
 
 export class ClosureInvokeExpr extends DataExpr {
 
-    out(ctx: ModuleManager, fun: FunExportExpr) {
+    out(ctx: ModuleManager, fun: FunExpr) {
         // Load function index from closure object pointer
         // Put closure object pointer back onto stack
         // Invoke function in via function table

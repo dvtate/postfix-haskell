@@ -479,14 +479,14 @@ export class RefType<T extends Type> extends Type {
      */
     getWasmTypeName(name?: string): string {
         // TODO think
-        // Note that the object is on ref_stack and only used as needed so this is typename tho kinda weird
+        // NOTE the object is on ref_stack and only used only indirectly there
         // i32 = pointer type
         return '';
     }
 
     flatPrimitiveList(): PrimitiveType[] {
         // TODO ???
-        return [PrimitiveType.Types.I32];
+        return [];
     }
 
     /**
@@ -497,13 +497,13 @@ export class RefType<T extends Type> extends Type {
         const bt = this.type.getBaseType();
         if (bt instanceof UnionType)
             return bt.types.some(t => t instanceof RefType || t instanceof RefRefType)
-        // TODO arrow types gonna be painful!
+        // TODO arrow types, scary
         return false;
     }
 }
 
 /**
- * Reference to a pointer which is stored on ref_stack to an object managed by gc
+ * Reference to a pointer which is stored on rv_stack to an object managed by gc
  */
 export class RefRefType<T extends RefType<Type>> extends Type {
     /**
@@ -522,5 +522,26 @@ export class RefRefType<T extends RefType<Type>> extends Type {
         return this.type.check(type);
     }
 
-    // TODO other parts similar to RefType
+    /**
+     * @override
+     */
+    getBaseType(): Type {
+        // Drop classes from the referenced type
+        return new RefType(this.token, this.type.getBaseType());
+    }
+
+    /**
+     * @override
+     */
+    getWasmTypeName(name?: string): string {
+        // TODO think
+        // NOTE the object is on ref_stack and only used only indirectly there
+        // i32 = pointer type
+        return '';
+    }
+
+    flatPrimitiveList(): PrimitiveType[] {
+        // TODO ???
+        return [];
+    }
 }
