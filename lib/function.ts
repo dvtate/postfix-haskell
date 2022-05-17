@@ -250,8 +250,8 @@ export default class Fun {
         // Make branch expr
         const branch = new expr.BranchExpr(
             this.tokens,
-            fromDataValue(branches.map(b => b[0])),
-            ios.map(t => fromDataValue(t.gives)),
+            fromDataValue(branches.map(b => b[0]), ctx),
+            ios.map(t => fromDataValue(t.gives, ctx)),
             inputs.filter(e => e instanceof expr.BranchInputExpr) as expr.BranchInputExpr[],
             this.name,
         );

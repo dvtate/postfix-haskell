@@ -466,7 +466,7 @@ const operators : MacroOperatorsSpec = {
                         token,
                         type.value.outputTypes[0],
                         `call ${importName} `,
-                        expr.fromDataValue(inputs))));
+                        expr.fromDataValue(inputs, ctx))));
                     return;
                 }
 
@@ -474,7 +474,7 @@ const operators : MacroOperatorsSpec = {
                 const instrExpr = new expr.MultiInstrExpr(
                     token,
                     `call ${importName}`,
-                    expr.fromDataValue(inputs),
+                    expr.fromDataValue(inputs, ctx),
                     type.value.outputTypes,
                 );
                 ctx.push(...instrExpr.results);
@@ -652,10 +652,10 @@ const operators : MacroOperatorsSpec = {
 
             // Create expression
             if (outputTypes.length > 1) {
-                const e = new expr.MultiInstrExpr(token, mnemonic.value, fromDataValue(inputs), outputTypes);
+                const e = new expr.MultiInstrExpr(token, mnemonic.value, fromDataValue(inputs, ctx), outputTypes);
                 ctx.push(...e.results);
             } else {
-                ctx.push(new expr.InstrExpr(token, outputTypes[0], mnemonic.value, fromDataValue(inputs)));
+                ctx.push(new expr.InstrExpr(token, outputTypes[0], mnemonic.value, fromDataValue(inputs, ctx)));
             }
         },
     },
@@ -817,14 +817,14 @@ const funs = {
                                 token,
                                 types.PrimitiveType.Types.I32,
                                 `${bType.name}.eqz`,
-                                expr.fromDataValue([b])
+                                expr.fromDataValue([b], ctx)
                             ));
                         } else {
                             ctx.push(new expr.InstrExpr(
                                 token,
                                 types.PrimitiveType.Types.I32,
                                 `${aType.name}.eq`,
-                                expr.fromDataValue([a, b])
+                                expr.fromDataValue([a, b], ctx)
                             ));
                         }
                         return;
@@ -852,14 +852,14 @@ const funs = {
                             token,
                             types.PrimitiveType.Types.I32,
                             `${aType.name}.eqz`,
-                            expr.fromDataValue([a])
+                            expr.fromDataValue([a], ctx)
                         ));
                     } else {
                         ctx.push(new expr.InstrExpr(
                             token,
                             types.PrimitiveType.Types.I32,
                             `${aType.name}.eq`,
-                            expr.fromDataValue([a, b])
+                            expr.fromDataValue([a, b], ctx),
                         ));
                     }
                     return;

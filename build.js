@@ -11,6 +11,12 @@ const cp = require('child_process');
 console.log('> tsc');
 cp.exec(
     'tsc',
-    // Remove wat import
-    // () => fs.unlinkSync('./lib/rt.wat.ts'),
+    (err, stdout, stderr) => {
+        if (err)    console.error(err);
+        if (stdout) console.log(stdout);
+        if (stderr) console.error(stderr);
+
+        // Remove wat import (keep for ide)
+        // fs.unlinkSync('./lib/rt.wat.ts');
+    }
 );

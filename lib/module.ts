@@ -134,7 +134,6 @@ export default class ModuleManager {
 
         // Look to see if we've seen it before
         if (this.imports[scopesKey]) {
-            // TODO .getWasmTypeName() is probably expensive and this is O(M*N)
             const match = this.imports[scopesKey].find(imp =>
                 imp.typeName == type.getWasmTypeName(imp.importId))
             if (match)

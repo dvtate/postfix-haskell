@@ -4,13 +4,14 @@ import * as value from '../value';
 import * as types from '../datatypes';
 import { Expr, DataExpr, FunExpr } from './expr';
 import ModuleManager from '../module';
+import Context from '../context';
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
  * @param vs array of values
  * @returns array of expressions
  */
-export function fromDataValue(vs: Array<DataExpr | value.Value>): DataExpr[] {
+export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): DataExpr[] {
     return vs.map(v => {
         // Already an expression
         if (v instanceof DataExpr)
@@ -22,11 +23,10 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>): DataExpr[] {
 
         // Recursively wrap tuple members
         if (v instanceof value.TupleValue)
-            return fromDataValue(v.value);
+            return fromDataValue(v.value, ctx);
 
         // If a macro gets here it's because it should be a rt closure
 
-        // Eww runtime error...
         throw new error.TypeError("incompatible type", v.token, v, null);
     }).reduce(
         (a: DataExpr[], v: DataExpr | DataExpr[]) =>
@@ -112,6 +112,7 @@ export class NumberExpr extends DataExpr {
         super(token, datatype);
         this.instr = instr;
         this.args = args;
+        // TODO warn if invalid args
     }
 
     /**

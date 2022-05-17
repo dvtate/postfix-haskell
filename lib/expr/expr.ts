@@ -5,6 +5,9 @@ import { LexerToken } from '../scan';
 import ModuleManager from '../module';
 import { TraceResults } from '../context';
 
+// TODO expr constructors should be augmented to also take in Context object
+// This way they can also emit warnings
+
 /**
  * This stores expressions that we can reason about
  * but can't completly eliminate from the code.
@@ -199,12 +202,8 @@ export abstract class FunExpr extends Expr {
             return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
 
         // Can't be stored
-        if (baseType.isWild() || baseType instanceof types.UnionType) {
-            console.error(type, baseType);
-            throw new error.SyntaxError("invalid local type", this.token);
-        }
         console.error(type, baseType);
-        throw new error.SyntaxError("WTF??: invalid local type", this.token);
+        throw new error.SyntaxError("invalid local type", this.token);
     }
 
     /**

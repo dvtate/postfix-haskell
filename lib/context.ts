@@ -21,7 +21,7 @@ import Fun from './function';
 const wabtProm = wabtMod();
 
 // TODO this class is fucking massive and should be split into different components
-//  so that the amount of state it manages is more segregated clear
+//  so that the amount of state it manages is better organized
 
 // Return Types for Context.traceIO() method
 export class TraceResults {
@@ -60,7 +60,7 @@ interface TraceResultTracker {
 /**
  * This class stores state assocated with the parser
  *
- * TODO remove public API's
+ * TODO reduce public API's
  */
 export default class Context {
     // Place to push/pop arugments & exprs

@@ -21,6 +21,13 @@ I32 I64 | F32 F64 | | $Num =
 (rec:
     (: ( Num List ) ) class $Node =
     () class $Nil =
+) enum $NumList =
+
+# When tracing fill stack with dummy values
+(rec:
+    $T =
+    (: ( T T List ) ) class $Node =
+    () class $Nil =
 ) enum $List =
 
 # Let's define a function to find the minimum value in a list

@@ -818,7 +818,7 @@
 
         ;; p = ref var stack pointer
         global.get $__rv_sp
-        local.get $p
+        local.set $p
 
         ;; for each pointer on the ref var stack
         local.get $is_major

@@ -37,23 +37,51 @@ export class SyntaxError extends ParseError {
      */
     constructor(message: string, tokens: LexerToken | LexerToken[], ctx?: Context) {
         super(message);
-        this.tokens = tokens instanceof Array ? tokens : [tokens];
         this.ctx = ctx;
+
+        // Dedup tokens into this.tokens
+        if (!(tokens instanceof Array))
+            tokens = [tokens];
+        let p = tokens[0];
+        this.tokens = [p];
+        tokens.forEach(t => {
+            if (p !== t) {
+                this.tokens.push(t);
+                p = t;
+            }
+        });
     }
 }
 
-export class TypeError extends CompilerError {
-    tokens: LexerToken[];
-
+export class TypeError extends SyntaxError {
+    /**
+     * @constructor
+     * @param message Reason
+     * @param tokens location in code
+     * @param v offending value/expression
+     * @param expected type expected
+     * @param ctx parser context
+     */
     constructor(
         message: string,
         tokens: LexerToken | LexerToken[],
         public v: value.Value | Expr,
-        public expected: Type,
-        public ctx?: Context,
+        public expected?: Type,
+        ctx?: Context,
     ) {
-        super(message);
-        this.tokens = tokens instanceof Array ? tokens : [tokens];
+        super(message, tokens, ctx);
+    }
+}
+
+export class StackTypeError extends SyntaxError {
+    constructor(
+        message: string,
+        tokens: LexerToken | LexerToken[],
+        public values: Array<value.Value | Expr>,
+        public expected?: Type[],
+        ctx?: Context,
+    ) {
+        super(message, tokens, ctx);
     }
 }
 

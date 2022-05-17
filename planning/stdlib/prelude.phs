@@ -25,7 +25,7 @@
 # <value> <type> cast
 ##
 
-# Boilerplate for conditions
+# Boilerplate for cast conditon
 (: ( $from $to ) =
 	( $val $t ) =
 	val has_type
@@ -148,7 +148,7 @@ $_can_promote ~ (: _promote + ) $global.+ fun
 ((F32): 1 ) (: "f32.neg" asm ) $neg fun
 ((F64): 1 ) (: "f64.neg" asm ) $neg fun
 
-# Add values of same type
+# Subtract values of same type
 ((I32 I32): 1 ) (: "i32.sub" asm ) $global.- fun
 ((I64 I64): 1 ) (: "i64.sub" asm ) $global.- fun
 ((F32 F32): 1 ) (: "f32.sub" asm ) $global.- fun

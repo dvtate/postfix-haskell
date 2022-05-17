@@ -64,6 +64,7 @@ export class BranchInputExpr extends DataExpr {
  *
  * this should only get used when it cannot be determined which branch to take at compile time
  */
+// TODO augment for enums
 export class BranchExpr extends Expr {
     /**
      * Locations in source
