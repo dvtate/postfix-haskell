@@ -16,6 +16,7 @@ import { LiteralMacro, Macro } from "./macro";
 import { formatErrorPos } from '../tools/util';
 import { Namespace } from './namespace';
 import Fun from './function';
+import { fromDataValue } from './expr';
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
@@ -73,7 +74,7 @@ export default class Context {
     trace: value.Value[] = [];
 
     // Tracking for traceIO and recursion stuff
-    traceResults: Array<TraceResultTracker | any> = [];
+    traceResults: Map<value.Value, TraceResultTracker> = new Map();
     globals: { [k: string] : value.Value };
 
     // Stack tracing cunters
@@ -148,7 +149,7 @@ export default class Context {
 
             // Prob not needed...
             trace: [...this.trace],
-            traceResults: [...this.traceResults],
+            traceResults: new Map(this.traceResults),
         });
 
         return ret;
@@ -263,7 +264,7 @@ export default class Context {
         this.minStackSize = this.stack.length;
 
         // initiate trace
-        this.traceResults.push({
+        this.traceResults.set(v, {
             value: v, ...knownResults,
             token, // prolly not needed
         });
@@ -298,19 +299,6 @@ export default class Context {
     }
 
     /**
-     *
-     * @param {*} v
-     * @returns TraceResultTracker or null
-     */
-    _getTraceResults(v: value.Value): TraceResultTracker {
-        // TODO also check takes datatypes and constexprs against stack
-        for (let i = this.traceResults.length - 1; i >= 0; i--)
-            if (this.traceResults[i].value === v)
-                return this.traceResults[i];
-        return null;
-    }
-
-    /**
      * Invoke macro or function
      * @param v - value to invoke
      * @param token - location in source
@@ -318,13 +306,15 @@ export default class Context {
      * @returns - null if recursive trace, error.SyntaxError on error, this on success
      */
     invoke(v : value.Value, token: LexerToken, isTrace = false): Context | error.SyntaxError | null {
-        // TODO this algorithm is extrememly complicated and confusing and inefficient
-        //  there must be a simpler way... time spent to create: ~1 month
+        // TODO this algorithm is extrememly complicated and confusing
+        //  there must be a simpler way... time spent to create: >1 month
 
         // When invoked static strings get their address and length pushed onto the stack
         if (v instanceof value.StrValue) {
-            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, v.value.length)));
-            this.push(new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, this.module.addStaticData(v.value, true))));
+            this.push(new value.NumberValue(token,
+                new WasmNumber(WasmNumber.Type.I32, v.value.length)));
+            this.push(new value.NumberValue(token,
+                new WasmNumber(WasmNumber.Type.I32, this.module.addStaticData(v.value, true))));
             return this;
         }
 
@@ -339,7 +329,10 @@ export default class Context {
             this.trace.push(v);
             if (this.trace.length > 1000) {
                 console.warn('1000 invocations reached, you probably forgot to use `rec`');
-                throw new error.SyntaxError('Semantics max call stack exceeded', this.trace.map(v => v.token), this);
+                throw new error.SyntaxError(
+                    'Semantics max call stack exceeded',
+                    this.trace.map(v => v.token),
+                    this);
             }
             const ret = this.toError(v.value.action(this, token), token);
             this.trace.pop();
@@ -374,11 +367,9 @@ export default class Context {
         }
 
         // This is complicated because of recursion :(
-        // TODO copy explanation from tg channel
-        const tResults = this._getTraceResults(v);
-        if (tResults === null) { // Not currently tracing
+        const tResults = this.traceResults.get(v);
+        if (!tResults) { // Not currently tracing
             // Trace results not found, Handle recursive call
-            // TODO if all inputs are constexprs => inline/invoke simple
 
             // Replace stack with expression wrappers so that they can be replaced with locals later
             const stack = this.stack.slice();
@@ -391,7 +382,6 @@ export default class Context {
             const body = new expr.RecursiveBodyExpr(token);
 
             // Trace once to determine non-recursive case
-            // console.log('trace 1');
             const ios = this.traceIO(v, token);
             if (!(ios instanceof TraceResults))
                 return ios;
@@ -421,7 +411,7 @@ export default class Context {
 
             // Link body inputs
             // Generate input locals
-            body.takes = ios.takes as expr.DataExpr[];
+            body.takes = fromDataValue(ios.takes, this);
             body.takeExprs = body.takes.map(e =>
                 e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : null);
 
@@ -432,13 +422,12 @@ export default class Context {
 
             // Trace again, this time substituting non-recursive trace results with recursive calls
             this.stack = body.takeExprs.slice();
-            // console.log('trace 2');
             const ios2 = this.traceIO(v, token, { result: ios, body });
             if (!(ios2 instanceof TraceResults))
                 return ios2;
 
             // Update body
-            body.gives = ios2.gives as expr.DataExpr[];
+            body.gives = fromDataValue(ios2.gives, this);
             // body.takes = ios2.takes;
 
             // Update stack
@@ -448,7 +437,6 @@ export default class Context {
             return this;
 
         } else if (tResults.result) { // Invoking an already traced recursive function
-            // console.log('tail:', token.token);
             // This is an invocation of a recursive function within it's body
             const { result, body } = tResults;
 
@@ -459,7 +447,7 @@ export default class Context {
                     // TODO this shouldn't suck so bad :(
                     return new error.SyntaxError(`cannot pass abstract value ${args[i]} in recursive call`, token, this);
 
-            const callExpr = new expr.RecursiveCallExpr(token, body, args as expr.DataExpr[]);
+            const callExpr = new expr.RecursiveCallExpr(token, body, fromDataValue(args, this));
             // Note that if they're used after this it woudln't be tail recursion and would be unreachable
 
             this.push(...callExpr.giveExprs);
@@ -557,10 +545,8 @@ export default class Context {
      * @retuns {Value[]} - list of values from stack
      */
     popn(n: number): value.Value[] {
-        // Pull values
-        const ret = [];
-        for (let i = 0; i < n; i++)
-            ret.push(this.stack.pop());
+        // Pull values from stack
+        const ret = n === 0 ? [] : this.stack.splice(-n).reverse();
 
         // Update trackers
         if (this.stack.length < this.minStackSize)
