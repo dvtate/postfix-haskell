@@ -95,6 +95,30 @@ export class AnyType extends Type {
 }
 
 /**
+ * Type which never matches
+ */
+export class NeverType extends Type {
+    /**
+     * @override
+     */
+    getBaseType(): Type {
+        return this;
+    }
+    getWasmTypeName(name?: string): string {
+        throw Error('Invalid call: NeverType.getWasmTypeName');
+    }
+    flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
+        throw Error('Invalid call: NeverType.flatPrimitiveList');
+    }
+    isUnit(): boolean {
+        return true;
+    }
+    check(type: Type): boolean {
+        return false;
+    }
+}
+
+/**
  * More specific than types, used for applying methods and stuff
  */
 export class ClassType<T extends Type> extends Type {
@@ -232,6 +256,11 @@ export class UnionType extends Type {
         if (type instanceof UnionType)
             return type.types.every(t => this.types.includes(t));
 
+        if (type instanceof AnyType)
+            return true;
+        if (type instanceof NeverType)
+            return false;
+
         // Verify type is in this set
         return this.types.includes(type);
     }
@@ -298,6 +327,10 @@ export class TupleType extends Type {
     check(type: Type): boolean {
         if (type == null)
             return false;
+
+        // Always match Any
+        if (type instanceof AnyType)
+            return true;
 
         // Don't care about classes
         if (type instanceof ClassType) {
@@ -368,6 +401,8 @@ export class PrimitiveType extends Type {
     check(type: Type): boolean {
         if (type == null)
             return false;
+        if (type instanceof AnyType)
+            return true;
 
         // Don't care about classes
         if (type instanceof ClassType) {
@@ -424,6 +459,8 @@ export class ArrowType extends Type {
      * @override
      */
     check(type: Type): boolean {
+        if (type instanceof AnyType)
+            return true;
         if (!(type instanceof ArrowType))
             return false;
         return this.inputTypes.every((t, i) => t.check(type.inputTypes[i]))
@@ -483,6 +520,8 @@ export class RefType<T extends Type> extends Type {
      * @override
      */
     check(type: Type): boolean {
+        if (type instanceof AnyType)
+            return true;
         // Interchangeable with base type
         return this.type.check(type);
     }
@@ -545,6 +584,8 @@ export class RefRefType<T extends RefType<Type>> extends Type {
      * @override
      */
     check(type: Type): boolean {
+        if (type instanceof AnyType)
+            return true;
         // Interchangeable with base type
         return this.type.check(type);
     }
@@ -602,6 +643,8 @@ export class EnumBaseType extends Type {
      * @override
      */
     check(type: Type): boolean {
+        if (type instanceof AnyType)
+            return true;
         return type && this.token === type.token;
     }
     isUnit(): boolean {
@@ -638,6 +681,8 @@ export class EnumClassType extends Type {
      * @override
      */
     check(type: Type): boolean {
+        if (type instanceof AnyType)
+            return true;
         return type instanceof EnumClassType
             && this.token === type.token    // also implies same parent
             && this.type.check(type.type);
