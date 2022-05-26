@@ -174,7 +174,7 @@ export abstract class FunExpr extends Expr {
         super(token);
         this.name = name;
         this.inputTypes = inputTypes.filter(t => !t.getBaseType().isUnit());
-        this.params = this.inputTypes.map(t =>
+        this.params = inputTypes.map(t =>
             new ParamExpr(token, t, this, t.isUnit() ? [] : this.addLocal(t)));
     }
 

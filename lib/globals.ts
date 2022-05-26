@@ -682,7 +682,7 @@ const operators : MacroOperatorsSpec = {
             const data = new Uint8Array(Number(len.value.value));
             const ret = new WasmNumber(
                 WasmNumber.Type.I32,
-                ctx.module.addStaticData(data)
+                ctx.module.addStaticData(data, false),
             );
             ctx.push(new value.NumberValue(token, ret));
         },

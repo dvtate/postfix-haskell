@@ -16,10 +16,10 @@
 1 dy_addr static_init
 
 # Setters
-((Unit I32): x_addr swap store ) $set_x =
-((Unit I32): y_addr swap store ) $set_y =
-((Unit I32): dx_addr swap store ) $set_dx =
-((Unit I32): dy_addr swap store ) $set_dy =
+((Unit I32): x_addr store ) $set_x =
+((Unit I32): y_addr store ) $set_y =
+((Unit I32): dx_addr store ) $set_dx =
+((Unit I32): dy_addr store ) $set_dy =
 
 # Getters
 (: x_addr "i32.load" asm ) $get_x =
@@ -27,8 +27,8 @@
 (: dx_addr "i32.load" asm ) $get_dx =
 (: dy_addr "i32.load" asm ) $get_dy =
 
-500 $width =
-400 $height =
+400 $width =
+500 $height =
 4 $ball_dim =
 
 (: # Generate random int from 1-10
@@ -37,22 +37,20 @@
 ) $rng_1_10 =
 
 (: # Update
-    # These will get tee'd
     get_x $x = get_y $y =
     get_dx $dx = get_dy $dy =
 
-    # Collisions
+    # Collision w/ walls
     (: true ) (: ) $x_cc fun
-    (: x dx <= ) (: rng_1_10 set_dx ) $x_cc fun
-    (: x dx + width ball_dim - >= ) (: 0 rng_1_10 - set_dx ) $x_cc fun
+    (: x 0 <= ) (: rng_1_10 set_dx ) $x_cc fun
+    (: x width ball_dim - >= ) (: 0 rng_1_10 - set_dx ) $x_cc fun
     x_cc
-
     (: true ) (: ) $y_cc fun
-    (: y dy <= ) (: rng_1_10 set_dy ) $y_cc fun
-    (: y dy + height ball_dim - >= ) (: 0 rng_1_10 - set_dy ) $y_cc fun
+    (: y 0 <= ) (: rng_1_10 set_dy ) $y_cc fun
+    (: y height ball_dim - >= ) (: 0 rng_1_10 - set_dy ) $y_cc fun
     y_cc
 
-    # Update
+    # Move
     x get_dx + I32 cast set_x
     y get_dy + I32 cast set_y
 ) $update =
@@ -69,9 +67,9 @@
     ( "js" "contextFillRect" ) import @
 
     # Debugging
-    #get_x get_y get_dx get_dy
-    #( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
-    #( "js" "console.log" ) import @
+    get_x get_y get_dx get_dy
+    ( Unit I32 I32 I32 I32 ) ( Unit ) Arrow
+    ( "js" "console.log" ) import @
 ) $draw =
 
 ( Unit ) (: draw ) "draw" export

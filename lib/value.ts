@@ -4,7 +4,7 @@ import { IdToken, LexerToken } from './scan';
 import Context from './context';
 import ModuleManager from './module';
 import * as expr from './expr';
-import { Expr } from './expr';
+import { Expr, fromDataValue } from './expr';
 import { Namespace } from './namespace';
 
 
@@ -102,12 +102,15 @@ export class NumberValue extends DataValue {
     }
 
     // Map of number types to coresponding primitive datatypes
-    static _typeMap: { [k: number]: types.PrimitiveType} = Object.keys(WasmNumber.Type)
-        .filter(k => isNaN(parseFloat(k))) // Only the labels because ts does both
-        .reduce((acc, v) => ({
-            ...acc,
-            [WasmNumber.Type[<any>v]] : types.PrimitiveType.Types[v],
-        }), {});
+    static _typeMap = {
+        [WasmNumber.Type.I32]: types.PrimitiveType.Types.I32,
+        [WasmNumber.Type.I64]: types.PrimitiveType.Types.I64,
+        [WasmNumber.Type.F32]: types.PrimitiveType.Types.F32,
+        [WasmNumber.Type.F64]: types.PrimitiveType.Types.F64,
+        // TODO add these
+        [WasmNumber.Type.U32]: types.PrimitiveType.Types.I32,
+        [WasmNumber.Type.U64]: types.PrimitiveType.Types.I64,
+    };
 
     /**
      * See code in expr/expr.ts

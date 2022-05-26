@@ -1,4 +1,5 @@
 // Generate wat import
+// TODO OPTIMIZE strip comments from WAT?
 const fs = require('fs');
 fs.writeFileSync(
     './lib/rt.wat.ts',

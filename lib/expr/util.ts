@@ -43,11 +43,11 @@ export class NumberExpr extends DataExpr {
 
     /**
      * @param token - Location in code
-     * @param value - Value to wrap
+     * @param v - Value to wrap
      */
-    constructor(token: LexerToken, value: value.NumberValue) {
-        super(token, value.datatype);
-        this.value = value;
+    constructor(token: LexerToken, v: value.NumberValue) {
+        super(token, v.datatype);
+        this.value = v;
     }
 
     /**
@@ -63,6 +63,39 @@ export class NumberExpr extends DataExpr {
 
     children(): Expr[] {
         return [];
+    }
+
+    get expensive(): boolean {
+        return false;
+    }
+
+    toValue(): value.Value {
+        return this.value;
+    }
+}
+
+export class TupleExpr extends DataExpr {
+    value: DataExpr[];
+
+    constructor(token: LexerToken, ctx: Context, v: value.TupleValue) {
+        super(token, v.datatype);
+        this.value = fromDataValue(v.value, ctx);
+    }
+
+    get expensive(): boolean {
+        return false;
+    }
+
+    out(ctx: ModuleManager, fun?: FunExpr): string {
+        return this.value.map(v => v.out(ctx, fun)).join(' ');
+    }
+
+    children(): Expr[] {
+        return this.value;
+    }
+
+    toValue(): value.Value {
+        return new value.TupleValue(this.token, this.value);
     }
 }
 

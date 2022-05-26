@@ -278,11 +278,11 @@ export default class ModuleManager {
 
                 // The data already exists
                 if (j == bytes.length)
-                    return i + this.stackSize;
+                    return i + (this.noRuntime ? 0 : this.stackSize);
             }
 
         // Append to static data
-        const ret = this.staticData.length + this.stackSize;
+        const ret = this.staticData.length + (this.noRuntime ? 0 : this.stackSize);
         this.staticData.push(...bytes);
         return ret;
     }
@@ -293,7 +293,7 @@ export default class ModuleManager {
      * @param value value to set static data to
      */
     setStaticData(address: number, value: number) {
-        this.staticData[address - this.stackSize] = value;
+        this.staticData[address - (this.noRuntime ? 0 : this.stackSize)] = value;
     }
 
     /**
@@ -353,6 +353,7 @@ export default class ModuleManager {
      * @param STACK_SIZE size of the references stack
      * @param NURSERY_SIZE
      * @returns wasm module text
+     * @remark see planning/implementation/lm.md for more on memory layout
      */
     generateRuntime(
         USER_IMPORTS: string,
@@ -371,9 +372,13 @@ export default class ModuleManager {
                 + hexChrs[(b & 0xf0) >> 4]
                 + hexChrs[b & 0xf];
         }
+
+        // Constants
         const OBJ_HEAD_SIZE = 3 * 4;
         // const EMPTY_HEAD_SIZE = 2 * 4;
-        const STATIC_DATA_LEN = (this.staticData.length | 0b11) + 1; // Align to 4 bytes
+        // Align to 4 bytes if non-zero
+        const STATIC_DATA_LEN = this.staticData.length
+            && (this.staticData.length | 0b11) + 1;
         const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
         // const STACK_START = 0;
         const STACK_END = STACK_SIZE;
@@ -381,11 +386,13 @@ export default class ModuleManager {
         const NURSERY_START = STACK_SIZE + STATIC_DATA_LEN;
         const NURSERY_END = STACK_SIZE + NURSERY_SIZE;
         const NURSERY_SP_INIT = NURSERY_END - OBJ_HEAD_SIZE;
-        const STATIC_DATA_START = NURSERY_END;
+        const STATIC_DATA_START = this.noRuntime ? 0 : NURSERY_END;
         const STATIC_DATA_END = STATIC_DATA_START + STATIC_DATA_LEN;
         const HEAP_START = STATIC_DATA_END;
         const FREE_START = HEAP_START + OBJ_HEAD_SIZE;
-        const PAGES_NEEDED = Math.ceil((FREE_START + 2 + 10) / 65536);
+        const PAGES_NEEDED = this.noRuntime
+            ? Math.ceil(STATIC_DATA_LEN / 65536)
+            : Math.ceil((FREE_START + 2 + 10) / 65536);
         const INIT_FREE_SIZE = PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE;
         const USER_TABLE = this.genTable();
 

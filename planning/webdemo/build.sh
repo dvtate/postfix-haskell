@@ -1,5 +1,5 @@
 echo "compiling..."
-phc file index.phs -t0 > index.wat
+../../dist/index.js file index.phs -o index.wat --no-rt=true --fast
 echo "assembling..."
 wat2wasm index.wat
 echo "optimizing..."
