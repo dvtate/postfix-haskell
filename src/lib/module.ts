@@ -3,7 +3,7 @@ import * as types from "./datatypes";
 import * as expr from './expr';
 
 // Import WAST template as a string
-import template, { noRuntime as noRuntimeTemplate } from "./rt.wat";
+import template, { noRuntime as noRuntimeTemplate } from "../generated/wat-runtime";
 
 /**
  * Adjust compiler behavior
