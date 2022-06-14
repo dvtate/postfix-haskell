@@ -39,7 +39,10 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): 
  * Constant value that we're treating as an Expr
  */
 export class NumberExpr extends DataExpr {
-    value: value.NumberValue;
+    /**
+     * @override
+     */
+    declare value: value.NumberValue;
 
     /**
      * @param token - Location in code
@@ -75,7 +78,10 @@ export class NumberExpr extends DataExpr {
 }
 
 export class TupleExpr extends DataExpr {
-    value: DataExpr[];
+    /**
+     * @override
+     */
+    declare value: DataExpr[];
 
     constructor(token: LexerToken, ctx: Context, v: value.TupleValue) {
         super(token, v.datatype);
@@ -272,17 +278,20 @@ export class MultiInstrExpr extends Expr {
  * Expression to be used for indentifiers, similar behavior to TeeExpr
  */
 export class IdExpr extends DataExpr {
-    public value: DataExpr;
+    /**
+     * @override
+     */
+    declare value: DataExpr;
 
     /**
      * Should this identifier be stored in a local?
      */
-    public stored = false;
+    stored = false;
 
     /**
      * Indicies for the locals
      */
-    public locals: number[] = null;
+    locals: number[] = null;
 
     /**
      * @constructor

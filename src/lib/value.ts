@@ -28,7 +28,6 @@ export enum ValueType {
     Ns      = 7, // Namespace
 }
 
-// TODO should be abstract
 /**
  * Generic value base class
  */
@@ -36,7 +35,7 @@ export class Value {
     /// Source location in code
     token: LexerToken;
 
-    /// Node type
+    /// Syntactic type
     type: ValueType;
 
     /// Relevant Value
@@ -73,7 +72,10 @@ export class Value {
  * Data with a user-level type, this includes unions, structs and aliases
  */
 export class DataValue extends Value {
-    datatype: types.Type;
+    /**
+     * @override
+     */
+    declare datatype: types.Type;
     type: ValueType.Data = ValueType.Data;
 
     constructor(token: LexerToken, type: types.Type, value: any) {
@@ -85,7 +87,7 @@ export class DataValue extends Value {
  * Set of identifiers
  */
 export class NamespaceValue extends Value {
-    value: Namespace;
+    declare value: Namespace;
     type: ValueType.Ns = ValueType.Ns;
 
     constructor(token: LexerToken, value: Namespace) {
@@ -131,10 +133,14 @@ export class NumberValue extends DataValue {
  * Escaped Identifier
  */
 export class IdValue extends Value {
-    value: string[];
-    type: ValueType.Id;
-    token: IdToken;
+    declare value: string[];
+    declare token: IdToken;
+    type: ValueType.Id = ValueType.Id;
 
+    /**
+     * @param token location in code it was specified
+     * @param isGlobal is it global or not?
+     */
     constructor(token: IdToken, public isGlobal = false) {
         super(token, ValueType.Id, token.value);
     }
@@ -156,8 +162,8 @@ type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
  * Packed values
  */
 export class TupleValue extends DataValue {
-    value: Value[];
-    datatype: types.TupleType;
+    declare value: Value[];
+    declare datatype: types.TupleType;
 
     constructor(token: LexerToken, values: Value[], datatype?: ClassOrType<types.TupleType>) {
         const type = datatype || new types.TupleType(token, values.map(v => v.datatype || null));
@@ -176,7 +182,7 @@ export class TupleValue extends DataValue {
  * String literal, not data
  */
 export class StrValue extends Value {
-    value: string;
+    declare value: string;
     constructor(token: LexerToken) {
         super(token, ValueType.Str, token.token);
     }

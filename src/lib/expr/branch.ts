@@ -20,7 +20,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * Expression that this should capture
      */
-    value: DataExpr;
+    declare value: DataExpr;
 
     constructor(token: LexerToken, value: DataExpr) {
         super(token, value.datatype);

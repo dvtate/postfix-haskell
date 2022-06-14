@@ -363,7 +363,7 @@ export class TupleType extends Type {
  * Tuple type but with no elements
  */
 export class UnitType extends TupleType {
-    types: []
+    types: [] = [];
 }
 
 /**

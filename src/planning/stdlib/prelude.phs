@@ -92,18 +92,30 @@ I32 I64 | F32 F64 | | $_Scalar =
 ((F32): is_const ) (: -1.0f == ) $_is_neg1 fun
 ((F64): is_const ) (: -1.0l == ) $_is_neg1 fun
 
+# Do we know at compile time that the value is a 0
+(: 1 ) (: 0 ) $_is_0 fun
+((0): 1 ) (: 1 ) $_is_0 fun
+((0L): 1 ) (: 1 ) $_is_0 fun
+((0.0f): 1 ) (: 1 ) $_is_0 fun
+((0.0l): 1 ) (: 1 ) $_is_0 fun
+
 ##
 # Operator ==
 ##
 
-#((I32 I32): _is_0 ) (: pop "i32.eqz" asm ) $global.== fun
-#((I32 I32): pop _is_0 ) (: swap pop "i32.eqz" asm ) $global.== fun
-#((I64 I64): _is_0 ) (: pop "i64.eqz" asm ) $global.== fun
-#((I64 I64): pop _is_0 ) (: swap pop "i64.eqz" asm ) $global.== fun
-((I32 I64): 1 ) (: swap I64 cast swap == ) $global.== fun
-((I64 I32): 1 ) (: I64 cast == ) $global.== fun
-((F32 F64): 1 ) (: swap F64 cast swap == ) $global.== fun
-((F64 F32): 1 ) (: F64 cast == ) $global.== fun
+# Otherwise use the builtin, ambiguous == operator
+
+# Use eqz instruction
+((I32 I32): _is_0 ) (: pop "i32.eqz" asm ) $global.== fun
+((I32 I32): pop _is_0 ) (: swap pop "i32.eqz" asm ) $global.== fun
+((I64 I64): _is_0 ) (: pop "i64.eqz" asm ) $global.== fun
+((I64 I64): pop _is_0 ) (: swap pop "i64.eqz" asm ) $global.== fun
+
+# Type promotion
+((I32 I64): 1 ) (: swap _promote swap == ) $global.== fun
+((I64 I32): 1 ) (: _promote == ) $global.== fun
+((F32 F64): 1 ) (: swap _promote swap == ) $global.== fun
+((F64 F32): 1 ) (: _promote == ) $global.== fun
 
 ##
 # Operator !=

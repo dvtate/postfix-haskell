@@ -1,17 +1,24 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "ESNext",
         "moduleResolution": "node",
         "pretty": true,
         "sourceMap": true,
-        "target": "ES2020",
+        "target": "ESNext",
         "resolveJsonModule": true,
         "outDir": "./dist",
         "strict": true,
         "strictNullChecks": false,
+        "esModuleInterop": true,
+        "importHelpers": true,
+        "isolatedModules": true,
+        "rootDir": "src",
         "allowJs": true
     },
     "include": [
+        "lib/**/*.ts",
+        "planning/*.ts",
+        "planning/*.js",
         "*/*.js",
         "*/*.ts",
         "*.js",

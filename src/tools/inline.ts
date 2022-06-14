@@ -3,7 +3,7 @@ import parse from '../lib/parse';
 import Context from '../lib/context';
 
 // Import wabt promise
-import wabtMod = require('wabt');
+import wabtMod from 'wabt';
 const wabtProm = wabtMod();
 
 /**

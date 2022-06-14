@@ -26,7 +26,7 @@ type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
 export abstract class Macro extends value.Value {
     type: value.ValueType.Macro = value.ValueType.Macro;
     datatype: types.ArrowType = null;
-    value: undefined;
+    declare value: undefined;
 
     /**
      * Datatypes which the macro satisfies

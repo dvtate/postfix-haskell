@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import yargs = require('yargs');
+import * as yargs from 'yargs';
 
 import runShell from './tools/shell';
 import compileFile from './tools/file';

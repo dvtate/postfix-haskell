@@ -1,0 +1,43 @@
+"../../stdlib/prelude.phs" require use
+
+# This is current
+((I32)(I32):
+    # Get input
+    $n =
+
+    # Iterative implementation
+    (rec:"
+        (: true ) (: pop ) $b fun
+        (: 0 > ) (: $n = n * n 1 - iter ) $b fun
+        b" $_ =
+
+        ( $ret $n ) =
+        (: true ) (: ret ) $b fun
+        (: n 0 > ) (: ret n * n 1 - iter ) $b fun
+        b
+    ) $iter =
+
+    # Invoke implementation
+    1 n iter
+) $fac =
+
+# Revised recursive-macro syntax
+(:
+    1 swap
+    (rec$iter:
+        (: true ) (: pop ) $b fun
+        (: 0 > ) (: $n = n * n 1 - iter ) $b fun
+        b
+    ) @
+) $fac2 =
+
+(I32) $fac ~ $fac export
+
+"
+    (rec:
+        ( $ret $n ) =
+        (: true ) (: ret ) $b fun
+        (: n 0 > ) (: ret n * n 1 - iter ) $b fun
+        b
+    ) $iter =
+"

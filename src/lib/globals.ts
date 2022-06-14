@@ -34,6 +34,7 @@ type MacroOperatorsSpec = {
         action: (ctx: Context, token: LexerToken)
             => Context | Array<string> | undefined | SyntaxError | void;
         type?: types.ArrowType;
+        // TODO help text?
     };
 };
 

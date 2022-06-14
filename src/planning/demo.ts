@@ -1,4 +1,4 @@
-import fs = require('fs');
+import { readFileSync } from 'fs';
 
 import lex from '../lib/scan';
 import parse from '../lib/parse';
@@ -9,7 +9,7 @@ import * as util from '../tools/util';
 (async () => {
     // Read program source
     const fname : string = process.argv[2];
-    const src = fs.readFileSync(fname).toString();
+    const src = readFileSync(fname).toString();
 
     // Compile program
     const ctx = parse(lex(src, fname));

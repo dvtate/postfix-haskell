@@ -1,8 +1,8 @@
 import * as fs from 'fs';
+import wabtMod from 'wabt';
+import binaryen from "binaryen";
 
-import binaryen = require("binaryen");
-import wabtMod = require("wabt");
-
+// Basically import everything lol
 import * as value from './value';
 import * as types from './datatypes';
 import * as error from './error';
@@ -24,7 +24,9 @@ const wabtProm = wabtMod();
 // TODO this class is fucking massive and should be split into different components
 //  so that the amount of state it manages is better organized
 
-// Return Types for Context.traceIO() method
+/**
+ * Return Types for Context.traceIO() method
+ */
 export class TraceResults {
     /**
      * Consumed by operation
@@ -241,7 +243,7 @@ export default class Context {
      * Get index for first value on stack that hasn't been seen before
      *
      * @param old - index for first value on stack that hasn't been seen before
-     * @deprecated
+     * @deprecated wait why is this depricated?
      */
     cmpStack(old: value.Value[]) {
         let i = 0;
