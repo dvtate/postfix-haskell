@@ -650,7 +650,14 @@ export default class Context {
   }
 
   /**
-   * Use Compiles program to WebAssembly Text and then uses WABT to convert to binary
+   * Use Compiles program to WebAssembly Text and then uses WABT to convert to
+   * binary
+   *
+   * @note Because wabt does not export its private types, this method (and
+   * anything else exported in this entire file) cannot include wabt types in
+   * their type signatures. This method must either be private, and do anything
+   * it might need with wabt data internally, or it must not return it.
+   * 
    * @returns - Wasm binary buffer
    */
   async outWasm() {
@@ -674,6 +681,12 @@ export default class Context {
 
     // Generate wasm binary
     mod.validate();
-    return mod.toBinary({ log: true });
+
+    /**
+     * Return buffer and log. Do not return the result from wabt directly as
+     * its types are private.
+     */
+    const { log, buffer } = mod.toBinary({ log: true });
+    return { log, buffer };
   }
 }
