@@ -13,7 +13,8 @@
         "importHelpers": true,
         "isolatedModules": true,
         "rootDir": "src",
-        "allowJs": true
+        "allowJs": true,
+        "checkJs": true,
     },
     "include": [
         "lib/**/*.ts",

@@ -1,23 +1,15 @@
-// Generate wat import
-// TODO OPTIMIZE strip comments from WAT?
-const fs = require('fs');
-fs.writeFileSync(
-    './lib/rt.wat.ts',
-    `export default ${JSON.stringify(fs.readFileSync('./lib/rt.wat').toString())
-    };\n\nexport const noRuntime = ${JSON.stringify(fs.readFileSync('./lib/no_rt.wat').toString())};`,
-);
+import { readFile, writeFile } from "fs/promises";
 
-// Run compile typescript
-const cp = require('child_process');
-console.log('> tsc');
-cp.exec(
-    'tsc',
-    (err, stdout, stderr) => {
-        if (err)    console.error(err);
-        if (stdout) console.log(stdout);
-        if (stderr) console.error(stderr);
+console.log("Building WAT runtime JS...");
 
-        // Remove wat import (keep for ide)
-        // fs.unlinkSync('./lib/rt.wat.ts');
-    }
-);
+const rtWat = await readFile("src/lib/rt.wat", "utf8");
+const noRtWat = await readFile("src/lib/no_rt.wat", "utf8");
+const watRuntime = `
+export default ${JSON.stringify(rtWat)};
+export const noRuntime = ${JSON.stringify(noRtWat)};
+`;
+
+/**
+ * Write the generated WASM JS runtime.
+ */
+await writeFile('src/generated/wat-runtime.ts', watRuntime);
