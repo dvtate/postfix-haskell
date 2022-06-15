@@ -1,11 +1,10 @@
-import { LexerToken } from './scan';
-import Context from './context';
-import * as types from './datatypes'
-import * as expr from './expr';
-import * as value from './value';
-import * as error from './error';
-import WasmNumber, { NumberType } from './numbers';
-import { fromDataValue } from './expr';
+import { LexerToken } from './scan.js';
+import Context from './context.js';
+import * as types from './datatypes.js'
+import * as expr from './expr/index.js';
+import * as value from './value.js';
+import * as error from './error.js';
+import WasmNumber, { NumberType } from './numbers.js';
 
 // Describes an instruction
 interface AssemblyDBEntry {
@@ -354,7 +353,7 @@ const opInstrs: { [k : string] : HandlerFn } = {
             token,
             trueVal.datatype,
             cmd,
-            fromDataValue([trueVal, falseVal, cond], ctx),
+            expr.fromDataValue([trueVal, falseVal, cond], ctx),
         ));
     },
 };

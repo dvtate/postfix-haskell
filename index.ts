@@ -1,11 +1,10 @@
-#!/usr/bin/env node
-import yargs = require('yargs');
-
-import runShell from './tools/shell';
-import compileFile from './tools/file';
 import { writeFileSync } from 'fs';
+import yargs from 'yargs/yargs';
 
-yargs
+import runShell from './tools/shell.js';
+import compileFile from './tools/file.js';
+
+yargs()
     .scriptName('phc')
     .usage('$0 <command> [args]')
     .option('verbose', {

@@ -1,6 +1,5 @@
-import fs = require('fs');
-
-import * as lex from '../lib/scan';
+import { readFileSync } from 'fs';
+import * as lex from '../lib/scan.js';
 
 interface FileSnapshot {
     line: string;
@@ -14,7 +13,7 @@ interface FileSnapshot {
  * @param {number} pos - character index in file
  */
 export function fileLocate(file: string, pos: number): FileSnapshot {
-    const lines = fs.readFileSync(file).toString().split('\n');
+    const lines = readFileSync(file).toString().split('\n');
     let cur = 0;
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++)
         if (1 + cur + lines[lineNumber].length > pos)

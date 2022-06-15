@@ -1,11 +1,11 @@
-import Context from "./context";
-import { BlockToken, LexerToken, MacroToken } from "./scan";
-import parse from "./parse";
-import { Namespace } from "./namespace";
-import * as error from './error';
-import * as value from './value';
-import * as types from './datatypes';
-import * as expr from './expr';
+import Context from "./context.js";
+import { BlockToken, LexerToken, MacroToken } from "./scan.js";
+import parse from "./parse.js";
+import { Namespace } from "./namespace.js";
+import * as error from './error.js';
+import * as value from './value.js';
+import * as types from './datatypes.js';
+import * as expr from './expr/index.js';
 
 // TODO add arrow type
 // TOOD make it extend Value - not addressing because not clear what the `.value` would be
@@ -26,7 +26,7 @@ type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
 export abstract class Macro extends value.Value {
     type: value.ValueType.Macro = value.ValueType.Macro;
     datatype: types.ArrowType = null;
-    value: undefined;
+    declare value: undefined;
 
     /**
      * Datatypes which the macro satisfies

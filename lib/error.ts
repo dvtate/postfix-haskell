@@ -1,13 +1,14 @@
 
-/*
- * Here are some reasons to stop the user from compiling Probably more will come as more things are added
+/**
+ * Here are some reasons to stop the user from compiling
+ * Probably more will come as more things are added
  */
 
-import { Context } from "vm";
-import { LexerToken } from "./scan";
-import * as value from './value';
-import { Expr } from "./expr";
-import { Type } from "./datatypes";
+import Context from "./context.js";
+import { LexerToken } from "./scan.js";
+import * as value from './value.js';
+import { Expr } from "./expr/index.js";
+import { Type } from "./datatypes.js";
 
 // TODO Only a few of these are used atm ...
 

@@ -1,7 +1,7 @@
-export * from './expr';
-export * from './branch';
-export * from './recursion';
-export * from './util';
+export * from './expr.js';
+export * from './branch.js';
+export * from './recursion.js';
+export * from './util.js';
 
 /*
  * This directory contains datatypes related to a graph IR used to output webassembly

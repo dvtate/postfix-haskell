@@ -1,10 +1,9 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import * as error from '../error';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
-import { DataExpr, Expr, FunExpr } from './expr';
-import { DependentLocalExpr } from './util';
+import * as value from '../value.js';
+import * as error from '../error.js';
+import { LexerToken } from '../scan.js';
+import ModuleManager from '../module.js';
+import { DataExpr, Expr, FunExpr } from './expr.js';
+import { DependentLocalExpr } from './util.js';
 
 /**
  * Describes expensive expressions which were on the stack before a branch was invoked
@@ -20,7 +19,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * Expression that this should capture
      */
-    value: DataExpr;
+    declare value: DataExpr;
 
     constructor(token: LexerToken, value: DataExpr) {
         super(token, value.datatype);

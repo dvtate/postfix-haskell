@@ -1,9 +1,9 @@
-import readline = require('readline');
-import fs = require('fs');
+import { createInterface } from 'readline';
+import { writeFileSync } from 'fs';
 
-import lex from '../lib/scan';
-import parse, { generatePerfSummary } from '../lib/parse';
-import Context from '../lib/context';
+import lex from '../lib/scan.js';
+import parse, { generatePerfSummary } from '../lib/parse.js';
+import Context from '../lib/context.js';
 
 /**
  * Launch interactive shell
@@ -12,7 +12,7 @@ import Context from '../lib/context';
  */
 export default function runShell(lexFlag = false, verboseFlag = true) {
     // Create line reader
-    const rl = readline.createInterface ({
+    const rl = createInterface ({
         input: process.stdin,
         output: process.stdout,
         terminal: true,
@@ -28,7 +28,7 @@ export default function runShell(lexFlag = false, verboseFlag = true) {
         if (line == '#! token-timers') {
             const ret = generatePerfSummary();
             console.log(ret);
-            fs.writeFileSync('/tmp/phs.perf.dump.json', JSON.stringify(ret));
+            writeFileSync('/tmp/phs.perf.dump.json', JSON.stringify(ret));
             return;
         }
 

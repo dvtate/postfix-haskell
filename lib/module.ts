@@ -1,9 +1,9 @@
-import Context from "./context";
-import * as types from "./datatypes";
-import * as expr from './expr';
+import Context from "./context.js";
+import * as types from "./datatypes.js";
+import * as expr from './expr/index.js';
 
 // Import WAST template as a string
-import template, { noRuntime as noRuntimeTemplate } from "./rt.wat";
+import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
 
 /**
  * Adjust compiler behavior

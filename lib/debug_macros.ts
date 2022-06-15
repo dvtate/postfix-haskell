@@ -1,9 +1,9 @@
-import { CompilerMacro } from "./macro";
-import * as value from "./value";
-import * as error from "./error";
-import { Context } from "vm";
-import { LexerToken } from "./scan";
-import { formatErrorPos } from "../tools/util";
+import { CompilerMacro } from "./macro.js";
+import * as value from "./value.js";
+import * as error from "./error.js";
+import Context from "./context.js";
+import { LexerToken } from "./scan.js";
+import { formatErrorPos } from "../tools/util.js";
 
 /*
  * These are useful for interactive shell and maybe for compile-time debugging
@@ -115,7 +115,7 @@ const debugOperators: { [k: string]: (ctx: Context, token: LexerToken) => any } 
     },
 
     // Compilation and stuff
-    ':targets' : ctx => ctx.exports,
+    ':targets' : ctx => ctx.module.definitions,
     ':compile' : async ctx => await ctx.outWast({}),
     ':wast' : async ctx => await ctx.outWast({ folding: true }),
     ':wat' : async ctx => await ctx.outWast({ folding: false }),

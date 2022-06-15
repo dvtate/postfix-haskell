@@ -1,9 +1,9 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
-import { Expr, DataExpr, FunExpr, ParamExpr } from './expr';
-import { TeeExpr, DependentLocalExpr, } from './util';
+import * as value from '../value.js';
+import * as types from '../datatypes.js';
+import { LexerToken } from '../scan.js';
+import ModuleManager from '../module.js';
+import { Expr, DataExpr, FunExpr, ParamExpr } from './expr.js';
+import { TeeExpr, DependentLocalExpr, } from './util.js';
 
 export class UnknownEnumExpr extends DataExpr {
 

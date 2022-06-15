@@ -1,5 +1,5 @@
-import { LexerToken } from "../lib/scan";
-import { formatErrorPos, fileLocate } from "./util";
+import { LexerToken } from "../lib/scan.js";
+import { formatErrorPos, fileLocate } from "./util.js";
 
 // Help message
 if (process.argv.length < 5) {

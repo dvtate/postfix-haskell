@@ -1,22 +1,20 @@
 import * as fs from 'fs';
+import binaryen from 'binaryen';
+import wabtMod from 'wabt';
 
-import binaryen = require("binaryen");
-import wabtMod = require("wabt");
-
-import * as value from './value';
-import * as types from './datatypes';
-import * as error from './error';
-import * as expr from './expr';
-import { BlockToken, LexerToken } from "./scan";
-import WasmNumber from "./numbers";
-import debugMacros from './debug_macros';
-import globalOps from './globals';
-import ModuleManager, { CompilerOptions } from "./module";
-import { LiteralMacro, Macro } from "./macro";
-import { formatErrorPos } from '../tools/util';
-import { Namespace } from './namespace';
-import Fun from './function';
-import { fromDataValue } from './expr';
+import * as value from './value.js';
+import * as types from './datatypes.js';
+import * as error from './error.js';
+import * as expr from './expr/index.js';
+import { BlockToken, LexerToken } from './scan.js';
+import WasmNumber from './numbers.js';
+import debugMacros from './debug_macros.js';
+import globalOps from './globals.js';
+import ModuleManager, { CompilerOptions } from './module.js';
+import { LiteralMacro, Macro } from './macro.js';
+import { formatErrorPos } from '../tools/util.js';
+import { Namespace } from './namespace.js';
+import Fun from './function.js';
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
@@ -411,7 +409,7 @@ export default class Context {
 
             // Link body inputs
             // Generate input locals
-            body.takes = fromDataValue(ios.takes, this);
+            body.takes = expr.fromDataValue(ios.takes, this);
             body.takeExprs = body.takes.map(e =>
                 e.type === value.ValueType.Expr ? new expr.DependentLocalExpr(token, e.datatype, body) : null);
 
@@ -427,7 +425,7 @@ export default class Context {
                 return ios2;
 
             // Update body
-            body.gives = fromDataValue(ios2.gives, this);
+            body.gives = expr.fromDataValue(ios2.gives, this);
             // body.takes = ios2.takes;
 
             // Update stack
@@ -447,7 +445,7 @@ export default class Context {
                     // TODO this shouldn't suck so bad :(
                     return new error.SyntaxError(`cannot pass abstract value ${args[i]} in recursive call`, token, this);
 
-            const callExpr = new expr.RecursiveCallExpr(token, body, fromDataValue(args, this));
+            const callExpr = new expr.RecursiveCallExpr(token, body, expr.fromDataValue(args, this));
             // Note that if they're used after this it woudln't be tail recursion and would be unreachable
 
             this.push(...callExpr.giveExprs);
@@ -672,6 +670,6 @@ export default class Context {
 
         // Generate wasm binary
         mod.validate();
-        return mod.toBinary({log: true});
+        return mod.toBinary({log: true}).buffer;
     }
 }

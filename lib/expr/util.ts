@@ -1,10 +1,10 @@
-import { LexerToken } from '../scan';
-import * as error from '../error';
-import * as value from '../value';
-import * as types from '../datatypes';
-import { Expr, DataExpr, FunExpr } from './expr';
-import ModuleManager from '../module';
-import Context from '../context';
+import { LexerToken } from '../scan.js';
+import * as error from '../error.js';
+import * as value from '../value.js';
+import * as types from '../datatypes.js';
+import { Expr, DataExpr, FunExpr } from './expr.js';
+import ModuleManager from '../module.js';
+import Context from '../context.js';
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -39,7 +39,7 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): 
  * Constant value that we're treating as an Expr
  */
 export class NumberExpr extends DataExpr {
-    value: value.NumberValue;
+    declare value: value.NumberValue;
 
     /**
      * @param token - Location in code
@@ -75,7 +75,7 @@ export class NumberExpr extends DataExpr {
 }
 
 export class TupleExpr extends DataExpr {
-    value: DataExpr[];
+    declare value: DataExpr[];
 
     constructor(token: LexerToken, ctx: Context, v: value.TupleValue) {
         super(token, v.datatype);
@@ -272,7 +272,7 @@ export class MultiInstrExpr extends Expr {
  * Expression to be used for indentifiers, similar behavior to TeeExpr
  */
 export class IdExpr extends DataExpr {
-    public value: DataExpr;
+    declare public value: DataExpr;
 
     /**
      * Should this identifier be stored in a local?

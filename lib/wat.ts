@@ -1,4 +1,4 @@
-import * as expr from './expr';
+import * as expr from './expr/index.js';
 
 
 // Not sure if I'll actually end up using this long term...

@@ -1,12 +1,10 @@
-import * as types from './datatypes';
-import WasmNumber from './numbers';
-import { IdToken, LexerToken } from './scan';
-import Context from './context';
-import ModuleManager from './module';
-import * as expr from './expr';
-import { Expr, fromDataValue } from './expr';
-import { Namespace } from './namespace';
-
+import * as types from './datatypes.js';
+import WasmNumber from './numbers.js';
+import { IdToken, LexerToken } from './scan.js';
+import Context from './context.js';
+import ModuleManager from './module.js';
+import { Expr, FunExportExpr } from './expr/index.js';
+import { Namespace } from './namespace.js';
 
 /*
  * In this context, Values are like nodes on an AST, but also used to simplify constexprs/partial evaluation
@@ -59,7 +57,7 @@ export class Value {
         return this.type !== ValueType.Expr;
     }
 
-    out?(ctx: ModuleManager, fun?: expr.FunExportExpr): string
+    out?(ctx: ModuleManager, fun?: FunExportExpr): string
 
     /**
      * Name for type of this value
@@ -73,7 +71,7 @@ export class Value {
  * Data with a user-level type, this includes unions, structs and aliases
  */
 export class DataValue extends Value {
-    datatype: types.Type;
+    declare datatype: types.Type;
     type: ValueType.Data = ValueType.Data;
 
     constructor(token: LexerToken, type: types.Type, value: any) {
@@ -85,7 +83,7 @@ export class DataValue extends Value {
  * Set of identifiers
  */
 export class NamespaceValue extends Value {
-    value: Namespace;
+    declare value: Namespace;
     type: ValueType.Ns = ValueType.Ns;
 
     constructor(token: LexerToken, value: Namespace) {
@@ -131,9 +129,9 @@ export class NumberValue extends DataValue {
  * Escaped Identifier
  */
 export class IdValue extends Value {
-    value: string[];
-    type: ValueType.Id;
-    token: IdToken;
+    declare value: string[];
+    declare token: IdToken;
+    type: ValueType.Id = ValueType.Id;
 
     constructor(token: IdToken, public isGlobal = false) {
         super(token, ValueType.Id, token.value);
@@ -156,15 +154,15 @@ type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
  * Packed values
  */
 export class TupleValue extends DataValue {
-    value: Value[];
-    datatype: types.TupleType;
+    declare value: Value[];
+    declare datatype: types.TupleType;
 
     constructor(token: LexerToken, values: Value[], datatype?: ClassOrType<types.TupleType>) {
         const type = datatype || new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
     }
 
-    out(ctx: ModuleManager, fun?: expr.FunExportExpr) {
+    out(ctx: ModuleManager, fun?: FunExportExpr) {
         return this.value.map(v => v.out(ctx, fun)).join('');
     }
 }
@@ -176,7 +174,7 @@ export class TupleValue extends DataValue {
  * String literal, not data
  */
 export class StrValue extends Value {
-    value: string;
+    declare value: string;
     constructor(token: LexerToken) {
         super(token, ValueType.Str, token.token);
     }

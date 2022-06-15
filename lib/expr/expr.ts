@@ -1,9 +1,8 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import * as error from '../error';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
-import { TraceResults } from '../context';
+import * as value from '../value.js';
+import * as types from '../datatypes.js';
+import * as error from '../error.js';
+import { LexerToken } from '../scan.js';
+import ModuleManager from '../module.js';
 
 // TODO expr constructors should be augmented to also take in Context object
 // This way they can also emit warnings

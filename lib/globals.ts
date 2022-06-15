@@ -1,16 +1,16 @@
-import * as value from './value';
-import * as types from './datatypes';
-import * as expr from './expr';
-import * as error from './error';
-import Context from './context';
-import WasmNumber from './numbers';
-import Fun from './function';
-import scan, { LexerToken, MacroToken } from './scan';
-import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro';
 import * as fs from 'fs';
 import * as path from 'path';
-import { invokeAsm } from './asm';
-import { fromDataValue } from './expr';
+
+import * as value from './value.js';
+import * as types from './datatypes.js';
+import * as expr from './expr/index.js';
+import * as error from './error.js';
+import Context from './context.js';
+import WasmNumber from './numbers.js';
+import Fun from './function.js';
+import scan, { LexerToken, MacroToken } from './scan.js';
+import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
+import { invokeAsm } from './asm.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -113,7 +113,8 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Puts items in executable array into a tuple
+    // Puts items given by a macro into a tuple
+    // probably no reason to have this now with tuple literals
     'pack' : {
         action: (ctx, token) => {
             // Get executable array
@@ -652,10 +653,10 @@ const operators : MacroOperatorsSpec = {
 
             // Create expression
             if (outputTypes.length > 1) {
-                const e = new expr.MultiInstrExpr(token, mnemonic.value, fromDataValue(inputs, ctx), outputTypes);
+                const e = new expr.MultiInstrExpr(token, mnemonic.value, expr.fromDataValue(inputs, ctx), outputTypes);
                 ctx.push(...e.results);
             } else {
-                ctx.push(new expr.InstrExpr(token, outputTypes[0], mnemonic.value, fromDataValue(inputs, ctx)));
+                ctx.push(new expr.InstrExpr(token, outputTypes[0], mnemonic.value, expr.fromDataValue(inputs, ctx)));
             }
         },
     },

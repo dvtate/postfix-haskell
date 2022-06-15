@@ -2,12 +2,11 @@
 import * as fs from 'fs';
 
 // Internal
-import lex from "../lib/scan";
-import parse from '../lib/parse';
-import * as error from '../lib/error';
-import Context from '../lib/context';
-
-import * as util from './util';
+import lex from "../lib/scan.js";
+import parse from '../lib/parse.js';
+import * as error from '../lib/error.js';
+import Context from '../lib/context.js';
+import * as util from './util.js';
 
 /**
  * Compile a file to webassembly text and print it's contents

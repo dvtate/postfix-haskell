@@ -1,16 +1,16 @@
 // Generate wat import
 // TODO OPTIMIZE strip comments from WAT?
-const fs = require('fs');
-fs.writeFileSync(
+import { writeFileSync, readFileSync } from 'fs';
+writeFileSync(
     './lib/rt.wat.ts',
-    `export default ${JSON.stringify(fs.readFileSync('./lib/rt.wat').toString())
-    };\n\nexport const noRuntime = ${JSON.stringify(fs.readFileSync('./lib/no_rt.wat').toString())};`,
+    `export default ${JSON.stringify(readFileSync('./lib/rt.wat').toString())
+    };\n\nexport const noRuntime = ${JSON.stringify(readFileSync('./lib/no_rt.wat').toString())};`,
 );
 
 // Run compile typescript
-const cp = require('child_process');
+import { exec } from 'child_process';
 console.log('> tsc');
-cp.exec(
+exec(
     'tsc',
     (err, stdout, stderr) => {
         if (err)    console.error(err);

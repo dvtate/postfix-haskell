@@ -1,12 +1,11 @@
-import * as value from './value';
-import * as types from './datatypes';
-import * as error from './error';
-import * as expr from './expr';
-import Context, { TraceResults } from './context';
-import { LexerToken } from './scan';
-import { fromDataValue } from './expr';
-import { Macro } from './macro';
-import WasmNumber from './numbers';
+import * as value from './value.js';
+import * as types from './datatypes.js';
+import * as error from './error.js';
+import * as expr from './expr/index.js';
+import Context, { TraceResults } from './context.js';
+import { LexerToken } from './scan.js';
+import { Macro } from './macro.js';
+import WasmNumber from './numbers.js';
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
 
@@ -250,8 +249,8 @@ export default class Fun {
         // Make branch expr
         const branch = new expr.BranchExpr(
             this.tokens,
-            fromDataValue(branches.map(b => b[0]), ctx),
-            ios.map(t => fromDataValue(t.gives, ctx)),
+            expr.fromDataValue(branches.map(b => b[0]), ctx),
+            ios.map(t => expr.fromDataValue(t.gives, ctx)),
             inputs.filter(e => e instanceof expr.BranchInputExpr) as expr.BranchInputExpr[],
             this.name,
         );
@@ -263,7 +262,7 @@ export default class Fun {
         /*
         // Push branch expr
         // TODO remove `as` here
-        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => fromDataValue(t.gives)));
+        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => expr.fromDataValue(t.gives)));
         const results: DependentLocalExpr[] = [];
         const ret: value.Value[] = [];
         first.forEach(o => {

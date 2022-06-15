@@ -1,15 +1,15 @@
-import fs = require('fs');
+import { readFileSync } from 'fs';
 
-import lex from '../lib/scan';
-import parse from '../lib/parse';
-import Context from '../lib/context';
-import * as error from '../lib/error';
-import * as util from '../tools/util';
+import lex from '../lib/scan.js';
+import parse from '../lib/parse.js';
+import Context from '../lib/context.js';
+import * as error from '../lib/error.js';
+import * as util from '../tools/util.js';
 
 (async () => {
     // Read program source
     const fname : string = process.argv[2];
-    const src = fs.readFileSync(fname).toString();
+    const src = readFileSync(fname).toString();
 
     // Compile program
     const ctx = parse(lex(src, fname));

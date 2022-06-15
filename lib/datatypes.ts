@@ -1,5 +1,5 @@
-import { LexerToken } from './scan';
-import { Value } from './value';
+import { LexerToken } from './scan.js';
+import { Value } from './value.js';
 
 /**
  * Abstract base for datatypes
@@ -363,7 +363,7 @@ export class TupleType extends Type {
  * Tuple type but with no elements
  */
 export class UnitType extends TupleType {
-    types: []
+    types: [] = [];
 }
 
 /**

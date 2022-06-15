@@ -1,5 +1,5 @@
-import { formatErrorPos } from "../tools/util";
-import WasmNumber from "./numbers";
+import { formatErrorPos } from "../tools/util.js";
+import WasmNumber from "./numbers.js";
 
 // This handles Context-free grammar
 

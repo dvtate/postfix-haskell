@@ -1,9 +1,9 @@
-import { BlockToken, IdToken, LexerToken, MacroToken, NumberToken } from "./scan";
-import * as value from './value';
-import Context from './context';
-import { LiteralMacro } from './macro';
-import * as error from './error';
-import * as types from './datatypes';
+import { BlockToken, IdToken, LexerToken, MacroToken, NumberToken } from "./scan.js";
+import * as value from './value.js';
+import Context from './context.js';
+import { LiteralMacro } from './macro.js';
+import * as error from './error.js';
+import * as types from './datatypes.js';
 
 /*
 The name for this file is somewhat misleading but technically correct

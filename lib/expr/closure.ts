@@ -1,11 +1,11 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import * as error from '../error';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
+import * as value from '../value.js';
+import * as types from '../datatypes.js';
+import * as error from '../error.js';
+import { LexerToken } from '../scan.js';
+import ModuleManager from '../module.js';
 
-import { DataExpr, Expr, FunExpr } from './expr';
-import { LiteralMacro, Macro } from '../macro';
+import { DataExpr, Expr, FunExpr } from './expr.js';
+import { LiteralMacro, Macro } from '../macro.js';
 
 /**
  * Capture lexically scoped variables and store them into a new closure object
