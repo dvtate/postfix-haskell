@@ -1,10 +1,11 @@
+#!/bin/env node
 import { writeFileSync } from 'fs';
 import yargs from 'yargs/yargs';
 
 import runShell from './tools/shell.js';
 import compileFile from './tools/file.js';
 
-yargs()
+yargs(process.argv.slice(2))
     .scriptName('phc')
     .usage('$0 <command> [args]')
     .option('verbose', {
