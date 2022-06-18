@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import * as value from './value.js';
 import * as types from './datatypes.js';
+import * as value from './value.js';
 import * as expr from './expr/index.js';
 import * as error from './error.js';
 import Context from './context.js';
@@ -249,13 +249,14 @@ const operators : MacroOperatorsSpec = {
     // TODO make this a function
     'make' : {
         action: (ctx, token) => {
-            // TODO Check base type compatible ?
             // Get type
             if (ctx.stack.length < 2)
                 return ['not enough values']
             const t = ctx.pop();
             if (t.type !== value.ValueType.Type)
                 return ['expected a class to apply'];
+            if (!(t.value instanceof types.ClassType))
+                return ['invalid type, expected a class'];
 
             // Get data
             const v = ctx.pop();
@@ -263,7 +264,7 @@ const operators : MacroOperatorsSpec = {
                 return ['expected data to apply class to'];
 
             // Apply class to data
-            const compatible = t.value.getBaseType().check(v.datatype);
+            const compatible = (t.value as types.ClassType<types.Type>).getBaseType().check(v.datatype);
             if (!compatible) {
                 // console.log('make: incompatible', t.value, t.value.getBaseType(), v.datatype);
                 ctx.warn(token, 'class applied to incompatible data');
@@ -384,7 +385,9 @@ const operators : MacroOperatorsSpec = {
                 ctx.warn(token, '() is context sensitive, you should use warn');
                 inputs = [];
             } else if (inputsTuple.type === value.ValueType.Type) {
-                const bt = inputsTuple.value.getBaseType();
+                const bt = inputsTuple.value instanceof types.ClassType
+                    ? inputsTuple.value.getBaseType()
+                    : inputsTuple.value;
                 if (!(bt instanceof types.TupleType))
                     return new error.SyntaxError('Expected a tuple type for inputs', token, ctx);
                 inputs = bt.types;
@@ -398,7 +401,9 @@ const operators : MacroOperatorsSpec = {
                 ctx.warn(token, '() is context sensitive, you should use warn');
                 outputs = [];
             } else if (outputsTuple.type === value.ValueType.Type) {
-                const bt = outputsTuple.value.getBaseType();
+                const bt = outputsTuple.value instanceof types.ClassType
+                ? outputsTuple.value.getBaseType()
+                : outputsTuple.value;
                 if (!(bt instanceof types.TupleType))
                     return new error.SyntaxError('Expected a tuple type for outputs', token, ctx);
                 outputs = bt.types;
@@ -409,13 +414,6 @@ const operators : MacroOperatorsSpec = {
             // Push Type onto the stack
             const type = new types.ArrowType(token, inputs, outputs);
             ctx.push(new value.Value(token, value.ValueType.Type, type));
-        },
-    },
-
-    // Unit datatype, stores no values, only accepts empty tuple
-    'Unit' : {
-        action: (ctx, token) => {
-            ctx.push(new value.Value(token, value.ValueType.Type, new types.TupleType(token, [])));
         },
     },
 
@@ -441,8 +439,10 @@ const operators : MacroOperatorsSpec = {
 
             // Add relevant import
             const importName = ctx.module.addImport(scopeStrs, type.value);
-            if (!importName)
-                return ["invalid import"];
+            if (importName instanceof error.SyntaxError) {
+                importName.tokens.push(token);
+                return importName;
+            }
 
             // Macro action which calls the import
             const callImport = (ctx: Context, token: LexerToken): ActionRet => {
@@ -462,7 +462,7 @@ const operators : MacroOperatorsSpec = {
 
                 // Make call expr
                 // TODO this is sketchy
-                if (type.value.outputTypes.length == 1) {
+                if (type.value.outputTypes && type.value.outputTypes.length === 1) {
                     ctx.push(new expr.TeeExpr(token, new expr.InstrExpr(
                         token,
                         type.value.outputTypes[0],
@@ -629,7 +629,7 @@ const operators : MacroOperatorsSpec = {
     },
 
     // Unsafe, custom inline assembly
-    '_asm' : {
+    '__asm' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get args
             if (ctx.stack.length < 2)
@@ -662,14 +662,14 @@ const operators : MacroOperatorsSpec = {
     },
 
     // Moving typechecking behavior from == to here
-    // 'typecheck' : {
-    //     action: (ctx, token) => {
-    //         if (ctx.stack.length < 2)
-    //             return ['missing values'];
-    //         const [a, b] = ctx.popn(2).reverse();
-    //         ctx.push(toBool(b.value.check(a.value), token));
-    //     }
-    // },
+    '__typecheck' : {
+        action: (ctx, token) => {
+            if (ctx.stack.length < 2)
+                return ['missing values'];
+            const [a, b] = ctx.popn(2).reverse();
+            ctx.push(toBool(b.value.check(a.value), token));
+        }
+    },
 
     'static_region' : {
         action: (ctx, token) => {
@@ -704,6 +704,14 @@ const operators : MacroOperatorsSpec = {
             ctx.module.setStaticData(Number(ptr.value.value), Number(v.value.value));
         },
     },
+
+    // Unit datatype, stores no values, only accepts empty tuple
+    'Unit' : {
+        action: (ctx, token) => {
+            ctx.push(new value.Value(token, value.ValueType.Type, new types.TupleType(token, [])));
+        },
+    },
+
 };
 
 // Global functions that the user can overload
@@ -798,12 +806,12 @@ const funs = {
                         return ['incompatible types'];
 
                     // Non-primitives
-                    const aType = a.datatype.getBaseType();
-                    const bType = b.datatype.getBaseType();
+                    const aType = a.datatype instanceof types.ClassType ? a.datatype.getBaseType() : a.datatype;
+                    const bType = b.datatype instanceof types.ClassType ? b.datatype.getBaseType() : b.datatype;
                     if (!(aType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
                     if (!(bType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
 
                     // Compile-time check
                     if (b.type === value.ValueType.Data) {
@@ -841,12 +849,12 @@ const funs = {
                         return ['incompatible types'];
 
                     // Non-primitives
-                    const aType = a.datatype.getBaseType();
-                    const bType = b.datatype.getBaseType();
+                    const aType = a.datatype instanceof types.ClassType ? a.datatype.getBaseType() : a.datatype;
+                    const bType = b.datatype instanceof types.ClassType ? b.datatype.getBaseType() : b.datatype;
                     if (!(aType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
                     if (!(bType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
 
                     if (b.type === value.ValueType.Data && b.value.value === BigInt(0)) {
                         ctx.push(new expr.InstrExpr(
@@ -866,7 +874,7 @@ const funs = {
                     return;
                 }
 
-                // String comparison
+                // String literal comparison
                 case value.ValueType.Str:
                     // // Sanity check
                     // if (!(a instanceof value.StrValue) || !(b instanceof value.StrValue))

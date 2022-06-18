@@ -1,10 +1,10 @@
-import * as types from './datatypes.js';
 import WasmNumber from './numbers.js';
-import { IdToken, LexerToken } from './scan.js';
-import Context from './context.js';
-import ModuleManager from './module.js';
-import { Expr, FunExportExpr } from './expr/index.js';
-import { Namespace } from './namespace.js';
+import type { IdToken, LexerToken } from './scan.js';
+import type Context from './context.js';
+import type ModuleManager from './module.js';
+import type { Expr, FunExportExpr } from './expr/index.js';
+import type { Namespace } from './namespace.js';
+import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
 
 /*
  * In this context, Values are like nodes on an AST, but also used to simplify constexprs/partial evaluation
@@ -65,6 +65,8 @@ export class Value {
     typename() {
         return ValueType[this.type];
     }
+
+    static Type = ValueType;
 }
 
 /**
@@ -96,19 +98,8 @@ export class NamespaceValue extends Value {
  */
 export class NumberValue extends DataValue {
     constructor(token: LexerToken, wasmNumber: WasmNumber) {
-        super(token, NumberValue._typeMap[wasmNumber.type], wasmNumber);
+        super(token, types.PrimitiveType.typeMap[wasmNumber.type], wasmNumber);
     }
-
-    // Map of number types to coresponding primitive datatypes
-    static _typeMap = {
-        [WasmNumber.Type.I32]: types.PrimitiveType.Types.I32,
-        [WasmNumber.Type.I64]: types.PrimitiveType.Types.I64,
-        [WasmNumber.Type.F32]: types.PrimitiveType.Types.F32,
-        [WasmNumber.Type.F64]: types.PrimitiveType.Types.F64,
-        // TODO add these
-        [WasmNumber.Type.U32]: types.PrimitiveType.Types.I32,
-        [WasmNumber.Type.U64]: types.PrimitiveType.Types.I64,
-    };
 
     /**
      * See code in expr/expr.ts

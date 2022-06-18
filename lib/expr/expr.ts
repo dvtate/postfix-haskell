@@ -122,11 +122,12 @@ export class DummyDataExpr extends DataExpr {
      * @returns Expression or tuple of expressions with given datatype
      */
     static create(token: LexerToken, datatype: types.Type): value.TupleValue | DummyDataExpr {
-        const bt = datatype.getBaseType();
-        if (bt instanceof types.TupleType && bt.types.length !== 0)
+        if (datatype instanceof types.ClassType)
+            datatype = datatype.getBaseType();
+        if (datatype instanceof types.TupleType && datatype.types.length !== 0)
             return new value.TupleValue(
                 token,
-                bt.types.map(t => DummyDataExpr.create(token, t)),
+                datatype.types.map(t => DummyDataExpr.create(token, t)),
                 datatype as types.TupleType,
             );
         else
@@ -172,7 +173,10 @@ export abstract class FunExpr extends Expr {
     constructor(token: LexerToken, name: string, inputTypes: types.Type[]) {
         super(token);
         this.name = name;
-        this.inputTypes = inputTypes.filter(t => !t.getBaseType().isUnit());
+        this.inputTypes = inputTypes.filter(t =>
+            t instanceof types.ClassType
+                ? !t.getBaseType().isUnit()
+                : t.isUnit());
         this.params = inputTypes.map(t =>
             new ParamExpr(token, t, this, t.isUnit() ? [] : this.addLocal(t)));
     }
@@ -188,20 +192,21 @@ export abstract class FunExpr extends Expr {
             return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
 
         // Add relevant locals
-        const baseType = type.getBaseType();
-        if (baseType instanceof types.TupleType) {
+        if (type instanceof types.ClassType)
+        type = type.getBaseType();
+        if (type instanceof types.TupleType) {
             let i = this._locals.length;
-            const prims = baseType.flatPrimitiveList();
+            const prims = type.flatPrimitiveList();
             this._locals.push(...prims);
             return prims.map(() => i++);
         }
-        if (baseType instanceof types.PrimitiveType)
-            return [this._locals.push(baseType) - 1];
-        if (baseType instanceof types.ArrowType)
+        if (type instanceof types.PrimitiveType)
+            return [this._locals.push(type) - 1];
+        if (type instanceof types.ArrowType)
             return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
 
         // Can't be stored
-        console.error(type, baseType);
+        console.error(type, type);
         throw new error.SyntaxError("invalid local type", this.token);
     }
 

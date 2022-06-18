@@ -1,14 +1,11 @@
+import * as types from './datatypes.js';
 import Context from "./context.js";
 import { BlockToken, LexerToken, MacroToken } from "./scan.js";
 import parse from "./parse.js";
 import { Namespace } from "./namespace.js";
 import * as error from './error.js';
 import * as value from './value.js';
-import * as types from './datatypes.js';
 import * as expr from './expr/index.js';
-
-// TODO add arrow type
-// TOOD make it extend Value - not addressing because not clear what the `.value` would be
 
 /**
  * Return Type for macro implementations
@@ -27,12 +24,6 @@ export abstract class Macro extends value.Value {
     type: value.ValueType.Macro = value.ValueType.Macro;
     datatype: types.ArrowType = null;
     declare value: undefined;
-
-    /**
-     * Datatypes which the macro satisfies
-     */
-    // private matchingDatatypes: types.ArrowType[] = [];
-    // private failedDatatypes: types.ArrowType[] = [];
 
     /**
      * Did the user flag this macro as recursive?
@@ -72,6 +63,10 @@ export abstract class Macro extends value.Value {
         // if (inputTypes.some(t => t.isWild()))
         //     return 'wild inputs';
 
+        // Unable to trace syntax types
+        if (inputTypes.some(t => !(t instanceof types.DataType)))
+            return new types.ArrowType(token, inputTypes);
+
         // Generate dummy inputs
         const inputs = inputTypes.map(t => expr.DummyDataExpr.create(token, t));
         ctx.stack.push(...inputs);
@@ -92,9 +87,11 @@ export abstract class Macro extends value.Value {
         if (ios.takes.some(v => !v.datatype))
             throw new Error('wtf?');
         if (ios.gives.some(v => !v.datatype))
-            return new error.SyntaxError(`macro returns untyped value ${
-                ios.gives.find(v => !v.datatype).typename()
-                }`, token, ctx);
+            return new error.SyntaxError(
+                `macro returns untyped value ${ios.gives.find(v => !v.datatype).typename()}`,
+                token,
+                ctx,
+            );
 
         // Add match
         // TODO the outputTypes should be merged with unused inputtypes
@@ -308,7 +305,7 @@ export class LiteralMacro extends Macro {
             return type;
 
         // Verify outputs
-        if (outputs && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
+        if (outputs && type.outputTypes && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
             ctx.warn(this.token, 'incorrectly typed macro');
             console.warn('incorrectly typed macro, should be', type);
             // return type;

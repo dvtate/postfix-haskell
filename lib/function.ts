@@ -1,10 +1,10 @@
-import * as value from './value.js';
 import * as types from './datatypes.js';
+import * as value from './value.js';
 import * as error from './error.js';
 import * as expr from './expr/index.js';
 import Context, { TraceResults } from './context.js';
 import { LexerToken } from './scan.js';
-import { Macro } from './macro.js';
+import type { Macro } from './macro.js';
 import WasmNumber from './numbers.js';
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
@@ -232,12 +232,15 @@ export default class Fun {
 
         // Verify all have same return types
         const first = ios[0].gives as expr.DataExpr[];
-        if (ios.some(t => t.gives.some((v, i) =>
-            (v instanceof value.DataValue || v instanceof expr.DataExpr)
-            && !v.datatype.getBaseType().check(first[i].datatype)))
-        ) {
+        const givesInconsistent = ios.some(t => t.gives.some((v, i) => {
+            if (!(v instanceof value.DataValue || v instanceof expr.DataExpr))
+                return false;
+            const t = v.datatype instanceof types.ClassType ? v.datatype.getBaseType() : v.datatype;
+            return !t.check(first[i].datatype);
+        }));
+        if (givesInconsistent) {
             console.error("ios", ios);
-            return ['function must have consistent return types'];
+            return ['possible function branches give inconsistent results'];
         }
 
         // Drop inputs from stack

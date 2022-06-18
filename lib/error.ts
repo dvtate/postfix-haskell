@@ -4,11 +4,11 @@
  * Probably more will come as more things are added
  */
 
-import Context from "./context.js";
-import { LexerToken } from "./scan.js";
-import * as value from './value.js';
-import { Expr } from "./expr/index.js";
-import { Type } from "./datatypes.js";
+import type Context from "./context.js";
+import { internalToken, LexerToken } from "./scan.js";
+import type { Type } from "./datatypes.js";
+import type * as value from './value.js';
+import type { Expr } from "./expr/index.js";
 
 // TODO Only a few of these are used atm ...
 

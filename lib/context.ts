@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import binaryen from 'binaryen';
 import wabtMod from 'wabt';
 
-import * as value from './value.js';
 import * as types from './datatypes.js';
+import * as value from './value.js';
 import * as error from './error.js';
 import * as expr from './expr/index.js';
 import { BlockToken, LexerToken } from './scan.js';
