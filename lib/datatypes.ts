@@ -1,6 +1,7 @@
 import { LexerToken } from './scan.js';
 import { Value, ValueType } from './value.js';
 import WasmNumber from './numbers.js';
+import * as error from './error.js';
 
 /**
  * Abstract base for datatypes
@@ -21,28 +22,6 @@ export abstract class Type {
     }
 
     /**
-     * Gives the wasm typename for given type
-     * @returns - typename
-     * @virtual
-     */
-    abstract getWasmTypeName(name?: string): string;
-
-    /**
-     * Get a flat list of primitive types that constitute this type
-     * @returns list of primitives that this type compiles to
-     * @throws if union encountered throws string "union"
-     * @virtual
-     */
-    abstract flatPrimitiveList(): Array<PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>>;
-
-    /**
-     * Does this type hold a value in wasm?
-     * @returns false if the value doesn't carry a value
-     * @virtual
-     */
-    abstract isUnit(): boolean;
-
-    /**
      * Do Typecheck
      * @param {Type} type - type to check against
      * @virtual
@@ -53,35 +32,7 @@ export abstract class Type {
 /**
  * Type which matches any other type
  */
- export class AnyType extends Type {
-    /**
-     * @override
-     */
-    getBaseType(): Type {
-        return this;
-    }
-
-    /**
-     * @override
-     */
-    getWasmTypeName(name?: string): string {
-        throw new Error('Invalid call: AnyType.getWasmTypeName');
-    }
-
-    /**
-     * @override
-     */
-    flatPrimitiveList(): Array<PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>> {
-        throw new Error('Invalid call: AnyType.flatPrimitiveList');
-    }
-
-    /**
-     * @override
-     */
-    isUnit(): boolean {
-        return true;
-    }
-
+export class AnyType extends Type {
     /**
      * @override
      */
@@ -98,20 +49,68 @@ export class NeverType extends Type {
     /**
      * @override
      */
-    getBaseType(): Type {
-        return this;
-    }
-    getWasmTypeName(name?: string): string {
-        throw Error('Invalid call: NeverType.getWasmTypeName');
-    }
-    flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
-        throw Error('Invalid call: NeverType.flatPrimitiveList');
-    }
-    isUnit(): boolean {
-        return true;
-    }
     check(type: Type): boolean {
         return false;
+    }
+}
+
+/**
+ * When need to be able to handle more than one type
+ *  aka sum type (`|`)
+ */
+ export class UnionType extends Type {
+    types: Type[];
+
+    constructor(token: LexerToken = undefined, types: Type[] = []) {
+        super(token);
+        this.types = types;
+    }
+
+    /**
+     * @override
+     */
+    check(type: Type): boolean {
+        if (type === null)
+            return false;
+
+        // Don't care about classes
+        if (type instanceof ClassType) {
+            type = type.getBaseType();
+            if (!type)
+                return false;
+        }
+
+        // Verify other union is subset of this one
+        if (type instanceof UnionType)
+            return type.types.every(t => this.types.includes(t));
+
+        if (type instanceof AnyType)
+            return true;
+        if (type instanceof NeverType)
+            return false;
+
+        // Verify type is in this set
+        return this.types.includes(type);
+    }
+
+    /**
+     * @override
+     */
+    flatPrimitiveList(): PrimitiveType[] {
+        throw "union type";
+    }
+
+    /**
+     * @override
+     */
+    getWasmTypeName(): string {
+        throw new Error('Invalid call: UnionType.getWasmTypeName()');
+    }
+    isUnit(): boolean {
+        throw new Error("Invalid call: UnionType.isUnit()");
+    }
+    getBaseType(): Type {
+        return this;
     }
 }
 
@@ -145,18 +144,11 @@ export class SyntaxType extends Type {
     checkValue(v: Value) {
         return this.valueType === v.type;
     }
-
-    flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
-        throw Error('invalid use of compile-time only type');
-    }
-    isUnit(): boolean {
-        throw Error('invalid use of compile-time only type');
-    }
-    getWasmTypeName(name?: string): string {
-        throw Error('invalid use of compile-time only type');
-    }
 }
 
+/**
+ * Types of entities that can be physically represented
+ */
 export abstract class DataType extends SyntaxType {
     declare valueType: ValueType.Data;
 
@@ -167,12 +159,35 @@ export abstract class DataType extends SyntaxType {
     checkValue(v: Value): boolean {
         return this.check(v.datatype);
     }
+
+    /**
+     * Gives the wasm typename for given type
+     * @returns - typename
+     * @virtual
+     */
+    abstract getWasmTypeName(name?: string): string;
+
+    // TODO this only really makes sense for tuples and classes of them...
+    /**
+     * Get a flat list of primitive types that constitute this type
+     * @returns list of primitives that this type compiles to
+     * @throws if union encountered throws string "union"
+     * @virtual
+     */
+    abstract flatPrimitiveList(): Array<PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>>;
+
+    /**
+     * Does this type hold a value in wasm?
+     * @returns false if the value doesn't carry a value
+     * @virtual
+     */
+    abstract isUnit(): boolean;
 }
 
 /**
  * More specific than types, used for applying methods and stuff
  */
-export class ClassType<T extends Type> extends Type {
+export class ClassType<T extends DataType> extends DataType {
     /**
      * Base type
      */
@@ -181,7 +196,6 @@ export class ClassType<T extends Type> extends Type {
     /**
      * Unique identifier for the class
      */
-    // TODO instead use a map from Tokens to ids ?
     id: number;
     static _tokenIdMap: Map<LexerToken, number> = new Map();
 
@@ -279,66 +293,6 @@ export class ClassType<T extends Type> extends Type {
 }
 
 /**
- * When need to be able to handle more than one type
- *  aka sum type (`|`)
- */
-export class UnionType extends Type {
-    types: Type[];
-
-    constructor(token: LexerToken = undefined, types: Type[] = []) {
-        super(token);
-        this.types = types;
-    }
-
-    /**
-     * @override
-     */
-    check(type: Type): boolean {
-        if (type === null)
-            return false;
-
-        // Don't care about classes
-        if (type instanceof ClassType) {
-            type = type.getBaseType();
-            if (!type)
-                return false;
-        }
-
-        // Verify other union is subset of this one
-        if (type instanceof UnionType)
-            return type.types.every(t => this.types.includes(t));
-
-        if (type instanceof AnyType)
-            return true;
-        if (type instanceof NeverType)
-            return false;
-
-        // Verify type is in this set
-        return this.types.includes(type);
-    }
-
-    /**
-     * @override
-     */
-    flatPrimitiveList(): PrimitiveType[] {
-        throw "union type";
-    }
-
-    /**
-     * @override
-     */
-    getWasmTypeName(): string {
-        throw new Error('Invalid call: UnionType.getWasmTypeName()');
-    }
-    isUnit(): boolean {
-        throw new Error("Invalid call: UnionType.isUnit()");
-    }
-    getBaseType(): Type {
-        return this;
-    }
-}
-
-/**
  * When need to store more than one piece of data in a single value
  *  aka product type (`pack`)
  */
@@ -350,11 +304,21 @@ export class TupleType extends DataType {
         this.types = types;
     }
 
+    assertIsDataType(): void | error.SyntaxError {
+        const t = this.types.find(t => !(t instanceof DataType));
+        if (t)
+            return new error.SyntaxError('Unexpected compile-only type', [t.token, this.token]);
+    }
+
     /**
      * @override
      */
     getWasmTypeName(name?: string) {
-        return this.types.map(t => t.getWasmTypeName(name)).join(' ');
+        const err = this.assertIsDataType();
+        if (err)
+            throw err;
+
+        return (this.types as DataType[]).map(t => t.getWasmTypeName(name)).join(' ');
     }
 
     /**
@@ -368,7 +332,11 @@ export class TupleType extends DataType {
      * @override
      */
     flatPrimitiveList() {
-        return this.types
+        const err = this.assertIsDataType();
+        if (err)
+            throw err;
+
+        return (this.types as DataType[])
             .map(t => t.flatPrimitiveList())
             .reduce((a,b) => a.concat(b), []);
     }
@@ -409,13 +377,6 @@ export class TupleType extends DataType {
     getBaseType(): Type {
         return this;
     }
-}
-
-/**
- * Tuple type but with no elements
- */
-export class UnitType extends TupleType {
-    types: [] = [];
 }
 
 /**
@@ -498,7 +459,7 @@ export class PrimitiveType extends DataType {
 /**
  * Datatype to describe function/macros
  */
-export class ArrowType extends Type {
+export class ArrowType extends DataType {
     constructor(token: LexerToken,
         public inputTypes: Type[],
         public outputTypes?: Type[])
@@ -510,12 +471,20 @@ export class ArrowType extends Type {
      * @override
      */
     getWasmTypeName(name?: string) {
+        // Make sure it's valid compile-time type
+        const badInp = this.inputTypes.find(t => !(t instanceof DataType));
+        if (badInp)
+            throw new error.SyntaxError('One of the input types is compile-time only', [badInp.token, this.token]);
+        if (!this.outputTypes)
+            throw new error.SyntaxError('Partial Arrow type used in wrong context', [this.token]);
+        const badOut = this.outputTypes.find(t => !(t instanceof DataType));
+        if (badOut)
+            throw new error.SyntaxError('One of the input types is compile-time only', [badOut.token, this.token]);
+
         return `(func ${name} (param ${
-            this.inputTypes.map(t => t.getWasmTypeName()).join(' ')
+            (this.inputTypes as DataType[]).map(t => t.getWasmTypeName()).join(' ')
         }) (result ${
-            this.outputTypes
-                ? this.outputTypes.map(t => t.getWasmTypeName()).join(' ')
-                : ''
+            (this.outputTypes as DataType[]).map(t => t.getWasmTypeName()).join(' ')
         }))`;
     }
 
@@ -557,21 +526,18 @@ export class ArrowType extends Type {
     /**
      * @override
      */
-    flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
         throw new Error('Invalid call: ArrowType.flatPrimitiveList()');
     }
     isUnit(): boolean {
         return false;
-    }
-    getBaseType(): Type {
-        return this;
     }
 }
 
 /**
  * Reference for a value of a given type T
  */
-export class RefType<T extends Type> extends DataType {
+export class RefType<T extends DataType> extends DataType {
     /**
      * @param token location in source code
      * @param type type of value being referenced
@@ -627,7 +593,7 @@ export class RefType<T extends Type> extends DataType {
 /**
  * Reference to a pointer which is stored on rv_stack to an object managed by gc
  */
-export class RefRefType<T extends RefType<Type>> extends DataType {
+export class RefRefType<T extends RefType<DataType>> extends DataType {
     /**
      * @param token location in source code
      * @param type type of value being referenced
@@ -698,7 +664,7 @@ export class EnumBaseType extends Type {
     isUnit(): boolean {
         return Object.values(this.subtypes).every(t => t.isUnit());
     }
-    flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
@@ -738,7 +704,7 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
     isUnit(): boolean {
         return this.type.isUnit();
     }
-    flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }

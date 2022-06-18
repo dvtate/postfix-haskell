@@ -15,7 +15,7 @@ export type ActionRet = Context | Array<string> | undefined | SyntaxError | void
 /**
  * Type T or class of type T
  */
-type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
+type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>;
 
 /**
  * Invokable block of code
@@ -31,7 +31,7 @@ export abstract class Macro extends value.Value {
     recursive = false;
 
     constructor(token: LexerToken, type: types.ArrowType = null, recursive = false) {
-        super(token, value.ValueType.Macro, null, type);
+        super(token, value.ValueType.Macro, undefined, type);
         this.recursive = recursive;
     }
 
@@ -68,7 +68,7 @@ export abstract class Macro extends value.Value {
             return new types.ArrowType(token, inputTypes);
 
         // Generate dummy inputs
-        const inputs = inputTypes.map(t => expr.DummyDataExpr.create(token, t));
+        const inputs = (inputTypes as types.DataType[]).map(t => expr.DummyDataExpr.create(token, t));
         ctx.stack.push(...inputs);
 
         // Trace the macro
@@ -97,7 +97,7 @@ export abstract class Macro extends value.Value {
         // TODO the outputTypes should be merged with unused inputtypes
         const ret = new types.ArrowType(
             token,
-            inputTypes,
+            (inputTypes as types.DataType[]),
             ios.gives.map(v => v.datatype),
         );
         return ret;
@@ -126,7 +126,7 @@ export abstract class Macro extends value.Value {
         //     return false;
 
         // Generate type from partial
-        const baseType = datatype.getBaseType() as types.TupleType | types.ArrowType;
+        const baseType = (datatype instanceof types.ClassType ? datatype.getBaseType() : datatype) as types.TupleType | types.ArrowType;
         const dt = this.inferDatatype(
             ctx,
             baseType instanceof types.TupleType

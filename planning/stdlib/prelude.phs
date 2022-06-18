@@ -1,3 +1,5 @@
+"./types.phs" require use
+
 # Stack
 (: $_ = ) $pop =				# Pop value
 (: $v = v v ) $dup =			# Duplicate value

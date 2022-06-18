@@ -135,7 +135,7 @@ export default class ModuleManager {
             return new error.SyntaxError('Cannot add import with partial arrow type', [type.token], this.ctx);
         // Imports currently limited to single return
         // TODO this shouldn't be the case
-        if (type.outputTypes.filter(t => !t.isUnit()).length > 1)
+        if (type.outputTypes.filter(t => t instanceof types.DataType && !t.isUnit()).length > 1)
             return new error.SyntaxError('Imports restricted to single return', [type.token], this.ctx);
 
         // Look to see if we've seen it before

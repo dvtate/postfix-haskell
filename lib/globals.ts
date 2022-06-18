@@ -113,46 +113,6 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Puts items given by a macro into a tuple
-    // probably no reason to have this now with tuple literals
-    'pack' : {
-        action: (ctx, token) => {
-            // Get executable array
-            if (ctx.stack.length === 0)
-                return ['expected a macro of values to pack'];
-            const execArr = ctx.pop();
-            if (!(execArr instanceof Macro))
-                return ['expected a macro of values to pack'];
-
-            // Invoke executable array
-            const ios = ctx.traceIO(execArr, token);
-            if (!(ios instanceof Context.TraceResults))
-                return ios;
-            const rvs = ios.gives;
-            ctx.popn(ios.takes.length);
-
-            // Empty Tuple
-            if (rvs.length === 0) {
-                ctx.push(new value.TupleValue(token, []));
-                return ctx;
-            }
-
-            const t0 = rvs[0].type;
-            // TODO eventually this could be allowed
-            // TODO handle escaped identifiers as wildcards
-            const allData = !rvs.some(v => ![value.ValueType.Data, value.ValueType.Expr].includes(v.type));
-            if (!allData && rvs.some(v => v.type !== t0))
-                return ['incompatible syntactic types passed to pack'];
-
-            // Make tuple
-            const ret = t0 === value.ValueType.Type
-                ? new value.Value(token, value.ValueType.Type,
-                    new types.TupleType(token, rvs.map(v => v.value as types.Type)))
-                : new value.TupleValue(token, rvs);
-            ctx.push(ret);
-        },
-    },
-
     // Make a type wrapper that assigns class tag to output datatype
     'class' : {
         action: (ctx, token) => {
@@ -264,7 +224,7 @@ const operators : MacroOperatorsSpec = {
                 return ['expected data to apply class to'];
 
             // Apply class to data
-            const compatible = (t.value as types.ClassType<types.Type>).getBaseType().check(v.datatype);
+            const compatible = (t.value as types.ClassType<types.DataType>).getBaseType().check(v.datatype);
             if (!compatible) {
                 // console.log('make: incompatible', t.value, t.value.getBaseType(), v.datatype);
                 ctx.warn(token, 'class applied to incompatible data');
@@ -346,7 +306,13 @@ const operators : MacroOperatorsSpec = {
                 return ['expected tuple of input types'];
 
             // Get input types
-            const inTypes = args.value.types;
+            const err = args.value.assertIsDataType();
+            if (err) {
+                err.tokens.push(token);
+                return err;
+            }
+            const inTypes = args.value.types as types.DataType[];
+
 
             // Put param exprs onto stack
             // TODO this only works with primitive types and unit
@@ -650,13 +616,17 @@ const operators : MacroOperatorsSpec = {
                 console.error(inputs.map(i => i.datatype), 'vs', inputTypes);
                 return ['invalid input types received'];
             }
+            if (inputTypes.some(t => !(t instanceof types.DataType)))
+                return ['unexpcted compile-only type'];
+            if (outputTypes.some(t => !(t instanceof types.DataType)))
+                return ['unexpcted compile-only type'];
 
             // Create expression
             if (outputTypes.length > 1) {
-                const e = new expr.MultiInstrExpr(token, mnemonic.value, expr.fromDataValue(inputs, ctx), outputTypes);
+                const e = new expr.MultiInstrExpr(token, mnemonic.value, expr.fromDataValue(inputs, ctx), outputTypes as types.DataType[]);
                 ctx.push(...e.results);
             } else {
-                ctx.push(new expr.InstrExpr(token, outputTypes[0], mnemonic.value, expr.fromDataValue(inputs, ctx)));
+                ctx.push(new expr.InstrExpr(token, outputTypes[0] as types.DataType, mnemonic.value, expr.fromDataValue(inputs, ctx)));
             }
         },
     },
@@ -704,14 +674,6 @@ const operators : MacroOperatorsSpec = {
             ctx.module.setStaticData(Number(ptr.value.value), Number(v.value.value));
         },
     },
-
-    // Unit datatype, stores no values, only accepts empty tuple
-    'Unit' : {
-        action: (ctx, token) => {
-            ctx.push(new value.Value(token, value.ValueType.Type, new types.TupleType(token, [])));
-        },
-    },
-
 };
 
 // Global functions that the user can overload
@@ -891,6 +853,7 @@ const funs = {
         '==',
     )),
 
+    // This should probably be removed
     // TODO maybe use make instead?
     'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
         null,

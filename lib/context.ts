@@ -105,9 +105,10 @@ export default class Context {
             ...globalOps,    // Operators
             ...debugMacros, // Debug operators
         };
-        Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
-            this.globals[typeName] = new value.Value(null, value.ValueType.Type, type));
+        // Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
+        //     this.globals[typeName] = new value.Value(null, value.ValueType.Type, type));
         this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.AnyType());
+        this.globals['Never'] = new value.Value(null, value.ValueType.Type, new types.NeverType());
         this.globals['global'] = new value.NamespaceValue(null, new Namespace(this.globals));
 
         // If there's an entry file we need to track imports to it
@@ -372,7 +373,7 @@ export default class Context {
             // Replace stack with expression wrappers so that they can be replaced with locals later
             const stack = this.stack.slice();
             this.stack = this.stack.map((v, i) =>
-                v instanceof expr.DataExpr || v instanceof value.DataValue
+                v.datatype instanceof types.DataType
                 ? new expr.RecursiveTakesExpr(v.token, v.datatype, this.stack.length - i, v)
                 : v);
 

@@ -98,7 +98,7 @@ export abstract class DataExpr extends Expr {
      * @param token - location in code
      * @param datatype - Datatype for value
      */
-    constructor(token: LexerToken, public datatype: types.Type) {
+    constructor(token: LexerToken, public datatype: types.DataType) {
         super(token);
     }
 
@@ -121,15 +121,22 @@ export class DummyDataExpr extends DataExpr {
      * @param datatype result type
      * @returns Expression or tuple of expressions with given datatype
      */
-    static create(token: LexerToken, datatype: types.Type): value.TupleValue | DummyDataExpr {
+    static create(token: LexerToken, datatype: types.DataType): value.TupleValue | DummyDataExpr {
         if (datatype instanceof types.ClassType)
             datatype = datatype.getBaseType();
-        if (datatype instanceof types.TupleType && datatype.types.length !== 0)
+        if (datatype instanceof types.TupleType && datatype.types.length !== 0) {
+            const err = datatype.assertIsDataType();
+            if (err) {
+                err.tokens.push(token);
+                throw err;
+            }
+
             return new value.TupleValue(
                 token,
-                datatype.types.map(t => DummyDataExpr.create(token, t)),
+                (datatype.types as types.DataType[]).map(t => DummyDataExpr.create(token, t)),
                 datatype as types.TupleType,
             );
+        }
         else
             return new DummyDataExpr(token, datatype);
     }
@@ -151,7 +158,7 @@ export abstract class FunExpr extends Expr {
     readonly name: string;
 
     // Parameter types
-    readonly inputTypes: types.Type[];
+    readonly inputTypes: types.DataType[];
 
     // Output expressions
     outputs: Array<DataExpr | value.NumberValue> = [];
@@ -159,8 +166,8 @@ export abstract class FunExpr extends Expr {
     // Locals store primitives or pointers
     _locals: Array<
         types.PrimitiveType
-        | types.RefType<types.Type>
-        | types.RefRefType<types.RefType<types.Type>>> = [];
+        | types.RefType<types.DataType>
+        | types.RefRefType<types.RefType<types.DataType>>> = [];
 
     // Parameter expressions
     readonly params: ParamExpr[];
@@ -170,7 +177,7 @@ export abstract class FunExpr extends Expr {
      * @param name - Export label
      * @param inputTypes - Types for input values
      */
-    constructor(token: LexerToken, name: string, inputTypes: types.Type[]) {
+    constructor(token: LexerToken, name: string, inputTypes: types.DataType[]) {
         super(token);
         this.name = name;
         this.inputTypes = inputTypes.filter(t =>
@@ -186,7 +193,7 @@ export abstract class FunExpr extends Expr {
      * @param type type of the value to be stored in locals
      * @returns array of locals indicies designated
      */
-    addLocal(type: types.Type): number[] {
+    addLocal(type: types.DataType): number[] {
         // For references we need to store the address
         if (type instanceof types.RefType)
             return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
@@ -273,7 +280,7 @@ export class ParamExpr extends DataExpr {
      * @param source - Origin expression
      * @param localInds - Stack index (0 == left)
      */
-    constructor(token: LexerToken, datatype: types.Type, source: FunExpr, localInds: number[]) {
+    constructor(token: LexerToken, datatype: types.DataType, source: FunExpr, localInds: number[]) {
         super(token, datatype);
         this.source = source;
         this.localInds = localInds;

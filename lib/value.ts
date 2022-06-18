@@ -70,7 +70,7 @@ export class Value {
 }
 
 /**
- * Data with a user-level type, this includes unions, structs and aliases
+ * Data with a user-level type, this includes numbers, tuples and classes
  */
 export class DataValue extends Value {
     declare datatype: types.Type;
@@ -97,6 +97,8 @@ export class NamespaceValue extends Value {
  * Primitive data, native wasm types
  */
 export class NumberValue extends DataValue {
+    declare datatype: ClassOrType<types.PrimitiveType>;
+
     constructor(token: LexerToken, wasmNumber: WasmNumber) {
         super(token, types.PrimitiveType.typeMap[wasmNumber.type], wasmNumber);
     }
@@ -139,14 +141,14 @@ export class IdValue extends Value {
 /**
  * Type T or class of type T
  */
-type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
+type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>;
 
 /**
  * Packed values
  */
 export class TupleValue extends DataValue {
     declare value: Value[];
-    declare datatype: types.TupleType;
+    declare datatype: ClassOrType<types.TupleType>;
 
     constructor(token: LexerToken, values: Value[], datatype?: ClassOrType<types.TupleType>) {
         const type = datatype || new types.TupleType(token, values.map(v => v.datatype || null));

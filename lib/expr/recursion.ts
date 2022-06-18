@@ -19,7 +19,7 @@ export class RecursiveTakesExpr extends DataExpr {
      * @param negIndex stack index of argument
      * @param value value being passed as argument
      */
-    constructor(token: LexerToken, datatype: types.Type, negIndex: number, value: value.Value) {
+    constructor(token: LexerToken, datatype: types.DataType, negIndex: number, value: value.Value) {
         super(token, datatype);
         this.negIndex = negIndex;
         this.value = value;
@@ -234,7 +234,7 @@ export class RecFunExpr extends FunExpr {
         this.copiedParams = copiedParams.filter(e => !e.datatype.isUnit());
     }
 
-    out(ctx: ModuleManager) {
+    out(ctx: ModuleManager): string {
         // Capture original positions so that we can revert later so that old references don't break
         const originalIndicies = this.copiedParams.map(e => e.localInds);
 
@@ -367,7 +367,7 @@ export class RecursiveResultExpr extends DataExpr {
      * @param source - Origin expression
      * @param position - Stack index (0 == left)
      */
-    constructor(token: LexerToken, datatype: types.Type, source: RecursiveCallExpr, position: number) {
+    constructor(token: LexerToken, datatype: types.DataType, source: RecursiveCallExpr, position: number) {
         super(token, datatype);
         this.source = source;
         this.position = position;
