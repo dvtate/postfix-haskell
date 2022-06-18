@@ -3,6 +3,7 @@ import * as types from '../datatypes.js';
 import * as error from '../error.js';
 import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
+import WasmNumber from '../numbers.js';
 
 // TODO expr constructors should be augmented to also take in Context object
 // This way they can also emit warnings
@@ -98,7 +99,7 @@ export abstract class DataExpr extends Expr {
      * @param token - location in code
      * @param datatype - Datatype for value
      */
-    constructor(token: LexerToken, public datatype: types.DataType) {
+    constructor(token: LexerToken, protected _datatype: types.DataType) {
         super(token);
     }
 
@@ -107,6 +108,13 @@ export abstract class DataExpr extends Expr {
      */
     get expensive(): boolean {
         return false;
+    }
+
+    /**
+     * @override
+     */
+    get datatype(): types.DataType {
+        return this._datatype;
     }
 }
 
@@ -242,7 +250,7 @@ export abstract class FunExpr extends Expr {
 export class FunExportExpr extends FunExpr {
     // TODO should make apis to help lift nested functions/closures
 
-    out(ctx: ModuleManager) {
+    out(ctx: ModuleManager): string {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
         const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');

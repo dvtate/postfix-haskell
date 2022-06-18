@@ -2,7 +2,7 @@ import WasmNumber from './numbers.js';
 import type { IdToken, LexerToken } from './scan.js';
 import type Context from './context.js';
 import type ModuleManager from './module.js';
-import type { Expr, FunExportExpr } from './expr/index.js';
+import type { Expr, FunExpr } from './expr/index.js';
 import type { Namespace } from './namespace.js';
 import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
 
@@ -40,14 +40,13 @@ export class Value {
     /// Relevant Value
     value: any;
 
-    /// If there's a datatype
-    datatype?: types.Type;
+    // Enum relevant here but ts doesn't let me use it
+    static Type = ValueType;
 
-    constructor(token: LexerToken, type: ValueType, value: any, datatype?: types.Type) {
+    constructor(token: LexerToken, type: ValueType, value: any, protected _datatype?: types.Type) {
         this.token = token;
         this.type = type;
         this.value = value;
-        this.datatype = datatype;
     }
 
     /**
@@ -57,7 +56,12 @@ export class Value {
         return this.type !== ValueType.Expr;
     }
 
-    out?(ctx: ModuleManager, fun?: FunExportExpr): string
+    /**
+     * This is emulating the behavior of Expr.out
+     * @param ctx compilation context
+     * @param fun function export body
+     */
+    out?(ctx: ModuleManager, fun?: FunExpr): string
 
     /**
      * Name for type of this value
@@ -66,18 +70,30 @@ export class Value {
         return ValueType[this.type];
     }
 
-    static Type = ValueType;
+    get datatype(): types.Type {
+        return this._datatype || new types.SyntaxType(this.token, this.type);
+    }
+    /**
+     * @depricated
+     */
+    set datatype(t: typeof this._datatype) {
+        this._datatype = t;
+    }
 }
 
 /**
  * Data with a user-level type, this includes numbers, tuples and classes
  */
 export class DataValue extends Value {
-    declare datatype: types.Type;
+    declare _datatype: types.Type;
     type: ValueType.Data = ValueType.Data;
 
     constructor(token: LexerToken, type: types.Type, value: any) {
         super(token, ValueType.Data, value, type);
+    }
+
+    get datatype(): typeof this._datatype {
+        return this._datatype;
     }
 }
 
@@ -97,7 +113,7 @@ export class NamespaceValue extends Value {
  * Primitive data, native wasm types
  */
 export class NumberValue extends DataValue {
-    declare datatype: ClassOrType<types.PrimitiveType>;
+    declare _datatype: ClassOrType<types.PrimitiveType>;
 
     constructor(token: LexerToken, wasmNumber: WasmNumber) {
         super(token, types.PrimitiveType.typeMap[wasmNumber.type], wasmNumber);
@@ -115,6 +131,10 @@ export class NumberValue extends DataValue {
      */
     children(): Expr[] {
         return [];
+    }
+
+    get datatype(): typeof this._datatype {
+        return this._datatype;
     }
 }
 
@@ -148,15 +168,19 @@ type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>
  */
 export class TupleValue extends DataValue {
     declare value: Value[];
-    declare datatype: ClassOrType<types.TupleType>;
+    declare _datatype: ClassOrType<types.TupleType>;
 
     constructor(token: LexerToken, values: Value[], datatype?: ClassOrType<types.TupleType>) {
         const type = datatype || new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
     }
 
-    out(ctx: ModuleManager, fun?: FunExportExpr) {
+    out(ctx: ModuleManager, fun?: FunExpr) {
         return this.value.map(v => v.out(ctx, fun)).join('');
+    }
+
+    get datatype(): typeof this._datatype {
+        return this._datatype;
     }
 }
 

@@ -22,8 +22,15 @@ type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>
  */
 export abstract class Macro extends value.Value {
     type: value.ValueType.Macro = value.ValueType.Macro;
-    datatype: types.ArrowType = null;
     declare value: undefined;
+
+    /**
+     * @override
+     */
+    _datatype: types.ArrowType = null;
+    get datatype(): typeof this._datatype | types.SyntaxType {
+        return this._datatype || new types.SyntaxType(this.token, value.ValueType.Macro);
+    }
 
     /**
      * Did the user flag this macro as recursive?
@@ -118,8 +125,12 @@ export abstract class Macro extends value.Value {
         safe = false,
     ): boolean | error.SyntaxError {
         // No need to inference if we already know the datatype
-        if (this.datatype)
-            return datatype.check(this.datatype);
+        if (this._datatype)
+            return datatype.check(this._datatype);
+
+        // Drop classes
+        if (datatype instanceof types.ClassType)
+            datatype = datatype.getBaseType();
         // if (this.matchingDatatypes.some(t => t.check(datatype)))
         //     return true;
         // if (this.failedDatatypes.some(t => t.check(datatype)))
@@ -142,7 +153,7 @@ export abstract class Macro extends value.Value {
 
         // Verify type
         if (dt instanceof types.ArrowType) {
-            const ret = datatype.check(this.datatype);
+            const ret = datatype.check(this._datatype);
             // if (ret)
             //     this.matchingDatatypes.push(dt);
             // else
@@ -163,7 +174,7 @@ export abstract class Macro extends value.Value {
      * @returns false if invalid true otherwise
      */
     checkInputs(stack: value.Value[]) {
-        return !this.datatype || this.datatype.checkInputs(stack);
+        return !this._datatype || this._datatype.checkInputs(stack);
     }
 }
 
@@ -312,7 +323,7 @@ export class LiteralMacro extends Macro {
         }
 
         // Apply datatype
-        this.datatype = type;
+        this._datatype = type;
     }
 
     toString() {

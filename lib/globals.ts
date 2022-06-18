@@ -854,38 +854,37 @@ const funs = {
     )),
 
     // This should probably be removed
-    // TODO maybe use make instead?
-    'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        new CompilerMacro(null, (ctx, token) => {
-            // macro + any datatype
-            const type = ctx.pop();
-            const v = ctx.pop();
-            if (type.type !== value.ValueType.Type)
-                return ctx.push(toBool(false, token));
-            else if (!(v instanceof Macro))
-                return ['as operator currently can only apply types to macros'];
-            else
-                return ctx.push(toBool(true, token));
-        }),
-        new CompilerMacro(null, ctx => {
-            // Get args
-            const type = ctx.pop();
-            const value = ctx.pop();
+    // 'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
+    //     null,
+    //     new CompilerMacro(null, (ctx, token) => {
+    //         // macro + any datatype
+    //         const type = ctx.pop();
+    //         const v = ctx.pop();
+    //         if (type.type !== value.ValueType.Type)
+    //             return ctx.push(toBool(false, token));
+    //         else if (!(v instanceof Macro))
+    //             return ['as operator currently can only apply types to macros'];
+    //         else
+    //             return ctx.push(toBool(true, token));
+    //     }),
+    //     new CompilerMacro(null, ctx => {
+    //         // Get args
+    //         const type = ctx.pop();
+    //         const value = ctx.pop();
 
-            // Assume it's arrow type, if not, convert it to one
-            // Do typecheck:
-                // Copy stack and put input types onto it
-                // Invoke macro
-                // Verify results are correct
-                // TODO probably should have something dedicated to this in Context/Macro
+    //         // Assume it's arrow type, if not, convert it to one
+    //         // Do typecheck:
+    //             // Copy stack and put input types onto it
+    //             // Invoke macro
+    //             // Verify results are correct
+    //             // TODO probably should have something dedicated to this in Context/Macro
 
-            // TODO this is placeholder
-            value.datatype = type.value;
-            ctx.push(value);
-        }),
-        'as',
-    )),
+    //         // TODO this is placeholder
+    //         value.datatype = type.value;
+    //         ctx.push(value);
+    //     }),
+    //     'as',
+    // )),
 };
 
 // Export map of macros

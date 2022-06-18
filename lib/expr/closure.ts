@@ -19,6 +19,8 @@ export class ClosureCreateExpr extends DataExpr {
 
 
     constructor(public macro: LiteralMacro) {
+        if (!(macro.datatype instanceof types.ArrowType))
+            throw new error.SyntaxError('invalid runtime closure', [macro.token]);
         super(macro.token, macro.datatype);
     }
 
