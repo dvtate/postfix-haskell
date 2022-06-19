@@ -1,17 +1,13 @@
-"./prelude.phs" require use
+"./prelude.phs" require $prelude =
 
 # String TypeClass
-(I32 I32) class $Str =
-((Str): 1 ) (: unpack pop ) $len fun
+( I32 I32 ) class $Str =
+((Str): 1 ) (: unpack pop ) $size fun
 ((Str): 1 ) (: unpack swap pop ) $addr fun
 
 # Overload as operator to convert string literals
-(: ( $lit $t ) = t Str == ) (:
-    $lit =
-    ( lit ) Str make
-) $global.as fun
+((Syntax:Str Syntax:Type): Str == ) (:
+    ( $lit $T ) =
+    ( lit ) T make
+) $prelude.cast fun
 
-(:
-    $lit =
-    ( lit ) Str make
-) $Str_new =
