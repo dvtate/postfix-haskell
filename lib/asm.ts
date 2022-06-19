@@ -340,18 +340,37 @@ const opInstrs: { [k : string] : HandlerFn } = {
             return;
         }
 
+        // Does the tuple type compile to a scalar primitive?
+        const compilesToPrim = (t: types.Type): boolean => {
+            // Primitive
+            if (t instanceof types.ClassType)
+                t = t.getBaseType();
+            if (t instanceof types.PrimitiveType)
+                return true;
+
+            // Tuples (recursion for nesting)
+            if (!(t instanceof types.TupleType))
+                return false;
+            if (!t.types.some(t => !(t instanceof types.DataType)))
+                return false;
+            const filteredTypes = (t.types as types.DataType[]).filter(t => !t.isUnit());
+            if (filteredTypes.length !== 1)
+                return false;
+            return compilesToPrim(filteredTypes[0]);
+        }
+
         // Validate inputs
         if (![value.ValueType.Data, value.ValueType.Expr].includes(trueVal.type) || trueVal.type != falseVal.type)
             return ['syntax error'];
+        if (compilesToPrim(trueVal.datatype))
+            return ['invalid datatype in true case of select instruction'];
         if (!trueVal.datatype.check(falseVal.datatype) || !falseVal.datatype.check(trueVal.datatype))
-            return ['incompatible datatypes for different branches of select'];
-        if (trueVal.datatype.isUnit())
-            return ['void datatype not allowed in select instruciton'];
+            return ['differing datatypes for different branches of select'];
 
         // Create select instruction
         ctx.push(new expr.InstrExpr(
             token,
-            trueVal.datatype,
+            trueVal.datatype as types.DataType,
             cmd,
             expr.fromDataValue([trueVal, falseVal, cond], ctx),
         ));

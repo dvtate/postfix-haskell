@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import * as value from './value.js';
 import * as types from './datatypes.js';
+import * as value from './value.js';
 import * as expr from './expr/index.js';
 import * as error from './error.js';
 import Context from './context.js';
@@ -113,46 +113,6 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Puts items given by a macro into a tuple
-    // probably no reason to have this now with tuple literals
-    'pack' : {
-        action: (ctx, token) => {
-            // Get executable array
-            if (ctx.stack.length === 0)
-                return ['expected a macro of values to pack'];
-            const execArr = ctx.pop();
-            if (!(execArr instanceof Macro))
-                return ['expected a macro of values to pack'];
-
-            // Invoke executable array
-            const ios = ctx.traceIO(execArr, token);
-            if (!(ios instanceof Context.TraceResults))
-                return ios;
-            const rvs = ios.gives;
-            ctx.popn(ios.takes.length);
-
-            // Empty Tuple
-            if (rvs.length === 0) {
-                ctx.push(new value.TupleValue(token, []));
-                return ctx;
-            }
-
-            const t0 = rvs[0].type;
-            // TODO eventually this could be allowed
-            // TODO handle escaped identifiers as wildcards
-            const allData = !rvs.some(v => ![value.ValueType.Data, value.ValueType.Expr].includes(v.type));
-            if (!allData && rvs.some(v => v.type !== t0))
-                return ['incompatible syntactic types passed to pack'];
-
-            // Make tuple
-            const ret = t0 === value.ValueType.Type
-                ? new value.Value(token, value.ValueType.Type,
-                    new types.TupleType(token, rvs.map(v => v.value as types.Type)))
-                : new value.TupleValue(token, rvs);
-            ctx.push(ret);
-        },
-    },
-
     // Make a type wrapper that assigns class tag to output datatype
     'class' : {
         action: (ctx, token) => {
@@ -246,16 +206,17 @@ const operators : MacroOperatorsSpec = {
 
     // Assign classes to value, instantate class
     // TODO Exprs
-    // TODO make this a function
+    // TODO make this a function?
     'make' : {
         action: (ctx, token) => {
-            // TODO Check base type compatible ?
             // Get type
             if (ctx.stack.length < 2)
                 return ['not enough values']
             const t = ctx.pop();
             if (t.type !== value.ValueType.Type)
                 return ['expected a class to apply'];
+            if (!(t.value instanceof types.ClassType))
+                return ['invalid type, expected a class'];
 
             // Get data
             const v = ctx.pop();
@@ -263,7 +224,7 @@ const operators : MacroOperatorsSpec = {
                 return ['expected data to apply class to'];
 
             // Apply class to data
-            const compatible = t.value.getBaseType().check(v.datatype);
+            const compatible = (t.value as types.ClassType<types.DataType>).getBaseType().check(v.datatype);
             if (!compatible) {
                 // console.log('make: incompatible', t.value, t.value.getBaseType(), v.datatype);
                 ctx.warn(token, 'class applied to incompatible data');
@@ -345,7 +306,13 @@ const operators : MacroOperatorsSpec = {
                 return ['expected tuple of input types'];
 
             // Get input types
-            const inTypes = args.value.types;
+            const err = args.value.assertIsDataType();
+            if (err) {
+                err.tokens.push(token);
+                return err;
+            }
+            const inTypes = args.value.types as types.DataType[];
+
 
             // Put param exprs onto stack
             // TODO this only works with primitive types and unit
@@ -384,7 +351,9 @@ const operators : MacroOperatorsSpec = {
                 ctx.warn(token, '() is context sensitive, you should use warn');
                 inputs = [];
             } else if (inputsTuple.type === value.ValueType.Type) {
-                const bt = inputsTuple.value.getBaseType();
+                const bt = inputsTuple.value instanceof types.ClassType
+                    ? inputsTuple.value.getBaseType()
+                    : inputsTuple.value;
                 if (!(bt instanceof types.TupleType))
                     return new error.SyntaxError('Expected a tuple type for inputs', token, ctx);
                 inputs = bt.types;
@@ -398,7 +367,9 @@ const operators : MacroOperatorsSpec = {
                 ctx.warn(token, '() is context sensitive, you should use warn');
                 outputs = [];
             } else if (outputsTuple.type === value.ValueType.Type) {
-                const bt = outputsTuple.value.getBaseType();
+                const bt = outputsTuple.value instanceof types.ClassType
+                ? outputsTuple.value.getBaseType()
+                : outputsTuple.value;
                 if (!(bt instanceof types.TupleType))
                     return new error.SyntaxError('Expected a tuple type for outputs', token, ctx);
                 outputs = bt.types;
@@ -409,13 +380,6 @@ const operators : MacroOperatorsSpec = {
             // Push Type onto the stack
             const type = new types.ArrowType(token, inputs, outputs);
             ctx.push(new value.Value(token, value.ValueType.Type, type));
-        },
-    },
-
-    // Unit datatype, stores no values, only accepts empty tuple
-    'Unit' : {
-        action: (ctx, token) => {
-            ctx.push(new value.Value(token, value.ValueType.Type, new types.TupleType(token, [])));
         },
     },
 
@@ -441,8 +405,10 @@ const operators : MacroOperatorsSpec = {
 
             // Add relevant import
             const importName = ctx.module.addImport(scopeStrs, type.value);
-            if (!importName)
-                return ["invalid import"];
+            if (importName instanceof error.SyntaxError) {
+                importName.tokens.push(token);
+                return importName;
+            }
 
             // Macro action which calls the import
             const callImport = (ctx: Context, token: LexerToken): ActionRet => {
@@ -462,7 +428,7 @@ const operators : MacroOperatorsSpec = {
 
                 // Make call expr
                 // TODO this is sketchy
-                if (type.value.outputTypes.length == 1) {
+                if (type.value.outputTypes && type.value.outputTypes.length === 1) {
                     ctx.push(new expr.TeeExpr(token, new expr.InstrExpr(
                         token,
                         type.value.outputTypes[0],
@@ -629,7 +595,7 @@ const operators : MacroOperatorsSpec = {
     },
 
     // Unsafe, custom inline assembly
-    '_asm' : {
+    '__asm' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get args
             if (ctx.stack.length < 2)
@@ -650,26 +616,30 @@ const operators : MacroOperatorsSpec = {
                 console.error(inputs.map(i => i.datatype), 'vs', inputTypes);
                 return ['invalid input types received'];
             }
+            if (inputTypes.some(t => !(t instanceof types.DataType)))
+                return ['unexpcted compile-only type'];
+            if (outputTypes.some(t => !(t instanceof types.DataType)))
+                return ['unexpcted compile-only type'];
 
             // Create expression
             if (outputTypes.length > 1) {
-                const e = new expr.MultiInstrExpr(token, mnemonic.value, expr.fromDataValue(inputs, ctx), outputTypes);
+                const e = new expr.MultiInstrExpr(token, mnemonic.value, expr.fromDataValue(inputs, ctx), outputTypes as types.DataType[]);
                 ctx.push(...e.results);
             } else {
-                ctx.push(new expr.InstrExpr(token, outputTypes[0], mnemonic.value, expr.fromDataValue(inputs, ctx)));
+                ctx.push(new expr.InstrExpr(token, outputTypes[0] as types.DataType, mnemonic.value, expr.fromDataValue(inputs, ctx)));
             }
         },
     },
 
     // Moving typechecking behavior from == to here
-    // 'typecheck' : {
-    //     action: (ctx, token) => {
-    //         if (ctx.stack.length < 2)
-    //             return ['missing values'];
-    //         const [a, b] = ctx.popn(2).reverse();
-    //         ctx.push(toBool(b.value.check(a.value), token));
-    //     }
-    // },
+    '__typecheck' : {
+        action: (ctx, token) => {
+            if (ctx.stack.length < 2)
+                return ['missing values'];
+            const [a, b] = ctx.popn(2).reverse();
+            ctx.push(toBool(b.value.check(a.value), token));
+        }
+    },
 
     'static_region' : {
         action: (ctx, token) => {
@@ -798,12 +768,12 @@ const funs = {
                         return ['incompatible types'];
 
                     // Non-primitives
-                    const aType = a.datatype.getBaseType();
-                    const bType = b.datatype.getBaseType();
+                    const aType = a.datatype instanceof types.ClassType ? a.datatype.getBaseType() : a.datatype;
+                    const bType = b.datatype instanceof types.ClassType ? b.datatype.getBaseType() : b.datatype;
                     if (!(aType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
                     if (!(bType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
 
                     // Compile-time check
                     if (b.type === value.ValueType.Data) {
@@ -841,12 +811,12 @@ const funs = {
                         return ['incompatible types'];
 
                     // Non-primitives
-                    const aType = a.datatype.getBaseType();
-                    const bType = b.datatype.getBaseType();
+                    const aType = a.datatype instanceof types.ClassType ? a.datatype.getBaseType() : a.datatype;
+                    const bType = b.datatype instanceof types.ClassType ? b.datatype.getBaseType() : b.datatype;
                     if (!(aType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
                     if (!(bType instanceof types.PrimitiveType))
-                        return ['builtin == only accepts primitives (overload $== global fun)'];
+                        return ['builtin == only accepts primitives (overload $global.== global fun)'];
 
                     if (b.type === value.ValueType.Data && b.value.value === BigInt(0)) {
                         ctx.push(new expr.InstrExpr(
@@ -866,7 +836,7 @@ const funs = {
                     return;
                 }
 
-                // String comparison
+                // String literal comparison
                 case value.ValueType.Str:
                     // // Sanity check
                     // if (!(a instanceof value.StrValue) || !(b instanceof value.StrValue))
@@ -883,38 +853,38 @@ const funs = {
         '==',
     )),
 
-    // TODO maybe use make instead?
-    'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
-        null,
-        new CompilerMacro(null, (ctx, token) => {
-            // macro + any datatype
-            const type = ctx.pop();
-            const v = ctx.pop();
-            if (type.type !== value.ValueType.Type)
-                return ctx.push(toBool(false, token));
-            else if (!(v instanceof Macro))
-                return ['as operator currently can only apply types to macros'];
-            else
-                return ctx.push(toBool(true, token));
-        }),
-        new CompilerMacro(null, ctx => {
-            // Get args
-            const type = ctx.pop();
-            const value = ctx.pop();
+    // This should probably be removed
+    // 'as' : new value.Value(null, value.ValueType.Fxn, new Fun(
+    //     null,
+    //     new CompilerMacro(null, (ctx, token) => {
+    //         // macro + any datatype
+    //         const type = ctx.pop();
+    //         const v = ctx.pop();
+    //         if (type.type !== value.ValueType.Type)
+    //             return ctx.push(toBool(false, token));
+    //         else if (!(v instanceof Macro))
+    //             return ['as operator currently can only apply types to macros'];
+    //         else
+    //             return ctx.push(toBool(true, token));
+    //     }),
+    //     new CompilerMacro(null, ctx => {
+    //         // Get args
+    //         const type = ctx.pop();
+    //         const value = ctx.pop();
 
-            // Assume it's arrow type, if not, convert it to one
-            // Do typecheck:
-                // Copy stack and put input types onto it
-                // Invoke macro
-                // Verify results are correct
-                // TODO probably should have something dedicated to this in Context/Macro
+    //         // Assume it's arrow type, if not, convert it to one
+    //         // Do typecheck:
+    //             // Copy stack and put input types onto it
+    //             // Invoke macro
+    //             // Verify results are correct
+    //             // TODO probably should have something dedicated to this in Context/Macro
 
-            // TODO this is placeholder
-            value.datatype = type.value;
-            ctx.push(value);
-        }),
-        'as',
-    )),
+    //         // TODO this is placeholder
+    //         value.datatype = type.value;
+    //         ctx.push(value);
+    //     }),
+    //     'as',
+    // )),
 };
 
 // Export map of macros

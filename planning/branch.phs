@@ -16,17 +16,17 @@ fizz buzz + $fizzbuzz =
 Unit class $Cuck =
 (:
     ( $v0 $v1 $v2 $v3 ) =
-    0 v0 ( Cuck I32 I32 ) ( Cuck ) Arrow "i32.store" _asm
-    4 v1 ( Cuck I32 I32 ) ( Cuck ) Arrow "i32.store" _asm
-    8 v2 ( Cuck I32 I32 ) ( Cuck ) Arrow "i32.store" _asm
-    12 v3 ( Cuck I32 F32 ) ( Cuck ) Arrow "f32.store" _asm
+    0 v0 ( Cuck I32 I32 ) ( Cuck ) Arrow "i32.store" __asm
+    4 v1 ( Cuck I32 I32 ) ( Cuck ) Arrow "i32.store" __asm
+    8 v2 ( Cuck I32 I32 ) ( Cuck ) Arrow "i32.store" __asm
+    12 v3 ( Cuck I32 F32 ) ( Cuck ) Arrow "f32.store" __asm
 ) $save =
 
 (:
-    0 ( I32 ) ( I32 ) Arrow "i32.load" _asm
-    4 ( I32 ) ( I32 ) Arrow "i32.load" _asm
-    8 ( I32 ) ( I32 ) Arrow "i32.load" _asm
-    12 ( I32 ) ( F32 ) Arrow "F32.load" _asm
+    0 ( I32 ) ( I32 ) Arrow "i32.load" __asm
+    4 ( I32 ) ( I32 ) Arrow "i32.load" __asm
+    8 ( I32 ) ( I32 ) Arrow "i32.load" __asm
+    12 ( I32 ) ( F32 ) Arrow "F32.load" __asm
 ) $load =
 
 ( Cuck I32 ) (:

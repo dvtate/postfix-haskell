@@ -1,14 +1,11 @@
+import * as types from './datatypes.js';
 import Context from "./context.js";
 import { BlockToken, LexerToken, MacroToken } from "./scan.js";
 import parse from "./parse.js";
 import { Namespace } from "./namespace.js";
 import * as error from './error.js';
 import * as value from './value.js';
-import * as types from './datatypes.js';
 import * as expr from './expr/index.js';
-
-// TODO add arrow type
-// TOOD make it extend Value - not addressing because not clear what the `.value` would be
 
 /**
  * Return Type for macro implementations
@@ -18,29 +15,33 @@ export type ActionRet = Context | Array<string> | undefined | SyntaxError | void
 /**
  * Type T or class of type T
  */
-type ClassOrType<T extends types.Type> = T | types.ClassType<ClassOrType<T>>;
+type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>;
 
 /**
  * Invokable block of code
  */
 export abstract class Macro extends value.Value {
     type: value.ValueType.Macro = value.ValueType.Macro;
-    datatype: types.ArrowType = null;
     declare value: undefined;
 
     /**
-     * Datatypes which the macro satisfies
+     * @override
      */
-    // private matchingDatatypes: types.ArrowType[] = [];
-    // private failedDatatypes: types.ArrowType[] = [];
-
+    _datatype: types.ArrowType = null;
+    get datatype(): typeof this._datatype | types.SyntaxType {
+        return this._datatype || types.SyntaxType.ValueTypes[value.ValueType.Macro];
+    }
+    set datatype(t: types.ArrowType | types.SyntaxType) {
+        if (t instanceof types.ArrowType)
+            this._datatype = t;
+    }
     /**
      * Did the user flag this macro as recursive?
      */
     recursive = false;
 
     constructor(token: LexerToken, type: types.ArrowType = null, recursive = false) {
-        super(token, value.ValueType.Macro, null, type);
+        super(token, value.ValueType.Macro, undefined, type);
         this.recursive = recursive;
     }
 
@@ -72,8 +73,12 @@ export abstract class Macro extends value.Value {
         // if (inputTypes.some(t => t.isWild()))
         //     return 'wild inputs';
 
+        // Unable to trace syntax types
+        if (inputTypes.some(t => !(t instanceof types.DataType)))
+            return new types.ArrowType(token, inputTypes);
+
         // Generate dummy inputs
-        const inputs = inputTypes.map(t => expr.DummyDataExpr.create(token, t));
+        const inputs = (inputTypes as types.DataType[]).map(t => expr.DummyDataExpr.create(token, t));
         ctx.stack.push(...inputs);
 
         // Trace the macro
@@ -92,15 +97,17 @@ export abstract class Macro extends value.Value {
         if (ios.takes.some(v => !v.datatype))
             throw new Error('wtf?');
         if (ios.gives.some(v => !v.datatype))
-            return new error.SyntaxError(`macro returns untyped value ${
-                ios.gives.find(v => !v.datatype).typename()
-                }`, token, ctx);
+            return new error.SyntaxError(
+                `macro returns untyped value ${ios.gives.find(v => !v.datatype).typename()}`,
+                token,
+                ctx,
+            );
 
         // Add match
         // TODO the outputTypes should be merged with unused inputtypes
         const ret = new types.ArrowType(
             token,
-            inputTypes,
+            (inputTypes as types.DataType[]),
             ios.gives.map(v => v.datatype),
         );
         return ret;
@@ -121,15 +128,19 @@ export abstract class Macro extends value.Value {
         safe = false,
     ): boolean | error.SyntaxError {
         // No need to inference if we already know the datatype
-        if (this.datatype)
-            return datatype.check(this.datatype);
+        if (this._datatype)
+            return datatype.check(this._datatype);
+
+        // Drop classes
+        if (datatype instanceof types.ClassType)
+            datatype = datatype.getBaseType();
         // if (this.matchingDatatypes.some(t => t.check(datatype)))
         //     return true;
         // if (this.failedDatatypes.some(t => t.check(datatype)))
         //     return false;
 
         // Generate type from partial
-        const baseType = datatype.getBaseType() as types.TupleType | types.ArrowType;
+        const baseType = (datatype instanceof types.ClassType ? datatype.getBaseType() : datatype) as types.TupleType | types.ArrowType;
         const dt = this.inferDatatype(
             ctx,
             baseType instanceof types.TupleType
@@ -145,7 +156,7 @@ export abstract class Macro extends value.Value {
 
         // Verify type
         if (dt instanceof types.ArrowType) {
-            const ret = datatype.check(this.datatype);
+            const ret = datatype.check(this._datatype);
             // if (ret)
             //     this.matchingDatatypes.push(dt);
             // else
@@ -166,7 +177,7 @@ export abstract class Macro extends value.Value {
      * @returns false if invalid true otherwise
      */
     checkInputs(stack: value.Value[]) {
-        return !this.datatype || this.datatype.checkInputs(stack);
+        return !this._datatype || this._datatype.checkInputs(stack);
     }
 }
 
@@ -308,14 +319,14 @@ export class LiteralMacro extends Macro {
             return type;
 
         // Verify outputs
-        if (outputs && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
+        if (outputs && type.outputTypes && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
             ctx.warn(this.token, 'incorrectly typed macro');
             console.warn('incorrectly typed macro, should be', type);
             // return type;
         }
 
         // Apply datatype
-        this.datatype = type;
+        this._datatype = type;
     }
 
     toString() {

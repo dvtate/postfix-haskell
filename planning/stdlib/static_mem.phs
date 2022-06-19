@@ -33,16 +33,16 @@
 # Store value in memory
 # <unit> <addr> <value> store
 ((Unit I32 I32): 1 ) (:
-    swap ( Unit I32 I32 ) ( Unit ) Arrow "i32.store" _asm
+    swap ( Unit I32 I32 ) ( Unit ) Arrow "i32.store" __asm
 ) $store fun
 ((Unit F32 I32): 1 ) (:
-    swap ( Unit I32 F32 ) ( Unit ) Arrow "f32.store" _asm
+    swap ( Unit I32 F32 ) ( Unit ) Arrow "f32.store" __asm
 ) $store fun
 ((Unit I64 I32): 1 ) (:
-    swap ( Unit I32 I64 ) ( Unit ) Arrow "i64.store" _asm
+    swap ( Unit I32 I64 ) ( Unit ) Arrow "i64.store" __asm
 ) $store fun
 ((Unit F64 I32): 1 ) (:
-    swap ( Unit I32 F64 ) ( Unit ) Arrow "f64.store" _asm
+    swap ( Unit I32 F64 ) ( Unit ) Arrow "f64.store" __asm
 ) $store fun
 
 # Load value from memory

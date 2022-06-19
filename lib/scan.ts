@@ -322,3 +322,8 @@ export default function scan(code: string, file?: string): LexerToken[] {
     });
     return ret;
 }
+
+/**
+ * Used for code originating within the compiler
+ */
+export const internalToken = new IdToken('compiler internal', 0, '/dev/null');

@@ -9,7 +9,7 @@ Unit class $World =
 
 # Store value in position zero of linear memory
 (: $value =
-    (: ( World I32 I32 ) ( World ) Arrow "i32.store" _asm ) $i32_store =
+    (: ( World I32 I32 ) ( World ) Arrow "i32.store" __asm ) $i32_store =
     unpack ( $x $v ) =
     0 x i32_store
     4 v i32_store
@@ -17,7 +17,7 @@ Unit class $World =
 
 # Get value from position zero in linear memory
 (:
-    (: ( I32 ) ( I32 ) Arrow "i32.load" _asm ) $i32_load =
+    (: ( I32 ) ( I32 ) Arrow "i32.load" __asm ) $i32_load =
     (
         0 i32_load
         4 i32_load
@@ -38,6 +38,6 @@ Unit class $World =
 ( World I32 ) (: set ) "set" export
 ( World ) (: get ) "get" export
 ( World ) (:
-    # () Unit Arrow "call $get" _asm
+    # () Unit Arrow "call $get" __asm
     get 1 + set
 ) "incr" export

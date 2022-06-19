@@ -1,5 +1,5 @@
 # postfix-haskell
-A very low-level functional programming language designed to compile to WebAssembly in the browser.
+A very low-level functional programming language designed to compile to WebAssembly in the browser. The language actually bears very little resemblance to Haskell despite the name.
 
 ## How to use
 The all examples can be run in an interactive shell like below. Note that this is unfinished and possibly out of date. For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/planning/stdlib/*`.
@@ -97,7 +97,7 @@ You can embed the language in JavaScript or TypeScript. See a demo in `planning/
 - functional: immutable variables defined via `=` operator
 - postfix: operators follow the operands they act on (ie - `1 2 +`)
   + the stack (place where expressions are put) is a compile-time abstraction, and values stored on it often aren't included in the compiled code
-- All the below examples assume you've imported the standard library which contains many basic operators like `+` and `&&` for example.
+- All the below examples assume you've imported the standard library which contains many basic operators like `+` and `&&`.
   + to import it use `"/[path to this repo]/postfix-haskell/planning/stdlib/prelude.phs" require use`
 
 ## Identifiers
@@ -173,8 +173,7 @@ add_and_double apply_operator :data
 # Here we're checking a compile-time condition
 ((F32): 1 ) (: "f32.max" asm ) $max fun
 
-# This does basically the same thing as the above definition
-#   but for F64's. The difference comes
+# This does basically the same as before but for F64
 (: type F64 == ) (: "f64.max" asm ) $max fun
 
 # This takes the F64 branch
@@ -185,13 +184,42 @@ add_and_double apply_operator :data
 # Action: the other 30 remains on the stack as the result
 1.2 30 max :data # 30
 ```
+## Namespaces and Modules
+- Namespaces are used to organize identifiers
+- Namespaces are made using the `namespace` keyword
+- To use an identifier stored in a namespace simply add a `.` between the namespace identifier and the identifier to access.
+- The `global` namespace is available at all scopes
+- The `use` keyword applies namespaces identifiers to current scope
+- Modules are imported using the `require` keyword which gives a namespace
+- the `export` keyword
+```php
+# Import the prelude library which defines `+` and `-`
+"./planning/stdlib/prelude.phs" require use
+
+# Create a namespace 'ns'
+(:
+    5 $five =
+    (: + ) $add =
+) namespace $ns =
+
+10 $five =
+
+( global.I32 ) (:
+    # Get 'five' from the namespace
+    ns.five
+
+    # Invoke 'add' from the namespace
+    ns.add
+
+    five -
+) "demo" export
+```
 
 ## Syntactic Types
-
-## Namespaces
+TODO
 
 # Should to add to guide
-- list of operators
-- list of data and syntactic types
+- Complete list of operators
+- List of data and syntactic types
 - namespaces elaborate on modules
 - recursion

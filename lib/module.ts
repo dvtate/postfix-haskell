@@ -1,6 +1,8 @@
 import Context from "./context.js";
 import * as types from "./datatypes.js";
 import * as expr from './expr/index.js';
+import * as error from './error.js';
+
 
 // Import WAST template as a string
 import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
@@ -124,13 +126,17 @@ export default class ModuleManager {
      * @param type - type of imported value
      * @returns - identifier to which the import is assigned
      */
-    addImport(scopes: string[], type: types.ArrowType): string {
+    addImport(scopes: string[], type: types.ArrowType): string | error.SyntaxError {
         // TODO this assumes that the user doesn't have imports with '\0' characters
         const scopesKey = scopes.join('\0');
 
+        // Return types must be specified
+        if (!type.outputTypes)
+            return new error.SyntaxError('Cannot add import with partial arrow type', [type.token], this.ctx);
         // Imports currently limited to single return
-        if (type.outputTypes.filter(t => !t.isUnit()).length > 1)
-            return '';
+        // TODO this shouldn't be the case
+        if (type.outputTypes.filter(t => t instanceof types.DataType && !t.isUnit()).length > 1)
+            return new error.SyntaxError('Imports restricted to single return', [type.token], this.ctx);
 
         // Look to see if we've seen it before
         if (this.imports[scopesKey]) {

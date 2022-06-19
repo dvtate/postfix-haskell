@@ -27,7 +27,7 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): 
 
         // If a macro gets here it's because it should be a rt closure
 
-        throw new error.TypeError("incompatible type", v.token, v, null);
+        throw new error.TypeError("incompatible type", [v.token], [v], null);
     }).reduce(
         (a: DataExpr[], v: DataExpr | DataExpr[]) =>
             v instanceof Array ? a.concat(v) : (a.push(v), a),
@@ -111,7 +111,7 @@ export class TupleExpr extends DataExpr {
     // Local variable index to which this value is stored
     inds: number[] = null;
 
-    constructor(token: LexerToken, datatype: types.Type, source: Expr) {
+    constructor(token: LexerToken, datatype: types.DataType, source: Expr) {
         super(token, datatype);
         this.source = source;
     }
@@ -141,7 +141,7 @@ export class TupleExpr extends DataExpr {
     // Arguments passed
     args: DataExpr[];
 
-    constructor(token: LexerToken, datatype: types.Type, instr: string, args: DataExpr[]) {
+    constructor(token: LexerToken, datatype: types.DataType, instr: string, args: DataExpr[]) {
         super(token, datatype);
         this.instr = instr;
         this.args = args;
@@ -229,7 +229,7 @@ export class MultiInstrExpr extends Expr {
     // Resulting values
     results: DependentLocalExpr[];
 
-    constructor(token: LexerToken, instr: string, args: DataExpr[], resultTypes: types.Type[]) {
+    constructor(token: LexerToken, instr: string, args: DataExpr[], resultTypes: types.DataType[]) {
         super(token);
         this.instr = instr;
         this.args = args;

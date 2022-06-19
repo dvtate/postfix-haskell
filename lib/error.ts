@@ -4,11 +4,11 @@
  * Probably more will come as more things are added
  */
 
-import Context from "./context.js";
+import type Context from "./context.js";
 import { LexerToken } from "./scan.js";
-import * as value from './value.js';
-import { Expr } from "./expr/index.js";
-import { Type } from "./datatypes.js";
+import type { Type } from "./datatypes.js";
+import type * as value from './value.js';
+import type { Expr } from "./expr/index.js";
 
 // TODO Only a few of these are used atm ...
 
@@ -59,15 +59,15 @@ export class TypeError extends SyntaxError {
      * @constructor
      * @param message Reason
      * @param tokens location in code
-     * @param v offending value/expression
+     * @param vs offending value/expression
      * @param expected type expected
      * @param ctx parser context
      */
     constructor(
         message: string,
         tokens: LexerToken | LexerToken[],
-        public v: value.Value | Expr,
-        public expected?: Type,
+        public vs: Array<value.Value | Expr>,
+        public expected?: Type[],
         ctx?: Context,
     ) {
         super(message, tokens, ctx);

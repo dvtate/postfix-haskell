@@ -1,6 +1,6 @@
-import { LexerToken } from "./scan.js";
-import * as value from './value.js';
-import Context from "./context.js";
+import type { LexerToken } from "./scan.js";
+import type * as value from './value.js';
+import type Context from "./context.js";
 
 /**
  * Macro Value that when given an id returns corresponding id in namespace

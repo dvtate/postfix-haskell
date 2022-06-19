@@ -8,7 +8,7 @@
 $Monad ~ class $IO =
 
 # Define print for numbers
-((Any IO  _Scalar): 1 )
+((Any IO  __Scalar): 1 )
 (: ( $io $v ) =
     io v ( io type v type ) ( io type ) Arrow ( "js" "console.log" ) import @
 ) $print fun

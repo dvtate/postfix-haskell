@@ -1,24 +1,24 @@
 "stdlib/prelude.phs" require use
 "stdlib/str.phs" require use
-"stdlib/io.phs" require use
+"stdlib/io.phs" require $io =
 
 # export for performing IO
-( Unit IO  I32 ) (:
+( Unit io.IO  I32 ) (:
     $n =
 
     # Some strings
-    "fizz" Str_new $fizz =
-    "buzz" Str_new $buzz =
-    "fizzbuzz" Str_new $fizzbuzz =
+    "fizz" Str cast $fizz =
+    "buzz" Str cast $buzz =
+    "fizzbuzz" Str cast $fizzbuzz =
 
     # fizzbuzz logic
-    (: true ) (: print ) $fb fun
-    (: 3 % 0 == ) (: pop fizz print ) $fb fun
-    (: 5 % 0 == ) (: pop buzz print ) $fb fun
+    (: true ) (: io.print ) $fb fun
+    (: 3 % 0 == ) (: pop fizz io.print ) $fb fun
+    (: 5 % 0 == ) (: pop buzz io.print ) $fb fun
     (: $n =
         n 3 % 0 ==
         n 5 % 0 == &&
-    ) (: pop fizzbuzz print ) $fb fun
+    ) (: pop fizzbuzz io.print ) $fb fun
 
     # from 1 - n do fizzbuzz
     (rec:

@@ -52,7 +52,7 @@ export function formatErrorPos(errors: CompileError[]): string {
                 ? `${e.tokens.slice(0, 15).map(ppToken).join('\n')
                     }\n\n...\n\n${e.tokens.slice(-15).map(ppToken).join('\n')}`
                 : e.tokens.map(ppToken).join('\n')
-        }`).join('\n\n');
+        }\n${e.stack}`).join('\n\n');
 }
 
 // Used by function uid
