@@ -221,8 +221,12 @@ export abstract class FunExpr extends Expr {
         | types.RefType<types.DataType>
         | types.RefRefType<types.RefType<types.DataType>>> = [];
 
+    // Index of transition between parameters and locals
+    nparams: number;
+
     // Parameter expressions
     readonly params: ParamExpr[];
+
 
     /**
      * @param token - Source location
@@ -238,6 +242,7 @@ export abstract class FunExpr extends Expr {
                 : t.isUnit());
         this.params = inputTypes.map(t =>
             new ParamExpr(token, t, this, t.isUnit() ? [] : this.addLocal(t)));
+        this.nparams = this._locals.length;
     }
 
     /**
@@ -297,7 +302,7 @@ export class FunExportExpr extends FunExpr {
     out(ctx: ModuleManager): string {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
-        const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
+        const paramTypes = this._locals.slice(0, this.nparams).map(t => t.getWasmTypeName()).join(' ');
         const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
         return `(func $${this.name} ${
@@ -305,7 +310,7 @@ export class FunExportExpr extends FunExpr {
         } ${
             resultTypes ? `(result ${resultTypes})` : ''
         }\n\t\t${
-            this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
+            this._locals.filter(Boolean).slice(this.nparams).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
         }\n\t${
             outs.join('\n\t')
         })\n(export "${this.name}" (func $${this.name}))`;

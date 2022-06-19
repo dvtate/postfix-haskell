@@ -259,10 +259,8 @@ export class RecFunExpr extends FunExpr {
         // Compile body & generate type signatures
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this)); // Body of fxn
-        const paramTypes = this.inputTypes.map(t =>
-            t.getWasmTypeName()).filter(Boolean).join(' ');
-        const resultTypes = this.outputs.map(r =>
-            r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
+        const paramTypes = this._locals.slice(0, this.nparams).map(t => t.getWasmTypeName()).join(' ');
+        const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
         // Generate output wat
         const ret = `(func ${this.name} ${
@@ -273,7 +271,7 @@ export class RecFunExpr extends FunExpr {
             resultTypes ? `(result ${resultTypes})` : ''
         }\n\t\t${
             // Local variables
-            this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
+            this._locals.slice(this.nparams).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
         }\n\t${
             // Write body
             outs.join('\n\t')
