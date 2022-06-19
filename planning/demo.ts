@@ -27,10 +27,10 @@ import * as util from '../tools/util.js';
     // Get WASM Module
     const mod: any = await WebAssembly.instantiate(wasm.buffer, {
         js: {
-            'console.log': console.log,
+            'console.log': console.log.bind(console),
             logStr: (addr : number, len : number) => {
                 const str = new Uint8Array(
-                    mod.instance.exports.memory.buffer,
+                    mod.instance.exports.__memory.buffer,
                     len,
                     addr);
                 console.log(new TextDecoder().decode(str));
@@ -38,13 +38,17 @@ import * as util from '../tools/util.js';
         },
     });
 
-    // const fac = mod.instance.exports.nfac as CallableFunction;
-    // for (let i = 0; i < 10; i++)
-    //     console.log(fac(i, 0, 1));
 
     const w = mod.instance.exports as any;
-    for (let i = 1; i < 10; i++)
-        console.log(w.sqrt(i));
+
+    // Print sqrts of 1-10
+    if (fname.includes('sqrt.phs'))
+        for (let i = 1; i < 10; i++)
+            console.log(w.sqrt(i));
+
+    // Do fizzbuzz for n=1..100
+    else if (fname.includes('fizzbuzz.phs'))
+        w.main(100);
 
     // const { get, set, incr }
     //     = mod.instance.exports as any;

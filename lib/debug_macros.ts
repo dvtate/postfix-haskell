@@ -116,7 +116,7 @@ const debugOperators: { [k: string]: (ctx: Context, token: LexerToken) => any } 
 
     // Compilation and stuff
     ':targets' : ctx => ctx.module.definitions,
-    ':compile' : async ctx => await ctx.outWast({}),
+    ':compile' : async ctx => await ctx.outWast({ optimize: true }),
     ':wast' : async ctx => await ctx.outWast({ folding: true }),
     ':wat' : async ctx => await ctx.outWast({ folding: false }),
 };

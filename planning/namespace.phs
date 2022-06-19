@@ -1,4 +1,4 @@
-
+"./stdlib/prelude.phs" require use
 
 # Create a namespace 'ns'
 (:
@@ -7,7 +7,7 @@
 ) namespace $ns =
 
 10 $five =
-$ns ~ "" "" use_some
+#$ns ~ "" "" use_some
 
 ( I32 ) (:
     # Get 'five' from the namespace
