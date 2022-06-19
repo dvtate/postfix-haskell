@@ -1,9 +1,10 @@
+# For now these are set internally by compiler
 
 # Number types
-0 type $I32 =
-0L type $I64 =
-0.0f type $F32 =
-0.0L type $F64 =
+0 type $global.I32 =
+0L type $global.I64 =
+0.0f type $global.F32 =
+0.0L type $global.F64 =
 
 () type $Unit =
 # "" type $Syntax:Str =

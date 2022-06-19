@@ -71,8 +71,9 @@ export class Value {
     }
 
     get datatype(): types.Type {
-        return this._datatype || new types.SyntaxType(this.token, this.type);
+        return this._datatype || types.SyntaxType.ValueTypes[this.type];
     }
+
     /**
      * @depricated
      */
@@ -94,6 +95,9 @@ export class DataValue extends Value {
 
     get datatype(): typeof this._datatype {
         return this._datatype;
+    }
+    set datatype(t: typeof this._datatype) {
+        this._datatype = t;
     }
 }
 
@@ -135,6 +139,9 @@ export class NumberValue extends DataValue {
 
     get datatype(): typeof this._datatype {
         return this._datatype;
+    }
+    set datatype(t: typeof this._datatype) {
+        this._datatype = t;
     }
 }
 
@@ -181,6 +188,9 @@ export class TupleValue extends DataValue {
 
     get datatype(): typeof this._datatype {
         return this._datatype;
+    }
+    set datatype(t: typeof this._datatype) {
+        this._datatype = t;
     }
 }
 

@@ -29,9 +29,12 @@ export abstract class Macro extends value.Value {
      */
     _datatype: types.ArrowType = null;
     get datatype(): typeof this._datatype | types.SyntaxType {
-        return this._datatype || new types.SyntaxType(this.token, value.ValueType.Macro);
+        return this._datatype || types.SyntaxType.ValueTypes[value.ValueType.Macro];
     }
-
+    set datatype(t: types.ArrowType | types.SyntaxType) {
+        if (t instanceof types.ArrowType)
+            this._datatype = t;
+    }
     /**
      * Did the user flag this macro as recursive?
      */

@@ -59,15 +59,15 @@ export class TypeError extends SyntaxError {
      * @constructor
      * @param message Reason
      * @param tokens location in code
-     * @param v offending value/expression
+     * @param vs offending value/expression
      * @param expected type expected
      * @param ctx parser context
      */
     constructor(
         message: string,
         tokens: LexerToken | LexerToken[],
-        public v: value.Value | Expr,
-        public expected?: Type,
+        public vs: Array<value.Value | Expr>,
+        public expected?: Type[],
         ctx?: Context,
     ) {
         super(message, tokens, ctx);

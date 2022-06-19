@@ -1,18 +1,22 @@
-import { LexerToken } from './scan.js';
+import { IdToken, LexerToken } from './scan.js';
 import { Value, ValueType } from './value.js';
 import WasmNumber from './numbers.js';
 import * as error from './error.js';
+
+interface DataTypeInterface {
+    // See documentation in DataType
+    getWasmTypeName(name?: string): string;
+    flatPrimitiveList(): Array<PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>>;
+    isUnit(): boolean;
+    checkValue(v: Value): boolean;
+}
+
 
 /**
  * Abstract base for datatypes
  */
 export abstract class Type {
     token: LexerToken;
-
-    /**
-     * Referenced other type
-     */
-    type?: Type;
 
     /**
      * @param {LexerToken} [token] -
@@ -27,30 +31,57 @@ export abstract class Type {
      * @virtual
      */
     abstract check(type : Type): boolean;
+
+    /**
+     *
+     * @param v value
+     * @returns
+     */
+    checkValue(v: Value): boolean {
+        return this.check(v.datatype);
+    }
+
 }
 
 /**
  * Type which matches any other type
  */
-export class AnyType extends Type {
+export class AnyType extends Type implements DataTypeInterface {
     /**
      * @override
      */
     check(type: Type): boolean {
-        // Default behavior is to act as a wildcard
-        return type != null;
+        return true;
+    }
+    flatPrimitiveList(): PrimitiveType[] {
+        throw new error.SyntaxError('AnyType can only exist at compile-time', [this.token]);
+    }
+    getWasmTypeName(): string {
+        throw new error.SyntaxError('AnyType can only exist at compile-time', [this.token]);
+    }
+    isUnit(): boolean {
+        throw new error.SyntaxError('AnyType can only exist at compile-time', [this.token]);
     }
 }
 
 /**
  * Type which never matches
  */
-export class NeverType extends Type {
+export class NeverType extends Type implements DataTypeInterface {
     /**
      * @override
      */
     check(type: Type): boolean {
         return false;
+    }
+    flatPrimitiveList(): PrimitiveType[] {
+        throw new error.SyntaxError('NeverType can only exist at compile-time', [this.token]);
+    }
+    getWasmTypeName(): string {
+        throw new error.SyntaxError('NeverType can only exist at compile-time', [this.token]);
+    }
+    isUnit(): boolean {
+        throw new error.SyntaxError('NeverType can only exist at compile-time', [this.token]);
     }
 }
 
@@ -97,20 +128,13 @@ export class NeverType extends Type {
      * @override
      */
     flatPrimitiveList(): PrimitiveType[] {
-        throw "union type";
+        throw new error.SyntaxError('UnionType can only exist at compile-time', [this.token]);
     }
-
-    /**
-     * @override
-     */
     getWasmTypeName(): string {
-        throw new Error('Invalid call: UnionType.getWasmTypeName()');
+        throw new error.SyntaxError('UnionType can only exist at compile-time', [this.token]);
     }
     isUnit(): boolean {
-        throw new Error("Invalid call: UnionType.isUnit()");
-    }
-    getBaseType(): Type {
-        return this;
+        throw new error.SyntaxError('UnionType can only exist at compile-time', [this.token]);
     }
 }
 
@@ -123,9 +147,20 @@ export class SyntaxType extends Type {
      * @param token location in code
      * @param valueType relevant syntactic/value type
      */
-    constructor(token: LexerToken, public valueType: ValueType) {
+    protected constructor(token: LexerToken, public valueType: ValueType) {
         super(token);
     }
+
+    static ValueTypes = {
+        [ValueType.Macro]: new SyntaxType(new IdToken('Syntax:Macro', 0, undefined), ValueType.Macro),
+        [ValueType.Data]: new SyntaxType(new IdToken('Syntax:Data', 0, undefined), ValueType.Data),
+        [ValueType.Type]: new SyntaxType(new IdToken('Syntax:Type', 0, undefined), ValueType.Type),
+        [ValueType.Id]: new SyntaxType(new IdToken('Syntax:Id', 0, undefined), ValueType.Id),
+        [ValueType.Expr]: new SyntaxType(new IdToken('Syntax:Expr', 0, undefined), ValueType.Expr),
+        [ValueType.Fxn]: new SyntaxType(new IdToken('Syntax:Fxn', 0, undefined), ValueType.Fxn),
+        [ValueType.Str]: new SyntaxType(new IdToken('Syntax:Str', 0, undefined), ValueType.Str),
+        [ValueType.Ns]: new SyntaxType(new IdToken('Syntax:Ns', 0, undefined), ValueType.Ns),
+    };
 
     /**
      * @override
@@ -144,20 +179,17 @@ export class SyntaxType extends Type {
     checkValue(v: Value) {
         return this.valueType === v.type;
     }
+
 }
 
 /**
  * Types of entities that can be physically represented
  */
-export abstract class DataType extends SyntaxType {
-    declare valueType: ValueType.Data;
+export abstract class DataType extends SyntaxType implements DataTypeInterface {
+    // declare valueType: ValueType.Data;
 
     constructor(token: LexerToken) {
         super(token, ValueType.Data);
-    }
-
-    checkValue(v: Value): boolean {
-        return this.check(v.datatype);
     }
 
     /**
@@ -297,13 +329,17 @@ export class ClassType<T extends DataType> extends DataType {
  *  aka product type (`pack`)
  */
 export class TupleType extends DataType {
-    types: Type[];
-
-    constructor(token: LexerToken = undefined, types: Type[] = []) {
+    /**
+     * @param token location in code
+     * @param types member types
+     */
+    constructor(token: LexerToken = undefined, public types: Type[] = []) {
         super(token);
-        this.types = types;
     }
 
+    /**
+     * Returns an error if type contains compile-time-only member types
+     */
     assertIsDataType(): void | error.SyntaxError {
         const t = this.types.find(t => !(t instanceof DataType));
         if (t)
@@ -406,7 +442,7 @@ export class PrimitiveType extends DataType {
     /**
      * @param name - formal name for type in target spec
      */
-    constructor(name: string) {
+    private constructor(name: string) {
         super(undefined);
         this.name = name;
     }

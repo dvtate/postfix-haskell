@@ -105,8 +105,10 @@ export default class Context {
             ...globalOps,    // Operators
             ...debugMacros, // Debug operators
         };
-        // Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
-        //     this.globals[typeName] = new value.Value(null, value.ValueType.Type, type));
+        Object.entries(types.PrimitiveType.Types).forEach(([typeName, type]) =>
+            this.globals[typeName] = new value.Value(null, value.ValueType.Type, type));
+        Object.values(types.SyntaxType.ValueTypes).forEach(type =>
+            this.globals[type.token.token] = new value.Value(null, value.ValueType.Type, type));
         this.globals['Any'] = new value.Value(null, value.ValueType.Type, new types.AnyType());
         this.globals['Never'] = new value.Value(null, value.ValueType.Type, new types.NeverType());
         this.globals['global'] = new value.NamespaceValue(null, new Namespace(this.globals));
@@ -118,7 +120,7 @@ export default class Context {
 
     /**
      * Copy Context state
-     * @returns {Object} - state copy object
+     * @returns state copy object
      */
     copyState() {
         // Copy data

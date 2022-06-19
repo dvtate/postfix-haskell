@@ -27,7 +27,7 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): 
 
         // If a macro gets here it's because it should be a rt closure
 
-        throw new error.TypeError("incompatible type", v.token, v, null);
+        throw new error.TypeError("incompatible type", [v.token], [v], null);
     }).reduce(
         (a: DataExpr[], v: DataExpr | DataExpr[]) =>
             v instanceof Array ? a.concat(v) : (a.push(v), a),
