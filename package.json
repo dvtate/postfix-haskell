@@ -5,11 +5,12 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "prebuild": "node build.js",
+    "dev": "tsmodule dev",
     "build": "tsmodule build",
-    "start": "ts-node index.ts",
-    "lint": "eslint . --ext .ts",
-    "docs": "typedoc index.ts lib/* tools/*.ts --out tsdoc"
+    "test": "ava",
+    "pretest": "tsmodule build --runtime-only",
+    "prepublishOnly": "yarn build && yarn test",
+    "lint": "eslint src --fix"
   },
   "repository": {
     "type": "git",
@@ -37,12 +38,36 @@
   },
   "devDependencies": {
     "@tsmodule/tsmodule": "^40.0.4",
-    "@types/node": "^14.18.12",
+    "@types/node": "^18.0.0",
     "@types/yargs": "^17.0.8",
-    "@typescript-eslint/eslint-plugin": "^5.12.1",
-    "@typescript-eslint/parser": "^5.12.1",
-    "eslint": "^8.17.0",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "ava": "^4.3.0",
+    "eslint": "^8.18.0",
     "typedoc": "^0.22.12",
-    "typescript": "^4.7.3"
+    "typescript": "^4.7.4"
+  },
+  "platform": "node",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./dist/index.js",
+    "./*": "./dist/*/index.js"
+  },
+  "ava": {
+    "timeout": 240000,
+    "files": [
+      "test/**/*.test.ts"
+    ],
+    "extensions": {
+      "ts": "module"
+    },
+    "nodeArguments": [
+      "--no-warnings",
+      "--loader=@tsmodule/tsmodule"
+    ]
   }
 }
