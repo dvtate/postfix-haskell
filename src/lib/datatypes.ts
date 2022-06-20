@@ -1,5 +1,5 @@
-import { LexerToken } from './scan';
-import { Value } from './value';
+import { LexerToken } from "./scan";
+import { Value } from "./value";
 
 /**
  * Abstract base for datatypes
@@ -49,7 +49,7 @@ export abstract class Type {
      * @param {Type} type - type to check against
      * @virtual
      */
-    abstract check(type : Type): boolean;
+    abstract check(type: Type): boolean;
 }
 
 /**
@@ -68,14 +68,14 @@ export class AnyType extends Type {
      * @override
      */
     getWasmTypeName(name?: string): string {
-        throw new Error('Invalid call: AnyType.getWasmTypeName');
+        throw new Error("Invalid call: AnyType.getWasmTypeName");
     }
 
     /**
      * @override
      */
     flatPrimitiveList(): Array<PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>> {
-        throw new Error('Invalid call: AnyType.flatPrimitiveList');
+        throw new Error("Invalid call: AnyType.flatPrimitiveList");
     }
 
     /**
@@ -89,7 +89,7 @@ export class AnyType extends Type {
      * @override
      */
     check(type: Type): boolean {
-        // Default behavior is to act as a wildcard
+    // Default behavior is to act as a wildcard
         return type != null;
     }
 }
@@ -105,10 +105,10 @@ export class NeverType extends Type {
         return this;
     }
     getWasmTypeName(name?: string): string {
-        throw Error('Invalid call: NeverType.getWasmTypeName');
+        throw Error("Invalid call: NeverType.getWasmTypeName");
     }
     flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
-        throw Error('Invalid call: NeverType.flatPrimitiveList');
+        throw Error("Invalid call: NeverType.flatPrimitiveList");
     }
     isUnit(): boolean {
         return true;
@@ -276,7 +276,7 @@ export class UnionType extends Type {
      * @override
      */
     getWasmTypeName(): string {
-        throw new Error('Invalid call: UnionType.getWasmTypeName()');
+        throw new Error("Invalid call: UnionType.getWasmTypeName()");
     }
     isUnit(): boolean {
         throw new Error("Invalid call: UnionType.isUnit()");
@@ -302,7 +302,7 @@ export class TupleType extends Type {
      * @override
      */
     getWasmTypeName(name?: string) {
-        return this.types.map(t => t.getWasmTypeName(name)).join(' ');
+        return this.types.map(t => t.getWasmTypeName(name)).join(" ");
     }
 
     /**
@@ -374,10 +374,10 @@ export class PrimitiveType extends Type {
 
     // Map of WASM primitive types
     static Types: { [k: string]: PrimitiveType } = {
-        I32: new PrimitiveType('i32'),
-        I64: new PrimitiveType('i64'),
-        F32: new PrimitiveType('f32'),
-        F64: new PrimitiveType('f64'),
+        I32: new PrimitiveType("i32"),
+        I64: new PrimitiveType("i64"),
+        F32: new PrimitiveType("f32"),
+        F64: new PrimitiveType("f64"),
     };
 
     /**
@@ -419,7 +419,7 @@ export class PrimitiveType extends Type {
      * @override
      */
     flatPrimitiveList(): PrimitiveType[] {
-        return [this]
+        return [this];
     }
 
     /**
@@ -449,9 +449,9 @@ export class ArrowType extends Type {
      */
     getWasmTypeName(name?: string) {
         return `(func ${name} (param ${
-            this.inputTypes.map(t => t.getWasmTypeName()).join(' ')
+            this.inputTypes.map(t => t.getWasmTypeName()).join(" ")
         }) (result ${
-            this.outputTypes.map(t => t.getWasmTypeName()).join(' ')
+            this.outputTypes.map(t => t.getWasmTypeName()).join(" ")
         }))`;
     }
 
@@ -494,7 +494,7 @@ export class ArrowType extends Type {
      * @override
      */
     flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
-        throw new Error('Invalid call: ArrowType.flatPrimitiveList()');
+        throw new Error("Invalid call: ArrowType.flatPrimitiveList()");
     }
     isUnit(): boolean {
         return false;
@@ -530,7 +530,7 @@ export class RefType<T extends Type> extends Type {
      * @override
      */
     getBaseType(): Type {
-        // Drop classes from the referenced type
+    // Drop classes from the referenced type
         return new RefType(this.token, this.type.getBaseType());
     }
 
@@ -538,10 +538,10 @@ export class RefType<T extends Type> extends Type {
      * @override
      */
     getWasmTypeName(name?: string): string {
-        // TODO think
-        // NOTE the object is on ref_stack and only used only indirectly there
-        // i32 = pointer type
-        return '';
+    // TODO think
+    // NOTE the object is on ref_stack and only used only indirectly there
+    // i32 = pointer type
+        return "";
     }
 
     flatPrimitiveList(): RefType<TupleType>[] {
@@ -557,13 +557,13 @@ export class RefType<T extends Type> extends Type {
     hasRefs(): boolean {
         const bt = this.type.getBaseType();
         if (bt instanceof UnionType)
-            return bt.types.some(t => t instanceof RefType || t instanceof RefRefType)
+            return bt.types.some(t => t instanceof RefType || t instanceof RefRefType);
         // TODO arrow types, scary
         return false;
     }
 
     isUnit(): boolean {
-        // It makes no sense for us to have a reference to a unit value
+    // It makes no sense for us to have a reference to a unit value
         return false; // this.type.isUnit();
     }
 }
@@ -594,7 +594,7 @@ export class RefRefType<T extends RefType<Type>> extends Type {
      * @override
      */
     getBaseType(): Type {
-        // Drop classes from the referenced type
+    // Drop classes from the referenced type
         return new RefType(this.token, this.type.getBaseType());
     }
 
@@ -602,14 +602,14 @@ export class RefRefType<T extends RefType<Type>> extends Type {
      * @override
      */
     getWasmTypeName(name?: string): string {
-        // TODO think
-        // NOTE the object is on ref_stack and only used only indirectly there
-        // i32 = pointer type
-        return '';
+    // TODO think
+    // NOTE the object is on ref_stack and only used only indirectly there
+    // i32 = pointer type
+        return "";
     }
 
     flatPrimitiveList() {
-        // Note that we return empty arr here because the value is stored on the ref/rv stack
+    // Note that we return empty arr here because the value is stored on the ref/rv stack
         return [
             new RefRefType(this.token,
                 new RefType(this.token,
@@ -651,12 +651,12 @@ export class EnumBaseType extends Type {
         return Object.values(this.subtypes).every(t => t.isUnit());
     }
     flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
-        // Is this right?
+    // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
     getWasmTypeName(name?: string): string {
-        // Is this right?
-        return 'i32 i32';
+    // Is this right?
+        return "i32 i32";
     }
     getBaseType(): Type {
         return this;
@@ -691,12 +691,12 @@ export class EnumClassType extends Type {
         return this.type.isUnit();
     }
     flatPrimitiveList(): (PrimitiveType | RefType<Type> | RefRefType<RefType<Type>>)[] {
-        // Is this right?
+    // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
     getWasmTypeName(name?: string): string {
-        // Is this right?
-        return 'i32 i32';
+    // Is this right?
+        return "i32 i32";
     }
     getBaseType(): Type {
         return this.type.getBaseType();

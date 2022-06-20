@@ -2,10 +2,10 @@ import Context from "./context";
 import { BlockToken, LexerToken, MacroToken } from "./scan";
 import parse from "./parse";
 import { Namespace } from "./namespace";
-import * as error from './error';
-import * as value from './value';
-import * as types from './datatypes';
-import * as expr from './expr';
+import * as error from "./error";
+import * as value from "./value";
+import * as types from "./datatypes";
+import * as expr from "./expr";
 
 // TODO add arrow type
 // TOOD make it extend Value - not addressing because not clear what the `.value` would be
@@ -65,9 +65,9 @@ export abstract class Macro extends value.Value {
         inputTypes: types.Type[],
         token: LexerToken = this.token
     ): types.ArrowType | error.SyntaxError | string {
-        // const cached = this.matchingDatatypes.find(t => t.checkInputTypes(inputTypes));
-        // if (cached)
-        //     return cached;
+    // const cached = this.matchingDatatypes.find(t => t.checkInputTypes(inputTypes));
+    // if (cached)
+    //     return cached;
 
         // if (inputTypes.some(t => t.isWild()))
         //     return 'wild inputs';
@@ -84,17 +84,17 @@ export abstract class Macro extends value.Value {
 
         // Validate trace
         if (ios.takes.length > inputs.length)
-            return 'differing input lengths';
+            return "differing input lengths";
         if (ios.takes.some((e, i) => e !== inputs[i])) {
-            console.error(ios.takes, 'vs', inputs);
-            return 'differing input values';
+            console.error(ios.takes, "vs", inputs);
+            return "differing input values";
         }
         if (ios.takes.some(v => !v.datatype))
-            throw new Error('wtf?');
+            throw new Error("wtf?");
         if (ios.gives.some(v => !v.datatype))
             return new error.SyntaxError(`macro returns untyped value ${
                 ios.gives.find(v => !v.datatype).typename()
-                }`, token, ctx);
+            }`, token, ctx);
 
         // Add match
         // TODO the outputTypes should be merged with unused inputtypes
@@ -120,7 +120,7 @@ export abstract class Macro extends value.Value {
         token: LexerToken = this.token,
         safe = false,
     ): boolean | error.SyntaxError {
-        // No need to inference if we already know the datatype
+    // No need to inference if we already know the datatype
         if (this.datatype)
             return datatype.check(this.datatype);
         // if (this.matchingDatatypes.some(t => t.check(datatype)))
@@ -155,9 +155,9 @@ export abstract class Macro extends value.Value {
 
         // Invalid type
         // TODO shouldn't need these warnings in the future
-        ctx.warn(token, 'could not infer partial type: ' + (dt || ''));
+        ctx.warn(token, "could not infer partial type: " + (dt || ""));
         return false;
-        // return new error.SyntaxError('could not infer partial type: ' + (dt || ''), token, ctx);
+    // return new error.SyntaxError('could not infer partial type: ' + (dt || ''), token, ctx);
     }
 
     /**
@@ -173,7 +173,7 @@ export abstract class Macro extends value.Value {
 /**
  * A macro that is created internally by the compiler
  */
- export class CompilerMacro extends Macro {
+export class CompilerMacro extends Macro {
     /**
      * @param invokeAction - body of the macro
      * @param [name] - debugging symbol for the macro
@@ -205,7 +205,7 @@ export abstract class Macro extends value.Value {
  */
 export class LiteralMacro extends Macro {
     body: LexerToken[];
-    scopes: Array<{ [k: string] : value.Value }>;
+    scopes: Array<{ [k: string]: value.Value }>;
 
     // Cannot infer return type for wildcards so can't make arrow type
     // But still we want to verify the input matches
@@ -227,8 +227,8 @@ export class LiteralMacro extends Macro {
      * @override
      */
     action(ctx: Context): ActionRet {
-        // TODO simplify and/or use ctx.copyState()
-        // Use proper lexical scope
+    // TODO simplify and/or use ctx.copyState()
+    // Use proper lexical scope
         const oldScopes = ctx.scopes;
         ctx.scopes = this.scopes;
         ctx.scopes.push({});
@@ -257,8 +257,8 @@ export class LiteralMacro extends Macro {
      * @returns - on success return namespace accessor macro on otherwise returns error
      */
     getNamespace(ctx: Context, token: LexerToken): value.NamespaceValue | error.SyntaxError {
-        // TODO simplify and/or use ctx.copyState()
-        // Use proper lexical scope
+    // TODO simplify and/or use ctx.copyState()
+    // Use proper lexical scope
         const oldScopes = ctx.scopes;
         ctx.scopes = this.scopes;
         ctx.scopes.push({});
@@ -292,25 +292,25 @@ export class LiteralMacro extends Macro {
      * @returns void if successful, anything else if error
      */
     applyType(ctx: Context, inputs: types.TupleType, outputs?: types.TupleType): void | error.SyntaxError | string[] | types.ArrowType {
-        // Attempt to infer output types from inputs
+    // Attempt to infer output types from inputs
         const type = this.inferDatatype(ctx, inputs.types, this.token);
         this.inputTypes = inputs.types;
         // if (this.inputTypes.length == 2)
         //     console.log(type);
 
         // Cannot infer output types when wildcards given as input
-        if (type === 'wild inputs')
+        if (type === "wild inputs")
             return;
 
-        if (typeof type == 'string')
+        if (typeof type == "string")
             return new error.SyntaxError(type, this.token, ctx);
         if (type instanceof error.SyntaxError)
             return type;
 
         // Verify outputs
         if (outputs && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
-            ctx.warn(this.token, 'incorrectly typed macro');
-            console.warn('incorrectly typed macro, should be', type);
+            ctx.warn(this.token, "incorrectly typed macro");
+            console.warn("incorrectly typed macro, should be", type);
             // return type;
         }
 
@@ -319,14 +319,14 @@ export class LiteralMacro extends Macro {
     }
 
     toString() {
-        return `LiteralMacro { ${this.token.file || ''}:${this.token.position} }`;
+        return `LiteralMacro { ${this.token.file || ""}:${this.token.position} }`;
     }
 
     /**
      * @override
      */
     checkInputs(stack: value.Value[]) {
-        // add check for partially typed macros in order to support wildcards
+    // add check for partially typed macros in order to support wildcards
         return super.checkInputs(stack) || (
             this.inputTypes
             && stack.length >= this.inputTypes.length

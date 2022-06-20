@@ -1,9 +1,9 @@
-import { createInterface as createRLInterface } from 'readline';
-import { writeFileSync } from 'fs';
+import { createInterface as createRLInterface } from "readline";
+import { writeFileSync } from "fs";
 
-import lex from '../lib/scan';
-import parse, { generatePerfSummary } from '../lib/parse';
-import Context from '../lib/context';
+import lex from "../lib/scan";
+import parse, { generatePerfSummary } from "../lib/parse";
+import Context from "../lib/context";
 
 /**
  * Launch interactive shell
@@ -23,12 +23,12 @@ export default function runShell(lexFlag = false, verboseFlag = true) {
     const ctx = new Context(undefined, { noRuntime: true });
 
     // For each line
-    rl.on('line', line => {
-        // TODO imports
-        if (line == '#! token-timers') {
+    rl.on("line", line => {
+    // TODO imports
+        if (line == "#! token-timers") {
             const ret = generatePerfSummary();
             console.log(ret);
-            writeFileSync('/tmp/phs.perf.dump.json', JSON.stringify(ret));
+            writeFileSync("/tmp/phs.perf.dump.json", JSON.stringify(ret));
             return;
         }
 
@@ -53,7 +53,7 @@ export default function runShell(lexFlag = false, verboseFlag = true) {
                 // Print errors and stuff
                 console.log(e);
             } catch (e) {
-                console.log('thrown', e);
+                console.log("thrown", e);
             }
         }
     });

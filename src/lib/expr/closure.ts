@@ -1,11 +1,11 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import * as error from '../error';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
+import * as value from "../value";
+import * as types from "../datatypes";
+import * as error from "../error";
+import { LexerToken } from "../scan";
+import ModuleManager from "../module";
 
-import { DataExpr, Expr, FunExpr } from './expr';
-import { LiteralMacro, Macro } from '../macro';
+import { DataExpr, Expr, FunExpr } from "./expr";
+import { LiteralMacro, Macro } from "../macro";
 
 /**
  * Capture lexically scoped variables and store them into a new closure object
@@ -23,22 +23,22 @@ export class ClosureCreateExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {
-        // Create new function for it's body
-        // Add function to module table
-        // Capture lexically scoped vars and convert them to args/lm addr?
-            // this is super painful ... maybe check to see if they've been compiled yet?
-            // maybe extend expressions?
+    // Create new function for it's body
+    // Add function to module table
+    // Capture lexically scoped vars and convert them to args/lm addr?
+    // this is super painful ... maybe check to see if they've been compiled yet?
+    // maybe extend expressions?
 
-        return '';
+        return "";
     }
 }
 
 export class ClosureInvokeExpr extends DataExpr {
 
     out(ctx: ModuleManager, fun: FunExpr) {
-        // Load function index from closure object pointer
-        // Put closure object pointer back onto stack
-        // Invoke function in via function table
-        return '';
+    // Load function index from closure object pointer
+    // Put closure object pointer back onto stack
+    // Invoke function in via function table
+        return "";
     }
 }

@@ -1,14 +1,14 @@
-import { readFileSync } from 'fs';
+import { readFileSync } from "fs";
 
-import lex from '../lib/scan';
-import parse from '../lib/parse';
-import Context from '../lib/context';
-import * as error from '../lib/error';
-import * as util from '../tools/util';
+import lex from "../lib/scan";
+import parse from "../lib/parse";
+import Context from "../lib/context";
+import * as error from "../lib/error";
+import * as util from "../tools/util";
 
 (async () => {
     // Read program source
-    const fname : string = process.argv[2];
+    const fname: string = process.argv[2];
     const src = readFileSync(fname).toString();
 
     // Compile program
@@ -27,8 +27,8 @@ import * as util from '../tools/util';
     // Get WASM Module
     const mod: any = await WebAssembly.instantiate(wasm.buffer, {
         js: {
-            'console.log': console.log,
-            logStr: (addr : number, len : number) => {
+            "console.log": console.log,
+            logStr: (addr: number, len: number) => {
                 const str = new Uint8Array(
                     mod.instance.exports.memory.buffer,
                     len,

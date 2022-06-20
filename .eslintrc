@@ -6,20 +6,14 @@
   "plugins": ["@typescript-eslint"],
   "rules": {
     
-    "no-console": "error",
+    "no-console": "warn",
     "no-trailing-spaces": "error",
-    "max-len": [1, 80, 2, {
-      "ignorePattern": "^import\\s.+\\sfrom\\s.+;$",
-      "ignoreUrls": true,
-      "ignoreStrings": true,
-      "ignoreTemplateLiterals": true,
-      "ignoreRegExpLiterals": true
-    }],
+    "max-len": "off",
 
     "@typescript-eslint/type-annotation-spacing": ["error"],
 
     "@typescript-eslint/ban-ts-comment": [
-      "error",
+      "warn",
       {
         "ts-nocheck": "allow-with-description",
         "ts-ignore": "allow-with-description"
@@ -27,7 +21,7 @@
     ],
 
     "indent": "off",
-    "@typescript-eslint/indent": ["error", 2],
+    "@typescript-eslint/indent": ["error", 4],
 
     "semi": "off",
     "@typescript-eslint/semi": ["error", "always"],

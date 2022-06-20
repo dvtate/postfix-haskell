@@ -5,7 +5,7 @@
 
 import { Context } from "vm";
 import { LexerToken } from "./scan";
-import * as value from './value';
+import * as value from "./value";
 import { Expr } from "./expr";
 import { Type } from "./datatypes";
 

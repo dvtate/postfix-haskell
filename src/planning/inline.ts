@@ -1,4 +1,4 @@
-import { phs } from '../tools/inline';
+import { phs } from "../tools/inline";
 
 (async function main(){
 
@@ -12,5 +12,5 @@ import { phs } from '../tools/inline';
     const { is_answer } = program.instance.exports as any;
     for (let i = 1; i < 100; i++)
         if (is_answer(i))
-            console.log('the magic number is ' + i);
+            console.log("the magic number is " + i);
 })();

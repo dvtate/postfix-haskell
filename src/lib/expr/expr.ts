@@ -1,9 +1,9 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import * as error from '../error';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
-import { TraceResults } from '../context';
+import * as value from "../value";
+import * as types from "../datatypes";
+import * as error from "../error";
+import { LexerToken } from "../scan";
+import ModuleManager from "../module";
+import { TraceResults } from "../context";
 
 // TODO expr constructors should be augmented to also take in Context object
 // This way they can also emit warnings
@@ -72,7 +72,7 @@ export abstract class Expr extends value.Value {
 
                     // ts-ignore
                     if (ret.some(e => !e.children)) {
-                        console.log('no cs', e);
+                        console.log("no cs", e);
                     }
                     return ret.length === 0 ? e : ret;
                 }).reduce((a, v) => {
@@ -138,8 +138,8 @@ export class DummyDataExpr extends DataExpr {
      * @override
      */
     out() {
-        throw new Error('Invalid Intermediate Representation node: ' + this.constructor.name);
-        return '';
+        throw new Error("Invalid Intermediate Representation node: " + this.constructor.name);
+        return "";
     }
 }
 
@@ -158,9 +158,9 @@ export abstract class FunExpr extends Expr {
 
     // Locals store primitives or pointers
     _locals: Array<
-        types.PrimitiveType
-        | types.RefType<types.Type>
-        | types.RefRefType<types.RefType<types.Type>>> = [];
+    types.PrimitiveType
+    | types.RefType<types.Type>
+    | types.RefRefType<types.RefType<types.Type>>> = [];
 
     // Parameter expressions
     readonly params: ParamExpr[];
@@ -184,7 +184,7 @@ export abstract class FunExpr extends Expr {
      * @returns array of locals indicies designated
      */
     addLocal(type: types.Type): number[] {
-        // For references we need to store the address
+    // For references we need to store the address
         if (type instanceof types.RefType)
             return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
 
@@ -212,7 +212,7 @@ export abstract class FunExpr extends Expr {
      * @returns webassembly text
      */
     setLocalWat(indicies: number[]): string {
-        return indicies.map(ind => `(local.set ${ind})`).reverse().join(' ');
+        return indicies.map(ind => `(local.set ${ind})`).reverse().join(" ");
     }
 
     /**
@@ -221,7 +221,7 @@ export abstract class FunExpr extends Expr {
      * @returns webassembly text
      */
     getLocalWat(indicies: number[]): string {
-        return indicies.map(ind => `(local.get ${ind})`).join(' ');
+        return indicies.map(ind => `(local.get ${ind})`).join(" ");
     }
 }
 
@@ -232,19 +232,19 @@ export class FunExportExpr extends FunExpr {
     // TODO should make apis to help lift nested functions/closures
 
     out(ctx: ModuleManager) {
-        // TODO tuples
+    // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
-        const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(' ');
-        const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
+        const paramTypes = this.inputTypes.map(t => t.getWasmTypeName()).filter(Boolean).join(" ");
+        const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(" ");
 
         return `(func $${this.name} ${
-            paramTypes ? `(param ${paramTypes})` : ''
+            paramTypes ? `(param ${paramTypes})` : ""
         } ${
-            resultTypes ? `(result ${resultTypes})` : ''
+            resultTypes ? `(result ${resultTypes})` : ""
         }\n\t\t${
-            this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
+            this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(" ")
         }\n\t${
-            outs.join('\n\t')
+            outs.join("\n\t")
         })\n(export "${this.name}" (func $${this.name}))`;
     }
 }

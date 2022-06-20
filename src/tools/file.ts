@@ -1,13 +1,13 @@
 // External
-import * as fs from 'fs';
+import * as fs from "fs";
 
 // Internal
 import lex from "../lib/scan";
-import parse from '../lib/parse';
-import * as error from '../lib/error';
-import Context from '../lib/context';
+import parse from "../lib/parse";
+import * as error from "../lib/error";
+import Context from "../lib/context";
 
-import * as util from './util';
+import * as util from "./util";
 
 /**
  * Compile a file to webassembly text and print it's contents
@@ -37,7 +37,7 @@ export default async function compileFile(
     try {
         src = fs.readFileSync(fname).toString();
     } catch (e) {
-        console.error('could not read file ', fname);
+        console.error("could not read file ", fname);
         throw e;
     }
 
@@ -53,10 +53,10 @@ export default async function compileFile(
     let start = performance.now();
     const ptree = lex(src, fname);
     if (trackTime)
-        console.log('lex:', performance.now() - start);
+        console.log("lex:", performance.now() - start);
 
     try {
-        // Parse (weird meaning here, more like "interpret phase")
+    // Parse (weird meaning here, more like "interpret phase")
         start = performance.now();
         const ctx = parse(ptree, new Context(fname, {
             stackSize, nurserySize, noRuntime,
@@ -67,18 +67,18 @@ export default async function compileFile(
             console.log(util.formatErrorPos([ctx]));
             process.exit(0);
         } else if (ctx === null) {
-            console.error('parse failed with null!');
+            console.error("parse failed with null!");
             return null;
         }
         if (trackTime)
-            console.log('parse:', performance.now() - start);
+            console.log("parse:", performance.now() - start);
 
         // Output assembly
         start = performance.now();
         const wast = await (ctx as Context).outWast({ folding, fast, optimize, });
         // console.log(wast);
         if (trackTime)
-            console.log('compile:', performance.now() - start);
+            console.log("compile:", performance.now() - start);
 
         return wast;
     } catch (e) {

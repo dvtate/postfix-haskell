@@ -1,10 +1,10 @@
-import { LexerToken } from '../scan';
-import * as error from '../error';
-import * as value from '../value';
-import * as types from '../datatypes';
-import { Expr, DataExpr, FunExpr } from './expr';
-import ModuleManager from '../module';
-import Context from '../context';
+import { LexerToken } from "../scan";
+import * as error from "../error";
+import * as value from "../value";
+import * as types from "../datatypes";
+import { Expr, DataExpr, FunExpr } from "./expr";
+import ModuleManager from "../module";
+import Context from "../context";
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -13,7 +13,7 @@ import Context from '../context';
  */
 export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): DataExpr[] {
     return vs.map(v => {
-        // Already an expression
+    // Already an expression
         if (v instanceof DataExpr)
             return v;
 
@@ -93,7 +93,7 @@ export class TupleExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun?: FunExpr): string {
-        return this.value.map(v => v.out(ctx, fun)).join(' ');
+        return this.value.map(v => v.out(ctx, fun)).join(" ");
     }
 
     children(): Expr[] {
@@ -110,7 +110,7 @@ export class TupleExpr extends DataExpr {
  *
  * used to handle multi-returns so that they don't get used out of order
  */
- export class DependentLocalExpr extends DataExpr {
+export class DependentLocalExpr extends DataExpr {
     // Expression produces the output captured by this one
     source: Expr;
 
@@ -123,10 +123,10 @@ export class TupleExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {
-        // source.out() will update our index to be valid and capture relevant values
-        // into our local
+    // source.out() will update our index to be valid and capture relevant values
+    // into our local
         const ret = `${
-            !this.source._isCompiled ? this.source.out(ctx, fun) : ''
+            !this.source._isCompiled ? this.source.out(ctx, fun) : ""
         } ${fun.getLocalWat(this.inds)}`;
         this.source._isCompiled = true;
         return ret;
@@ -140,7 +140,7 @@ export class TupleExpr extends DataExpr {
 /**
  * Passes stack arguments to desired WASM instruction
  */
- export class InstrExpr extends DataExpr {
+export class InstrExpr extends DataExpr {
     // WASM instruction mnemonic
     instr: string;
 
@@ -151,14 +151,14 @@ export class TupleExpr extends DataExpr {
         super(token, datatype);
         this.instr = instr;
         this.args = args;
-        // TODO warn if invalid args
+    // TODO warn if invalid args
     }
 
     /**
      * @override
      */
     out(ctx: ModuleManager, fun: FunExpr) {
-        const ret = `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
+        const ret = `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(" ")})`;
         // console.log(this.constructor.name, ret);
         return ret;
     }
@@ -197,8 +197,8 @@ export class TeeExpr extends DataExpr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExpr) {
-        // if (!this.value.expensive)
-        //     return this.value.out(ctx, fun);
+    // if (!this.value.expensive)
+    //     return this.value.out(ctx, fun);
 
         if (this.locals === null) {
             this.locals = fun.addLocal(this.datatype);
@@ -206,7 +206,7 @@ export class TeeExpr extends DataExpr {
                 return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0]})`;
             else
                 return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)
-                    }\n\t${fun.getLocalWat(this.locals)}`;
+                }\n\t${fun.getLocalWat(this.locals)}`;
         }
         return fun.getLocalWat(this.locals);
     }
@@ -256,9 +256,9 @@ export class MultiInstrExpr extends Expr {
 
         // Instruction + capture results
         return `(${this.instr} ${
-            this.args.map(e => e.out(ctx, fun)).join(' ')
+            this.args.map(e => e.out(ctx, fun)).join(" ")
         })\n${
-            this.results.map(e => fun.setLocalWat(e.inds)).join(' ')
+            this.results.map(e => fun.setLocalWat(e.inds)).join(" ")
         }`;
     }
 
@@ -315,19 +315,19 @@ export class IdExpr extends DataExpr {
      * @returns
      */
     store(ctx: ModuleManager, fun?: FunExpr): string {
-        // Cheap operations don't need caching
+    // Cheap operations don't need caching
         if (!this.expensive)
-            return '';
+            return "";
         this.locals = fun.addLocal(this.value.datatype);
         return `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)
-            }\n\t${fun.getLocalWat(this.locals)}`;
+        }\n\t${fun.getLocalWat(this.locals)}`;
     }
 
     /**
      * @override
      */
     out(ctx: ModuleManager, fun?: FunExpr): string {
-        // Store expensive exprs in locals, otherwise just get resulting expr
+    // Store expensive exprs in locals, otherwise just get resulting expr
         if (this.stored && this.value.expensive)
             if (!this.locals) {
                 // TODO maybe should define locals at top of function instead of at use case
@@ -336,7 +336,7 @@ export class IdExpr extends DataExpr {
                     return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0]})`;
                 else
                     return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)
-                        }\n\t${fun.getLocalWat(this.locals)}`;
+                    }\n\t${fun.getLocalWat(this.locals)}`;
             } else {
                 return fun.getLocalWat(this.locals);
             }
