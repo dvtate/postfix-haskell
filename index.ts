@@ -41,18 +41,16 @@ yargs(process.argv.slice(2))
                 'fast' : {
                     describe: 'skip validation and pretty-print steps',
                     type: 'boolean',
-                    default: false,
                 },
                 'folding' : {
                     describe: 'use folding/s-expr WAT syntax',
                     type: 'boolean',
-                    default: false,
                 },
 
                 // TODO convert this to a numeric arg
                 'optimize' : {
                     describe: 'pass compiled output through binaryen optimizer',
-                    default: false,
+                    type: 'boolean',
                     alias: 'O',
                 },
                 'stack-size' : {
@@ -73,7 +71,6 @@ yargs(process.argv.slice(2))
                 'no-rt' : {
                     describe: 'do not include boilerplate code which might be required for program to run',
                     type: 'boolean',
-                    default: false,
                 },
             }),
         async argv => {

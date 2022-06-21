@@ -1,4 +1,6 @@
-"./types.phs" require use
+# Empty type
+() type $Unit =
+Never $Void =
 
 # Stack
 (: $_ = ) $pop =				# Pop value
@@ -23,39 +25,33 @@
 (: pop ) (: pop @ ) $global.|| fun
 
 ##
-# cast a value of one type to another type
+# Cast a value of one type to another type
 # <value> <type> cast
 ##
 
-# Boilerplate for cast conditon
-(: ( $from $to ) =
-	( $val $t ) =
-	val type Syntax:Data ==
-	(: t from == val type to == && ) &&
-) $__is_from_to =
-
-# No need to cast if already same type as target (Maybe remove classes?)
+# No need to cast if already same type as target
+# Maybe remove classes?
 (: swap type == ) (: pop ) $cast fun
 
 # Cast to I32
-(: I32 I64 __is_from_to ) (: pop "i32.wrap_i64_s" asm ) $cast fun
-(: I32 F32 __is_from_to ) (: pop "i32.trunc_f32_s" asm ) $cast fun
-(: I32 F64 __is_from_to ) (: pop "i32.trunc_f64_s" asm ) $cast fun
+((I64 Syntax:Type): I32 == ) (: pop "i32.wrap_i64_s" asm ) $cast fun
+((F32 Syntax:Type): I32 == ) (: pop "i32.trunc_f32_s" asm ) $cast fun
+((F64 Syntax:Type): I32 == ) (: pop "i32.trunc_f64_s" asm ) $cast fun
 
 # Cast to I64
-(: I64 I32 __is_from_to ) (: pop "i64.extend_i32_s" asm ) $cast fun
-(: I64 F32 __is_from_to ) (: pop "i64.trunc_f32_s" asm ) $cast fun
-(: I64 F64 __is_from_to ) (: pop "i64.trunc_f64_s" asm ) $cast fun
+((I32 Syntax:Type): I64 == ) (: pop "i64.extend_i32_s" asm ) $cast fun
+((F32 Syntax:Type): I64 == ) (: pop "i64.trunc_f32_s" asm ) $cast fun
+((F64 Syntax:Type): I64 == ) (: pop "i64.trunc_f64_s" asm ) $cast fun
 
 # Cast to F32
-(: F32 I32 __is_from_to ) (: pop "f32.convert_i32_s" asm ) $cast fun
-(: F32 I64 __is_from_to ) (: pop "f32.convert_i64_s" asm ) $cast fun
-(: F32 F64 __is_from_to ) (: pop "f32.demote_f64" asm ) $cast fun
+((I32 Syntax:Type): F32 == ) (: pop "f32.convert_i32_s" asm ) $cast fun
+((I64 Syntax:Type): F32 == ) (: pop "f32.convert_i64_s" asm ) $cast fun
+((F64 Syntax:Type): F32 == ) (: pop "f32.demote_f64" asm ) $cast fun
 
 # Cast to F64
-(: F64 I32 __is_from_to ) (: pop "f64.convert_i32_s" asm ) $cast fun
-(: F64 I64 __is_from_to ) (: pop "f64.convert_i64_s" asm ) $cast fun
-(: F64 F32 __is_from_to ) (: pop "f64.promote_f32" asm ) $cast fun
+((I32 Syntax:Type): F64 == ) (: pop "f64.convert_i32_s" asm ) $cast fun
+((I64 Syntax:Type): F64 == ) (: pop "f64.convert_i64_s" asm ) $cast fun
+((F32 Syntax:Type): F64 == ) (: pop "f64.promote_f32" asm ) $cast fun
 
 # Perform promotion
 ((I64 F64): 1 ) (: swap F64 cast swap ) $__promote fun
@@ -102,10 +98,12 @@ I32 I64 | F32 F64 | | $__Scalar =
 ((I32 I32): pop __is_0 ) (: swap pop "i32.eqz" asm ) $global.== fun
 ((I64 I64): __is_0 ) (: pop "i64.eqz" asm ) $global.== fun
 ((I64 I64): pop __is_0 ) (: swap pop "i64.eqz" asm ) $global.== fun
+
 ((I32 I64): 1 ) (: swap I64 cast swap == ) $global.== fun
 ((I64 I32): 1 ) (: I64 cast == ) $global.== fun
 ((F32 F64): 1 ) (: swap F64 cast swap == ) $global.== fun
 ((F64 F32): 1 ) (: F64 cast == ) $global.== fun
+
 ((Syntax:Type Syntax:Type): 1 ) (: __typecheck ) $global.== fun
 
 ##

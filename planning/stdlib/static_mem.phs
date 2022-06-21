@@ -47,15 +47,19 @@
 
 # Load value from memory
 # <unit> <I32 addr> <TYPE> load
-(: I32 == ) (: pop "i32.load" asm ) $load fun
-(: I64 == ) (: pop "i64.load" asm ) $load fun
-(: F32 == ) (: pop "f32.load" asm ) $load fun
-(: F64 == ) (: pop "f64.load" asm ) $load fun
+((Syntax:Type): I32 == ) (: pop "i32.load" asm ) $load fun
+((Syntax:Type): I64 == ) (: pop "i64.load" asm ) $load fun
+((Syntax:Type): F32 == ) (: pop "f32.load" asm ) $load fun
+((Syntax:Type): F64 == ) (: pop "f64.load" asm ) $load fun
 
 # Byte width of type
 # ... this prob should be part of compiler...
 # <type> sizeof -- <byte width>
-(: I32 == ) (: pop 4 ) $sizeof fun
-(: F32 == ) (: pop 4 ) $sizeof fun
-(: I64 == ) (: pop 8 ) $sizeof fun
-(: F64 == ) (: pop 8 ) $sizeof fun
+((Syntax:Type): I32 == ) (: pop 4 ) $sizeof fun
+((I32): 1 ) (: pop 4 ) $sizeof fun
+((Syntax:Type): F32 == ) (: pop 4 ) $sizeof fun
+((F32): 1 ) (: pop 4 ) $sizeof fun
+((Syntax:Type): I64 == ) (: pop 8 ) $sizeof fun
+((I64): 1 ) (: pop 8 ) $sizeof fun
+((Syntax:Type): F64 == ) (: pop 8 ) $sizeof fun
+((F64): 1 ) (: pop 8 ) $sizeof fun

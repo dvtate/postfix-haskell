@@ -1,11 +1,11 @@
 "./prelude.phs" require $prelude =
 
-# String TypeClass
+# String class
 ( I32 I32 ) class $Str =
 ((Str): 1 ) (: unpack pop ) $size fun
 ((Str): 1 ) (: unpack swap pop ) $addr fun
 
-# Overload as operator to convert string literals
+# Overload cast operator to convert string literals
 ((Syntax:Str Syntax:Type): Str == ) (:
     ( $lit $T ) =
     ( lit ) T make

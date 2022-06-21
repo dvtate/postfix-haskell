@@ -1,4 +1,4 @@
-"stdlib/prelude.phs" require use
+"stdlib/prelude.phs" require "\\%|Unit|\\+|\\=\\=|\\<\\=|true|pop|cast" "" use_some
 "stdlib/str.phs" require use
 "stdlib/io.phs" require $io =
 
