@@ -1,10 +1,10 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import * as error from '../error';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
-import { DataExpr, Expr, FunExpr } from './expr';
-import { DependentLocalExpr } from './util';
+import * as value from "../value";
+import * as types from "../datatypes";
+import * as error from "../error";
+import { LexerToken } from "../scan";
+import ModuleManager from "../module";
+import { DataExpr, Expr, FunExpr } from "./expr";
+import { DependentLocalExpr } from "./util";
 
 /**
  * Describes expensive expressions which were on the stack before a branch was invoked
@@ -34,8 +34,8 @@ export class BranchInputExpr extends DataExpr {
      * @returns WAT
      */
     capture(ctx: ModuleManager, fun: FunExpr) {
-        // if (this.index)
-        //     return '';
+    // if (this.index)
+    //     return '';
         this.index = fun.addLocal(this.value.datatype);
         return `${this.value.out(ctx, fun)}\n${fun.setLocalWat(this.index)}`;
     }
@@ -46,7 +46,7 @@ export class BranchInputExpr extends DataExpr {
     out(ctx: ModuleManager, fun: FunExpr) {
         if (!this.datatype.isUnit() && !this.index) {
             console.log(this.value);
-            console.log(new Error('bt'));
+            console.log(new Error("bt"));
         }
         return fun.getLocalWat(this.index);
     }
@@ -103,7 +103,7 @@ export class BranchExpr extends Expr {
         conditions: Array<DataExpr>,
         actions: Array<DataExpr>[],
         inputExprs: BranchInputExpr[],
-        public name?:string,
+        public name?: string,
     ) {
         super(tokens[0]);
         this.tokens = tokens;
@@ -117,9 +117,9 @@ export class BranchExpr extends Expr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExpr) {
-        // Prevent multiple compilations
+    // Prevent multiple compilations
         this._isCompiled = true;
-        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n');
+        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join("\n");
 
         // Compile body
         // Notice order of compilation from top to bottom so that locals are assigned before use
@@ -128,13 +128,13 @@ export class BranchExpr extends Expr {
         for (let i = this.conditions.length - 1; i >= 0; i--) {
             const invIdx = (this.conditions.length - i) - 1;
             conds[invIdx] = this.conditions[i].out(ctx, fun);
-            acts[invIdx] = this.actions[i].reverse().map(a => a.out(ctx, fun)).join(' ');
+            acts[invIdx] = this.actions[i].reverse().map(a => a.out(ctx, fun)).join(" ");
         }
         // const conds = this.conditions.map(c => c.out(ctx, fun)).reverse();
         // const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
 
         // Generate result type signature
-        const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
+        const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(" ");
 
         // Set up dependent locals
         const results = this.results;
@@ -143,7 +143,7 @@ export class BranchExpr extends Expr {
         });
 
         // Last condition must be else clause
-        if (conds[conds.length - 1] != '(i32.const 1)') {
+        if (conds[conds.length - 1] != "(i32.const 1)") {
             // console.log(conds[conds.length - 1]);
             throw new error.SyntaxError("no else case for fun branch", this.tokens);
         }
@@ -174,12 +174,12 @@ export class BranchExpr extends Expr {
 
         // Compile to (if (...) (result ...) (then ...) (else ...))
         // Note that there's some BS done here to work around multi-return if statements not being allowed :(
-        const retSet = results.map(r => fun.setLocalWat(r.inds)).join('');
+        const retSet = results.map(r => fun.setLocalWat(r.inds)).join("");
         let ret: string = inputs + (function compileIf(i): string {
             return i + 1 >= acts.length
                 ? acts[i] + retSet
                 : `${conds[i]}\n\t(if ${
-                    retType.length === 1 ? `(result ${retType})` : ''
+                    retType.length === 1 ? `(result ${retType})` : ""
                 }\n\t(then ${
                     acts[i] + retSet
                 })\n\t(else ${
@@ -187,7 +187,7 @@ export class BranchExpr extends Expr {
                 }))`;
         })(0);
         if (retType.length === 1)
-            ret += '\n\t' + retSet;
+            ret += "\n\t" + retSet;
 
         // console.log('BranchExpr', ret);
         return ret;

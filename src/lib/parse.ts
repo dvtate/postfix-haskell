@@ -1,9 +1,9 @@
 import { BlockToken, IdToken, LexerToken, MacroToken, NumberToken } from "./scan";
-import * as value from './value';
-import Context from './context';
-import { LiteralMacro } from './macro';
-import * as error from './error';
-import * as types from './datatypes';
+import * as value from "./value";
+import Context from "./context";
+import { LiteralMacro } from "./macro";
+import * as error from "./error";
+import * as types from "./datatypes";
 
 /*
 The name for this file is somewhat misleading but technically correct
@@ -63,16 +63,16 @@ export default function parse(tokens: LexerToken[], ctx = new Context(tokens[0].
                 }
                 break;
 
-            // Need to determine number type from literal
+                // Need to determine number type from literal
             case LexerToken.Type.Number:
                 ctx.push(new value.NumberValue(t, (t as NumberToken).value));
                 break;
 
-            // Blocks: Need to form a closure with current scope
+                // Blocks: Need to form a closure with current scope
             case LexerToken.Type.Block: {
                 // This shouldn't be needed
                 if (!(t instanceof MacroToken))
-                    throw new Error('wtf?');
+                    throw new Error("wtf?");
 
                 // Get input and output types
                 const ts: types.TupleType[] = [];
@@ -82,17 +82,17 @@ export default function parse(tokens: LexerToken[], ctx = new Context(tokens[0].
                         return rv;
                     const v = ctx.pop();
                     if (!(v.value instanceof types.TupleType))
-                        return new error.SyntaxError('Macro inputs tuple should only contain types', tt, ctx);
+                        return new error.SyntaxError("Macro inputs tuple should only contain types", tt, ctx);
                     ts.push(v.value);
                 }
 
                 // Push macro onto stack
-                const m = new LiteralMacro(ctx, t)
+                const m = new LiteralMacro(ctx, t);
                 m.recursive = t.recursive;
                 if (ts.length !== 0 && !m.recursive) {
                     const rv = m.applyType(ctx, ts[0], ts[1]);
                     if (rv instanceof types.ArrowType)
-                        console.warn('inferred type: ', rv);
+                        console.warn("inferred type: ", rv);
                     if (rv)
                         throw rv;
                 }

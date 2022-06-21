@@ -4,19 +4,19 @@
  */
 
 
-type DocsMap = { [k: string] : {
+type DocsMap = { [k: string]: {
     name: string,
     overloadable: boolean,
     signature: string,
     description: string,
-}};
+} };
 
 export const docs: DocsMap = {
-    '+' : {
-        name: 'Addition',
+    "+" : {
+        name: "Addition",
         overloadable: true,
-        signature: '<value> <value> +',
-        description: 'Adds two values together',
+        signature: "<value> <value> +",
+        description: "Adds two values together",
     },
     // ....
 };

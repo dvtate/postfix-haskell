@@ -1,12 +1,12 @@
-import * as value from './value';
-import * as types from './datatypes';
-import * as error from './error';
-import * as expr from './expr';
-import Context, { TraceResults } from './context';
-import { LexerToken } from './scan';
-import { fromDataValue } from './expr';
-import { Macro } from './macro';
-import WasmNumber from './numbers';
+import * as value from "./value";
+import * as types from "./datatypes";
+import * as error from "./error";
+import * as expr from "./expr";
+import Context, { TraceResults } from "./context";
+import { LexerToken } from "./scan";
+import { fromDataValue } from "./expr";
+import { Macro } from "./macro";
+import WasmNumber from "./numbers";
 
 // TODO there need to be a lot of special errors/warnings for this so that user knows what to fix
 
@@ -27,7 +27,7 @@ export default class Fun {
     /**
      * Preconditions for each branch
      */
-    conditions: Macro[] = []
+    conditions: Macro[] = [];
 
     /**
      * Actions/postconditions for each branch
@@ -70,7 +70,7 @@ export default class Fun {
      * @param action - action when test passses
      */
     overload(token: LexerToken, condition: Macro, action: Macro) {
-        // Prevent multiple overloads
+    // Prevent multiple overloads
         const idx = this.tokens.indexOf(token);
         // console.log('overload', this.tokens[0].token, this.tokens.includes(token));
         if (idx !== -1) {
@@ -90,17 +90,17 @@ export default class Fun {
      * @param token invokee token
      * @returns same as return value of Macro.action
      */
-    action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
-        // To prevent duplicate expressions we can copy input exprs to locals
-        // FIXME: once we know inputs and shit we then need to store them into the Branch expr so that
-        //  the value they're capturing is captured before branch body and only accessed via relevant local
+    action(ctx: Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
+    // To prevent duplicate expressions we can copy input exprs to locals
+    // FIXME: once we know inputs and shit we then need to store them into the Branch expr so that
+    //  the value they're capturing is captured before branch body and only accessed via relevant local
         const oldStack = ctx.stack.slice();
         ctx.stack = ctx.stack.map(v =>
             v instanceof expr.DataExpr
                 // @ts-ignore typescript doesn't understand `.constructor`
                 && v.expensive
-                    ? new expr.BranchInputExpr(v.token, v)
-                    : v);
+                ? new expr.BranchInputExpr(v.token, v)
+                : v);
 
         // Pick which branch to follow
         // TODO stop at first else statement
@@ -134,7 +134,7 @@ export default class Fun {
                 || !types.PrimitiveType.Types.I32.check(rv.datatype) && rv));
         if (typeErr) {
             console.error("typerror: ", typeErr);
-            return ['function conditions must put an I32 on top of stack'];
+            return ["function conditions must put an I32 on top of stack"];
         }
 
         // Check for errors
@@ -212,8 +212,8 @@ export default class Fun {
 
         // Verify consistent # i/o's
         if (ios.some(t => t.delta !== ios[0].delta)) {
-            console.error('Fun.action ios inconsistent:', ios);
-            return ['functions must have runtime consistency for number of inputs/outputs'];
+            console.error("Fun.action ios inconsistent:", ios);
+            return ["functions must have runtime consistency for number of inputs/outputs"];
         }
 
         // Figure out how many args to pull
@@ -238,7 +238,7 @@ export default class Fun {
             && !v.datatype.getBaseType().check(first[i].datatype)))
         ) {
             console.error("ios", ios);
-            return ['function must have consistent return types'];
+            return ["function must have consistent return types"];
         }
 
         // Drop inputs from stack
@@ -260,7 +260,7 @@ export default class Fun {
         branch.args = inputs;
         ctx.push(...results);
 
-        /*
+    /*
         // Push branch expr
         // TODO remove `as` here
         const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => fromDataValue(t.gives)));

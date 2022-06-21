@@ -3,7 +3,7 @@ import { formatErrorPos, fileLocate } from "./util";
 
 // Help message
 if (process.argv.length < 5) {
-    console.error("usage: file position length")
+    console.error("usage: file position length");
     process.exit(1);
 }
 
@@ -16,10 +16,10 @@ const loc = fileLocate(file, position);
 console.log({ file, position, tokenLength, loc });
 
 console.log(formatErrorPos([{
-    name: 'locate',
-    message: 'location in the file',
+    name: "locate",
+    message: "location in the file",
     tokens: [new LexerToken(
-        new Array(tokenLength).fill('t').join(''),
+        new Array(tokenLength).fill("t").join(""),
         LexerToken.Type.Identifier,
         position,
         file,

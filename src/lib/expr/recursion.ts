@@ -1,9 +1,9 @@
-import * as value from '../value';
-import * as types from '../datatypes';
-import { LexerToken } from '../scan';
-import ModuleManager from '../module';
-import { Expr, DataExpr, FunExpr, ParamExpr } from './expr';
-import { TeeExpr, DependentLocalExpr, } from './util';
+import * as value from "../value";
+import * as types from "../datatypes";
+import { LexerToken } from "../scan";
+import ModuleManager from "../module";
+import { Expr, DataExpr, FunExpr, ParamExpr } from "./expr";
+import { TeeExpr, DependentLocalExpr, } from "./util";
 
 /**
  * Used to wrap arguments passed to recursive functions as they are being tracd in a way that
@@ -85,7 +85,7 @@ export class RecursiveBodyExpr extends Expr {
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {
-        // Prevent multiple compilations
+    // Prevent multiple compilations
         this._isCompiled = true;
 
         // If not tail recursive, generate a helper function instead of a loop
@@ -105,7 +105,7 @@ export class RecursiveBodyExpr extends Expr {
         });
         let ret = `\n\t${this.takeExprs.map((e, i) =>
             `${this.takes[i].out(ctx, fun)}${fun.setLocalWat(e.inds)}`
-        ).join('\n\t')}\n\t`;
+        ).join("\n\t")}\n\t`;
 
         // Create place to store outputs
         this.giveExprs.forEach(e => {
@@ -113,11 +113,11 @@ export class RecursiveBodyExpr extends Expr {
         });
 
         // Body
-        const retType = this.gives.map(e => e.datatype.getWasmTypeName()).join(' ');
+        const retType = this.gives.map(e => e.datatype.getWasmTypeName()).join(" ");
         ret += `(loop ${this.label} (result ${retType})\n\t${
-            this.gives.map(e => e.out(ctx, fun)).join('\n\t')
+            this.gives.map(e => e.out(ctx, fun)).join("\n\t")
         })\n\t${
-            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join(' ')
+            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join(" ")
         }\n\t`;
 
         // console.log('RecursiveBodyExpr', ret);
@@ -128,7 +128,7 @@ export class RecursiveBodyExpr extends Expr {
      * Version of this.out() for when it's not tail-recursive
      */
     outFn(ctx: ModuleManager, fun: FunExpr) {
-        // Since we're moving body to another function we have to move locals
+    // Since we're moving body to another function we have to move locals
         const captureExprs = this.gives
             .map(e => e.getLeaves())
             .reduce((a, v) => a.concat(v), [])
@@ -166,11 +166,11 @@ export class RecursiveBodyExpr extends Expr {
 
         // Invoke helper function and capture return values into dependent locals
         return `${
-            this.takes.map(e => e.out(ctx, fun)).join('')
+            this.takes.map(e => e.out(ctx, fun)).join("")
         }${
-            captureExprs.map((e: DataExpr) => e.out(ctx, fun)).join('')
+            captureExprs.map((e: DataExpr) => e.out(ctx, fun)).join("")
         }\n\t(call ${this.label})${
-            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join('')
+            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join("")
         }`;
     }
 
@@ -186,7 +186,7 @@ export class RecursiveBodyExpr extends Expr {
      * @returns true if we can use a loop instead of recursive func call
      */
     private _isTailRecursive(): boolean {
-        // Covers infinite loop case
+    // Covers infinite loop case
         if (this.gives.some(c => c instanceof RecursiveResultExpr))
             return true;
 
@@ -235,7 +235,7 @@ export class RecFunExpr extends FunExpr {
     }
 
     out(ctx: ModuleManager) {
-        // Capture original positions so that we can revert later so that old references don't break
+    // Capture original positions so that we can revert later so that old references don't break
         const originalIndicies = this.copiedParams.map(e => e.localInds);
 
         // Alias our DependentLocalExpr inputs to params
@@ -260,23 +260,23 @@ export class RecFunExpr extends FunExpr {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this)); // Body of fxn
         const paramTypes = this.inputTypes.map(t =>
-            t.getWasmTypeName()).filter(Boolean).join(' ');
+            t.getWasmTypeName()).filter(Boolean).join(" ");
         const resultTypes = this.outputs.map(r =>
-            r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
+            r.datatype.getWasmTypeName()).filter(Boolean).join(" ");
 
         // Generate output wat
         const ret = `(func ${this.name} ${
             // Parameter types
-            paramTypes ? `(param ${paramTypes})` : ''
+            paramTypes ? `(param ${paramTypes})` : ""
         } ${
             // Return types
-            resultTypes ? `(result ${resultTypes})` : ''
+            resultTypes ? `(result ${resultTypes})` : ""
         }\n\t\t${
             // Local variables
-            this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
+            this._locals.filter(Boolean).map(l => `(local ${l.getWasmTypeName()})`).join(" ")
         }\n\t${
             // Write body
-            outs.join('\n\t')
+            outs.join("\n\t")
         })`;
 
         // Revert modifications to the exprs so that other places they're referenced don't break
@@ -307,7 +307,7 @@ export class RecursiveCallExpr extends Expr {
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {
-        // Prevent recompiling
+    // Prevent recompiling
         this._isCompiled = true;
 
         // TCO behavior
@@ -317,9 +317,9 @@ export class RecursiveCallExpr extends Expr {
             let ret = `\n\t${this.takeExprs.map((e, i) =>
                 `${e.out(ctx, fun)}${
                     !this.body.takeExprs[i] || !this.body.takeExprs[i].inds
-                        ? ''
+                        ? ""
                         : fun.setLocalWat(this.body.takeExprs[i].inds)}`
-            ).join('\n\t')}\n\t`;
+            ).join("\n\t")}\n\t`;
 
             // Invoke function
             ret += `(br ${this.body.label})`;
@@ -328,14 +328,14 @@ export class RecursiveCallExpr extends Expr {
         }
 
         if (fun !== this.body.helper)
-            throw new Error('wtf?');
+            throw new Error("wtf?");
 
         // Call helper function
         // Note this will always be in the body of the helper function and thus a recursive call
         return `\n\t${
-            this.takeExprs.map(e => e.out(ctx, fun)).join(' ')
+            this.takeExprs.map(e => e.out(ctx, fun)).join(" ")
         } ${
-            this.body.helper.copiedParams.map((p: DataExpr) => p.out(ctx, fun)).join('')
+            this.body.helper.copiedParams.map((p: DataExpr) => p.out(ctx, fun)).join("")
         } (call ${this.body.label})`;
     }
 
@@ -374,7 +374,7 @@ export class RecursiveResultExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {
-        let ret = '';
+        let ret = "";
         if (!this.source._isCompiled)
             ret += this.source.out(ctx, fun);
 

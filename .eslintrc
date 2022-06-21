@@ -1,17 +1,46 @@
 {
-    "root": true,
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/eslint-recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "rules": {
-        "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/ban-ts-comment": "off"
-    }
+  "extends": [
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    
+    "no-console": "warn",
+    "no-trailing-spaces": "error",
+    "max-len": "off",
 
+    "@typescript-eslint/type-annotation-spacing": ["error"],
+
+    "@typescript-eslint/ban-ts-comment": [
+      "warn",
+      {
+        "ts-nocheck": "allow-with-description",
+        "ts-ignore": "allow-with-description"
+      }
+    ],
+
+    "indent": "off",
+    "@typescript-eslint/indent": ["error", 4],
+
+    "semi": "off",
+    "@typescript-eslint/semi": ["error", "always"],
+
+    "quotes": "off",
+    "@typescript-eslint/quotes": ["error", "double"],
+
+    "object-curly-spacing": "off",
+    "@typescript-eslint/object-curly-spacing": ["error", "always"],
+
+    "sort-imports": [
+      "warn",
+      {
+        "ignoreCase": false,
+        "ignoreDeclarationSort": false,
+        "ignoreMemberSort": true,
+        "memberSyntaxSortOrder": ["none", "all", "multiple", "single"],
+        "allowSeparatedGroups": true
+      }
+    ]
   }
+}

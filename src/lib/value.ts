@@ -1,11 +1,11 @@
-import * as types from './datatypes';
-import WasmNumber from './numbers';
-import { IdToken, LexerToken } from './scan';
-import Context from './context';
-import ModuleManager from './module';
-import * as expr from './expr';
-import { Expr, fromDataValue } from './expr';
-import { Namespace } from './namespace';
+import * as types from "./datatypes";
+import WasmNumber from "./numbers";
+import { IdToken, LexerToken } from "./scan";
+import Context from "./context";
+import ModuleManager from "./module";
+import * as expr from "./expr";
+import { Expr, fromDataValue } from "./expr";
+import { Namespace } from "./namespace";
 
 
 /*
@@ -58,7 +58,7 @@ export class Value {
         return this.type !== ValueType.Expr;
     }
 
-    out?(ctx: ModuleManager, fun?: expr.FunExportExpr): string
+    out?(ctx: ModuleManager, fun?: expr.FunExportExpr): string;
 
     /**
      * Name for type of this value
@@ -171,7 +171,7 @@ export class TupleValue extends DataValue {
     }
 
     out(ctx: ModuleManager, fun?: expr.FunExportExpr) {
-        return this.value.map(v => v.out(ctx, fun)).join('');
+        return this.value.map(v => v.out(ctx, fun)).join("");
     }
 }
 

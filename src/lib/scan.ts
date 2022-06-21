@@ -31,18 +31,18 @@ export class LexerToken {
     static Type = TokenType;
 
     constructor(
-        public token : string,
-        public type? : TokenType,
-        public position? : number,
-        public file? : string,
+        public token: string,
+        public type?: TokenType,
+        public position?: number,
+        public file?: string,
     ) { }
 
     // TODO toString()
 
     locationString() {
         return formatErrorPos([{
-            name: this.constructor.name + ' token',
-            message: this.constructor.name + ' token',
+            name: this.constructor.name + " token",
+            message: this.constructor.name + " token",
             tokens: [this],
         }]);
     }
@@ -67,23 +67,23 @@ export class BlockToken extends LexerToken {
     body!: Array<LexerToken>;
 
     constructor(token: string, position: number, file: string) {
-        const type = '[{('.includes(token) ? TokenType.ContainerOpen : TokenType.ContainerClose;
+        const type = "[{(".includes(token) ? TokenType.ContainerOpen : TokenType.ContainerClose;
         super(token, type, position, file);
         this.subtype = [
             ContainerType.Curly, ContainerType.Curly,
             ContainerType.Bracket, ContainerType.Bracket,
             ContainerType.Paren, ContainerType.Paren,
-        ]['{}[]()'.indexOf(token)];
+        ]["{}[]()".indexOf(token)];
     }
 
     isMacro() {
         return this.subtype === ContainerType.Paren
             && this.body
-            && this.body.slice(0, 4).some(t => t.token === ':' || t.token === 'rec:');
+            && this.body.slice(0, 4).some(t => t.token === ":" || t.token === "rec:");
     }
 
     toMacro() {
-        // Not a macro
+    // Not a macro
         if (!this.isMacro()) {
             this.type = TokenType.Tuple;
             return this;
@@ -91,22 +91,22 @@ export class BlockToken extends LexerToken {
 
         const types: BlockToken[] = [];
         let recursive = false;
-        let i : number;
-        const l = Math.min(4, this.body.length)
+        let i: number;
+        const l = Math.min(4, this.body.length);
         for (i = 0; i < l; i++) {
             const t = this.body[i];
-            if (t.token === ':')
+            if (t.token === ":")
                 break;
-            if (t.token === 'rec:') {
+            if (t.token === "rec:") {
                 recursive = true;
                 break;
             }
-            if (t.token === 'rec')
+            if (t.token === "rec")
                 recursive = true;
             else if (t instanceof BlockToken)
                 types.push(t);
             else
-                throwParseError('invalid macro prefix', [this, t], this.file);
+                throwParseError("invalid macro prefix", [this, t], this.file);
         }
 
         return new MacroToken(
@@ -127,7 +127,7 @@ export class BlockToken extends LexerToken {
         const ret: IdToken[] = [];
         this.body.forEach(tok => {
             if (tok instanceof BlockToken)
-                ret.push(...tok.referencedIds())
+                ret.push(...tok.referencedIds());
             else if (tok instanceof IdToken)
                 ret.push(tok);
         });
@@ -153,10 +153,10 @@ export class IdToken extends LexerToken {
     isEscaped: boolean;
     constructor(token: string, position: number, file: string) {
         super(token, TokenType.Identifier, position, file);
-        this.isEscaped = this.token[0] === '$';
+        this.isEscaped = this.token[0] === "$";
         const unescaped = this.isEscaped ? this.token.slice(1) : this.token;
         // TODO handle when token is "." or "..." or "..abc" this could be useful?
-        this.value = unescaped.split('.');
+        this.value = unescaped.split(".");
     }
 }
 
@@ -175,7 +175,7 @@ function toToken(token: string, position: number, file: string): LexerToken {
         return null;
 
     // String
-    if (token[0] === '"')
+    if (token[0] === "\"")
         return new LexerToken(token.substring(1, token.length - 1), TokenType.String, position, file);
 
     // Number (note this makes NaN an identifier)
@@ -183,7 +183,7 @@ function toToken(token: string, position: number, file: string): LexerToken {
         return new NumberToken(token, position, file);
 
     // Separators
-    if ('{}[]()'.includes(token))
+    if ("{}[]()".includes(token))
         return new BlockToken(token, position, file);
 
     // Identifier
@@ -207,46 +207,46 @@ export function lex(src: string, file?: string): LexerToken[] {
 
     // Find end of string
     const endStr = () => {
-        // Determine if quote is escaped
+    // Determine if quote is escaped
         function isEscaped(s: string, i: number) {
             let e = false;
-            while (s[--i] === '\\')
+            while (s[--i] === "\\")
                 e = !e;
             return e;
         }
 
         // Find end of string
         while (++i < src.length)
-            if (src[i] === '"' && !isEscaped(src, i))
+            if (src[i] === "\"" && !isEscaped(src, i))
                 break;
     };
 
     // For each char...
     while (i < src.length) {
-        // Separator
-        if ('[]{}()'.includes(src[i])) {
+    // Separator
+        if ("[]{}()".includes(src[i])) {
             addToken(src.substring(prev, i));
             addToken(src[i]);
 
-        // Line-Comment
-        } else if (src[i] === '#') {
+            // Line-Comment
+        } else if (src[i] === "#") {
             addToken(src.substring(prev, i));
-            while (i < src.length && src[i] !== '\n')
+            while (i < src.length && src[i] !== "\n")
                 i++;
 
-        // End of token
-        } else if ([' ', '\t', '\n'].includes(src[i])) {
+            // End of token
+        } else if ([" ", "\t", "\n"].includes(src[i])) {
             addToken(src.substring(prev, i));
 
-        // String literal
-        } else if (['"', "'"].includes(src[i])) {
+            // String literal
+        } else if (["\"", "'"].includes(src[i])) {
             addToken(src.substring(prev, i));
             prev = i;
             endStr();
             i++;
             addToken(src.substring(prev, i));
 
-        // Middle of a token
+            // Middle of a token
         } else {
             i++;
             continue;
@@ -274,8 +274,8 @@ export function lex(src: string, file?: string): LexerToken[] {
 function throwParseError(message: string, tokens: LexerToken[], file?: string) {
     // TODO convert to constructor
     throw {
-        type: 'SyntaxError',
-        name: 'LexerError',
+        type: "SyntaxError",
+        name: "LexerError",
         message,
         tokens,
         stack: new Error(),
@@ -295,7 +295,7 @@ export default function scan(code: string, file?: string): LexerToken[] {
     const tokens = lex(code, file);
     const ret: LexerToken[] = [];
     tokens.forEach(tok => {
-        // Collapse containers
+    // Collapse containers
         if (tok.type == TokenType.ContainerClose) {
             // Index of most recent container
             // TODO use .reverse+findIndex?
@@ -306,7 +306,7 @@ export default function scan(code: string, file?: string): LexerToken[] {
 
             // No openers
             if (ind === -1)
-                throwParseError('Unexpected symbol ' + tok.token, [tok]);
+                throwParseError("Unexpected symbol " + tok.token, [tok]);
 
             // Not matching
             const parent = ret[ind] as BlockToken;

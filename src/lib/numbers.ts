@@ -65,7 +65,7 @@ export default class WasmNumber {
      */
     set type(type: NumberType) {
         const v = this.value;
-            // typeof this._repr == 'bigint' ? this._repr : this._repr[0];
+        // typeof this._repr == 'bigint' ? this._repr : this._repr[0];
         this._type = type;
         this.value = v;
     }
@@ -80,7 +80,7 @@ export default class WasmNumber {
             case NumberType.F64:
                 return (this._repr as Float32Array)[0];
 
-            // BigInt
+                // BigInt
             case NumberType.I32:
             case NumberType.I64:
             case NumberType.U32:
@@ -94,7 +94,7 @@ export default class WasmNumber {
      *
      * @param {Number} n - value to set
      */
-    set value(n : number | bigint) {
+    set value(n: number | bigint) {
         switch(this.type) {
             case NumberType.F32:
                 this._repr = new Float32Array([Number(n)]);
@@ -117,7 +117,7 @@ export default class WasmNumber {
      * @returns {string} - relevant WASM instruction name
      */
     typeName(): string {
-        return ['invalid', 'i32.const', 'i64.const', 'i32.const', 'i64.const', 'f32.const', 'f64.const'][this.type];
+        return ["invalid", "i32.const", "i64.const", "i32.const", "i64.const", "f32.const", "f64.const"][this.type];
     }
 
     /**
@@ -133,29 +133,29 @@ export default class WasmNumber {
      * @returns - this
      */
     fromString(s: string): this {
-        // Get size
+    // Get size
         let isLong = false;
-        if ('Ll'.includes(s[s.length - 1])) {
+        if ("Ll".includes(s[s.length - 1])) {
             s = s.slice(0, -1);
             isLong = true;
         }
 
         // Get sign
         let isUnsigned = false;
-        if ('Uu'.includes(s[s.length - 1])) {
+        if ("Uu".includes(s[s.length - 1])) {
             s = s.slice(0, -1);
             isUnsigned = true;
         }
 
         let isFloat = false;
-        if ('Ff'.includes(s[s.length -1]) && !s.includes('x')) {
+        if ("Ff".includes(s[s.length -1]) && !s.includes("x")) {
             s = s.slice(0, -1);
             isFloat = true;
         }
 
         // Get type
         let isInt = true;
-        let n : bigint | number;
+        let n: bigint | number;
         try {
             n = BigInt(s);
         } catch (_) {
@@ -178,16 +178,16 @@ export default class WasmNumber {
      * Deserialize
      * @param {Number|Object} n - input
      */
-    fromJSON(n : number | bigint | string | any) {
-        if (typeof n === 'object') {
+    fromJSON(n: number | bigint | string | any) {
+        if (typeof n === "object") {
             this.type = n.type || NumberType.F64;
             n = n.value;
         }
-        if (typeof n === 'number' || typeof n === 'bigint') {
+        if (typeof n === "number" || typeof n === "bigint") {
             this.value = n;
             return;
         }
-        if (typeof n === 'string') {
+        if (typeof n === "string") {
             // accept serialized string since bigint can't be json'd
             try {
                 this.value = BigInt(n);
@@ -221,7 +221,7 @@ export default class WasmNumber {
      * @param {WasmNumber} other - Number to compare against
      * @returns {boolean}
      */
-    equals(other : WasmNumber): boolean {
+    equals(other: WasmNumber): boolean {
         return this.type === other.type
             && ((<any>this._repr)[0] || this._repr)
             === ((<any>other._repr)[0] || other._repr);
@@ -264,7 +264,7 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     add(b: WasmNumber): this {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -280,7 +280,7 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     mul(b: WasmNumber): this {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -296,7 +296,7 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     rem(b: WasmNumber): this {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -312,7 +312,7 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     div(b: WasmNumber): this {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -329,7 +329,7 @@ export default class WasmNumber {
      * @param {WasmNumber} b
      */
     sub(b: WasmNumber): this {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -346,7 +346,7 @@ export default class WasmNumber {
      * @returns i32 result
      */
     lt(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -360,7 +360,7 @@ export default class WasmNumber {
      * @returns i32 result
      */
     gt(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -373,7 +373,7 @@ export default class WasmNumber {
      * @returns i32 result
      */
     le(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -386,7 +386,7 @@ export default class WasmNumber {
      * @returns i32 result
      */
     ge(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -398,7 +398,7 @@ export default class WasmNumber {
      * @param b other
      */
     and(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -412,7 +412,7 @@ export default class WasmNumber {
      * @param b other
      */
     or(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -426,7 +426,7 @@ export default class WasmNumber {
      * @param b other
      */
     xor(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -440,7 +440,7 @@ export default class WasmNumber {
      * @param b other
      */
     shl(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -455,7 +455,7 @@ export default class WasmNumber {
      * @param signed do we used signed vs unsigned bitshift operation
      */
     shr(b: WasmNumber, signed = true) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -469,12 +469,12 @@ export default class WasmNumber {
      * @param b other
      */
     rotl(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
         // TODO implement
-        throw new Error('TODO');
+        throw new Error("TODO");
     }
 
     /**
@@ -482,12 +482,12 @@ export default class WasmNumber {
      * @param b other
      */
     rotr(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
         // TODO implement
-        throw new Error('TODO');
+        throw new Error("TODO");
     }
 
     /**
@@ -496,7 +496,7 @@ export default class WasmNumber {
      * @returns maxmimum
      */
     max(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -509,7 +509,7 @@ export default class WasmNumber {
      * @returns minimum
      */
     min(b: WasmNumber) {
-        // Only accept compatible types
+    // Only accept compatible types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -521,7 +521,7 @@ export default class WasmNumber {
      * @param b other
      */
     copysign(b: WasmNumber) {
-        // Check types
+    // Check types
         if (this.type !== b.type)
             throw new Error("Incompatible WasmNumberType");
 
@@ -535,12 +535,12 @@ export default class WasmNumber {
      * calculate absolute value
      */
     abs() {
-        // Check types
+    // Check types
         if (this.type !== NumberType.F32 && this.type !== NumberType.F64)
-            throw new Error('Only valid for floats');
+            throw new Error("Only valid for floats");
 
         // @ts-ignore
-        this.value = Math.abs(this.value)
+        this.value = Math.abs(this.value);
         return this;
     }
 
@@ -555,12 +555,12 @@ export default class WasmNumber {
      * Calculate Square route
      */
     sqrt() {
-        // Check types
+    // Check types
         if (this.type !== NumberType.F32 && this.type !== NumberType.F64)
-            throw new Error('Only valid for floats');
+            throw new Error("Only valid for floats");
 
         // @ts-ignore
-        this.value = Math.sqrt(this.value)
+        this.value = Math.sqrt(this.value);
         return this;
     }
 
@@ -568,12 +568,12 @@ export default class WasmNumber {
      * Calculate Ceiling
      */
     ceil() {
-        // Check types
+    // Check types
         if (this.type !== NumberType.F32 && this.type !== NumberType.F64)
-            throw new Error('Only valid for floats');
+            throw new Error("Only valid for floats");
 
         // @ts-ignore
-        this.value = Math.ceil(this.value)
+        this.value = Math.ceil(this.value);
         return this;
     }
 
@@ -581,12 +581,12 @@ export default class WasmNumber {
      * Calculate floor
      */
     floor() {
-        // Check types
+    // Check types
         if (this.type !== NumberType.F32 && this.type !== NumberType.F64)
-            throw new Error('Only valid for floats');
+            throw new Error("Only valid for floats");
 
         // @ts-ignore
-        this.value = Math.floor(this.value)
+        this.value = Math.floor(this.value);
         return this;
     }
 
@@ -594,12 +594,12 @@ export default class WasmNumber {
      * Truncate the number
      */
     trunc() {
-        // Check types
+    // Check types
         if (this.type !== NumberType.F32 && this.type !== NumberType.F64)
-            throw new Error('Only valid for floats');
+            throw new Error("Only valid for floats");
 
         // @ts-ignore
-        this.value = Math.trunc(this.value)
+        this.value = Math.trunc(this.value);
         return this;
     }
 
@@ -608,9 +608,9 @@ export default class WasmNumber {
      * @note this differs from JS and C!
      */
     nearest() {
-        // Check types
+    // Check types
         if (this.type !== NumberType.F32 && this.type !== NumberType.F64)
-            throw new Error('Only valid for floats');
+            throw new Error("Only valid for floats");
 
         // Behavior is different from Math.round when there's a tie
         // In that case we round to nearest even int
@@ -682,7 +682,7 @@ export default class WasmNumber {
      * @param nbits number of bits to sign extend to
      */
     extend(nbits: number) {
-        // The value of the sign bit
+    // The value of the sign bit
         const mask: bigint = 1n << BigInt(nbits - 1);
 
         let i = BigInt(this.value);

@@ -1,9 +1,9 @@
-import lex from '../lib/scan';
-import parse from '../lib/parse';
-import Context from '../lib/context';
+import lex from "../lib/scan";
+import parse from "../lib/parse";
+import Context from "../lib/context";
 
 // Import wabt promise
-import wabtMod from 'wabt';
+import wabtMod from "wabt";
 const wabtProm = wabtMod();
 
 /**
@@ -69,7 +69,7 @@ export async function compileWat(src: string, importObject = {}) {
     // Validate
     mod.validate();
 
-    const bin = mod.toBinary({log: true});
+    const bin = mod.toBinary({ log: true });
     const valid = WebAssembly.validate(bin.buffer);
     if (!valid)
         return console.error("wasm invalid!", valid);

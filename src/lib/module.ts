@@ -1,6 +1,6 @@
 import Context from "./context";
 import * as types from "./datatypes";
-import * as expr from './expr';
+import * as expr from "./expr";
 
 // Import WAST template as a string
 import template, { noRuntime as noRuntimeTemplate } from "../generated/wat-runtime";
@@ -8,7 +8,7 @@ import template, { noRuntime as noRuntimeTemplate } from "../generated/wat-runti
 /**
  * Adjust compiler behavior
  */
- export interface CompilerOptions {
+export interface CompilerOptions {
     /**
      * How aggressively should this program be optimized? (default: 1)
      */
@@ -68,7 +68,8 @@ export default class ModuleManager {
     private staticData: number[] = [];
 
     /**
-     * Primarily function exports. Compiled functions and stuff that go in main body of module
+     * Primarily function exports. Compiled functions and stuff that go in main
+     * body of module
      */
     definitions: string[] = [];
 
@@ -83,14 +84,14 @@ export default class ModuleManager {
     protected optLevel: number;
 
     /**
-     * Size in bytes of the references stack section of linear memory
-     * (see planning/implementation/lm.md)
+     * Size in bytes of the references stack section of linear memory (see
+     * planning/implementation/lm.md)
      */
     protected stackSize: number;
 
     /**
-     * Size in bytes of the nursery section of linear memory
-     * (see planning/implementation/lm.md)
+     * Size in bytes of the nursery section of linear memory (see
+     * planning/implementation/lm.md)
      */
     protected nurserySize: number;
 
@@ -120,22 +121,21 @@ export default class ModuleManager {
 
     /**
      * Add an import
-     * @param scopes - env scopes to import from
-     * @param type - type of imported value
-     * @returns - identifier to which the import is assigned
+     * @param scopes - env scopes to import from @param type - type of imported
+     * value @returns - identifier to which the import is assigned
      */
     addImport(scopes: string[], type: types.ArrowType): string {
-        // TODO this assumes that the user doesn't have imports with '\0' characters
-        const scopesKey = scopes.join('\0');
+    // TODO this assumes that the user doesn't have imports with '\0' characters
+        const scopesKey = scopes.join("\0");
 
         // Imports currently limited to single return
         if (type.outputTypes.filter(t => !t.isUnit()).length > 1)
-            return '';
+            return "";
 
         // Look to see if we've seen it before
         if (this.imports[scopesKey]) {
             const match = this.imports[scopesKey].find(imp =>
-                imp.typeName == type.getWasmTypeName(imp.importId))
+                imp.typeName == type.getWasmTypeName(imp.importId));
             if (match)
                 return match.importId;
         } else {
@@ -166,12 +166,10 @@ export default class ModuleManager {
      * @returns - WebAssembly text code
      */
     compile(): string {
-        // TODO globals/stack pointer
+    // TODO globals/stack pointer
 
-        // Compile exports
-        // Some expressions add helper funcitons so we have to compile
-        //   until there are no more
-        // Error.stackTraceLimit = Infinity;
+        // Compile exports Some expressions add helper funcitons so we have to
+        // compile until there are no more Error.stackTraceLimit = Infinity;
         do {
             const exports = this.functions;
             this.functions = [];
@@ -181,32 +179,31 @@ export default class ModuleManager {
         // Compile imports
         const importDefs = Object.values(this.imports)
             .map(is => is.map(i => `(import ${
-                    // TODO use String.prototype.replaceAll() in 2 years or regex
-                    i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
-                } ${
-                    i.type.getWasmTypeName(i.importId)
-                })`)
-                .join('\n')
-            ).join('\n\n');
+                // TODO use String.prototype.replaceAll() in 2 years or regex
+                i.scopes.map(s => `"${s.split("").map(c => c === "\"" ? "\\\"" : c).join("")}"`).join(" ")
+            } ${
+                i.type.getWasmTypeName(i.importId)
+            })`)
+                .join("\n")
+            ).join("\n\n");
 
         // Insert user-generated code into our runtime
         return this.generateRuntime(
             importDefs,
-            this.definitions.filter(Boolean).join('\n\n'),
+            this.definitions.filter(Boolean).join("\n\n"),
         );
 
-        // Create module as string (no runtime)
-        // return `(module \n${importDefs
-        //     }\n\n${this.definitions.filter(Boolean).join('\n\n')}
-        //     (memory (export "memory") ${this.initialPages()})
-        //     (data (i32.const 0) "${this.staticDataToHexString()}"))`;
+    // Create module as string (no runtime) return `(module \n${importDefs
+    // }\n\n${this.definitions.filter(Boolean).join('\n\n')} (memory (export
+    //     "memory") ${this.initialPages()}) (data (i32.const 0)
+    //     "${this.staticDataToHexString()}"))`;
     }
 
     /**
      * Make a copy
      */
     clone(): ModuleManager {
-        // Make new module
+    // Make new module
         const ret = new ModuleManager(this.ctx, {
             optLevel: this.optLevel,
             stackSize: this.stackSize,
@@ -216,7 +213,8 @@ export default class ModuleManager {
         // Shallow-Copy exports
         ret.functions = { ...this.functions };
 
-        // These properties are only referenced as we want to keep changes from smaller scopes
+        // These properties are only referenced as we want to keep changes from
+        // smaller scopes
         ret.imports = this.imports;
         ret.staticData = this.staticData;
         ret.definitions = this.definitions;
@@ -225,16 +223,17 @@ export default class ModuleManager {
 
     /**
      * Convert data to byte array
-     * @param d data source
-     * @returns data as array of bytes
+     * @param d data source @returns data as array of bytes
      */
-    static toByteArray(d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string): Uint8Array {
-        // No action
+    static toByteArray(
+        d: Array<number> | Uint8Array | Uint16Array | Uint32Array | string
+    ): Uint8Array {
+    // No action
         if (d instanceof Uint8Array)
             return d;
 
         // Encode string to utf-8
-        if (typeof d === 'string')
+        if (typeof d === "string")
             return new TextEncoder().encode(d);
 
         // Convert other typed arrays
@@ -245,25 +244,24 @@ export default class ModuleManager {
         if (d instanceof Array)
             return new Uint8Array(d);
 
-        // Convert bigint
-        // if (typeof d == 'bigint') {
-        //     const ret = [];
-        //     while (d) {
-        //         ret.push(Number(d & 0b11111111n))
-        //         d >>= 8n;
-        //     }
-        //     return new Uint8Array(ret.reverse());
-        // }
+        throw new Error("Could not convert to byte array: " + JSON.stringify(d));
+
+    // Convert bigint if (typeof d == 'bigint') { const ret = []; while (d) {
+    // ret.push(Number(d & 0b11111111n)) d >>= 8n; } return new
+    //     Uint8Array(ret.reverse()); }
     }
 
     /**
      * Store static data
-     * @param data - data to save statically
-     * @param isConst - if true we can check to see if it's already in data section and simply point to it
+     * @param data - data to save statically @param isConst - if true we can
+     * check to see if it's already in data section and simply point to it
      * @returns - memory address for start of region
      */
-    addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string, isConst = false): number {
-        // TODO OPTIMIZATION we should segregate strings vs non-string static data
+    addStaticData(
+        data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string,
+        isConst = false
+    ): number {
+    // TODO OPTIMIZATION we should segregate strings vs non-string static data
 
         // Convert data to byte array
         const bytes = ModuleManager.toByteArray(data);
@@ -282,18 +280,24 @@ export default class ModuleManager {
             }
 
         // Append to static data
-        const ret = this.staticData.length + (this.noRuntime ? 0 : this.stackSize);
+        const ret = this.staticData.length + (
+            this.noRuntime
+                ? 0
+                : this.stackSize
+        );
         this.staticData.push(...bytes);
         return ret;
     }
 
     /**
      * Initialize static data to a specific value
-     * @param address address of static data to set
-     * @param value value to set static data to
+     * @param address address of static data to set @param value value to set
+     * static data to
      */
     setStaticData(address: number, value: number) {
-        this.staticData[address - (this.noRuntime ? 0 : this.stackSize)] = value;
+        this.staticData[
+            address - (this.noRuntime ? 0 : this.stackSize)
+        ] = value;
     }
 
     /**
@@ -301,20 +305,20 @@ export default class ModuleManager {
      * @returns
      */
     staticDataToHexString(): string {
-        /**
+    /**
          * Convert a byte into an escaped hex character
-         * @param b - byte
-         * @returns - string of form \XX where XX is replaced by character hex equiv
+         * @param b - byte @returns - string of form \XX where XX is replaced by
+         * character hex equiv
          */
         function byteToHexEsc(b: number): string {
-            const hexChrs = '0123456789ABCDEF';
-            return '\\'
+            const hexChrs = "0123456789ABCDEF";
+            return "\\"
                 + hexChrs[(b & 0xf0) >> 4]
                 + hexChrs[b & 0xf];
         }
 
         // Static data as a hex string
-        return this.staticData.map(byteToHexEsc).join('');
+        return this.staticData.map(byteToHexEsc).join("");
     }
 
     /**
@@ -322,14 +326,14 @@ export default class ModuleManager {
      * @returns - number of pages to start with
      */
     initialPages(): number {
-        // Start out with enough pages for static data + 1
+    // Start out with enough pages for static data + 1
         return Math.floor(this.staticData.length / 64000 + 1);
     }
 
     /**
      * Add a function to the table
-     * @param fnName identifier for function to push into the table
-     * @returns index of the function
+     * @param fnName identifier for function to push into the table @returns
+     * index of the function
      */
     addToTable(fnName: string): number {
         return this.tableElems.push(fnName) - 1;
@@ -342,18 +346,17 @@ export default class ModuleManager {
     genTable(): string {
         return `(table (export "__table") ${this.tableElems.length} funcref ${
             this.tableElems.length
-                ? `(elem ${this.tableElems.map(id => '$' + id).join(' ')})`
-                : ''
+                ? `(elem ${this.tableElems.map(id => "$" + id).join(" ")})`
+                : ""
         })`;
     }
 
     /**
      * Generate a wasm module from a template which includes our runtime
-     * @param USER_CODE_STR user's function definitions and exports
-     * @param STACK_SIZE size of the references stack
-     * @param NURSERY_SIZE
-     * @returns wasm module text
-     * @remark see planning/implementation/lm.md for more on memory layout
+     * @param USER_CODE_STR user's function definitions and exports @param
+     * STACK_SIZE size of the references stack @param NURSERY_SIZE @returns wasm
+     * module text @remark see planning/implementation/lm.md for more on memory
+     * layout
      */
     generateRuntime(
         USER_IMPORTS: string,
@@ -361,25 +364,24 @@ export default class ModuleManager {
         STACK_SIZE: number = this.stackSize,
         NURSERY_SIZE: number = this.nurserySize,
     ): string {
-        /**
+    /**
          * Convert a byte into an escaped hex character
-         * @param b - byte
-         * @returns - string of form \XX where XX is replaced by character hex equiv
+         * @param b - byte @returns - string of form \XX where XX is replaced by
+         * character hex equiv
          */
         function byteToHexEsc(b: number): string {
-            const hexChrs = '0123456789ABCDEF';
-            return '\\'
+            const hexChrs = "0123456789ABCDEF";
+            return "\\"
                 + hexChrs[(b & 0xf0) >> 4]
                 + hexChrs[b & 0xf];
         }
 
         // Constants
         const OBJ_HEAD_SIZE = 3 * 4;
-        // const EMPTY_HEAD_SIZE = 2 * 4;
-        // Align to 4 bytes if non-zero
+        // const EMPTY_HEAD_SIZE = 2 * 4; Align to 4 bytes if non-zero
         const STATIC_DATA_LEN = this.staticData.length
             && (this.staticData.length | 0b11) + 1;
-        const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
+        const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join("");
         // const STACK_START = 0;
         const STACK_END = STACK_SIZE;
         const RV_STACK_END = STACK_END / 2;
@@ -393,7 +395,10 @@ export default class ModuleManager {
         const PAGES_NEEDED = this.noRuntime
             ? Math.ceil(STATIC_DATA_LEN / 65536)
             : Math.ceil((FREE_START + 2 + 10) / 65536);
-        const INIT_FREE_SIZE = PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE;
+
+        const INIT_FREE_SIZE =
+          PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE;
+
         const USER_TABLE = this.genTable();
 
         // Little-endian hex-string representation
@@ -402,18 +407,18 @@ export default class ModuleManager {
             (INIT_FREE_SIZE >> 8) & 0xff,
             (INIT_FREE_SIZE >> 16) & 0xff,
             (INIT_FREE_SIZE >> 24) & 0xff,
-        ].map(byteToHexEsc).join('');
+        ].map(byteToHexEsc).join("");
 
         const obj = {
             OBJ_HEAD_SIZE, STATIC_DATA_LEN, STACK_END, NURSERY_START,
-            NURSERY_END, NURSERY_SP_INIT, STATIC_DATA_START, STATIC_DATA_END, HEAP_START,
-            PAGES_NEEDED, INIT_FREE_SIZE, INIT_FREE_SIZE_STR, STACK_SIZE, FREE_START,
-            USER_TABLE, NURSERY_SIZE, USER_CODE_STR, USER_IMPORTS, STATIC_DATA_STR,
-            RV_STACK_END,
+            NURSERY_END, NURSERY_SP_INIT, STATIC_DATA_START, STATIC_DATA_END,
+            HEAP_START, PAGES_NEEDED, INIT_FREE_SIZE, INIT_FREE_SIZE_STR,
+            STACK_SIZE, FREE_START, USER_TABLE, NURSERY_SIZE, USER_CODE_STR,
+            USER_IMPORTS, STATIC_DATA_STR, RV_STACK_END,
         };
 
         return Object.entries(obj).reduce(
-            (r, [k, v]) => r.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v)),
+            (r, [k, v]) => r.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v)),
             this.noRuntime ? noRuntimeTemplate : template,
         );
     }
