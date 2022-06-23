@@ -48,13 +48,11 @@ const syntaxTypes: {[k: number] : string} =
 const debugOperators: { [k: string]: (ctx: Context, token: LexerToken) => any } = {
     // Syntactic type for given value
     ':type' : (ctx: Context) => {
-
         // Return debug object with relevant info
         const v = ctx.pop();
-        const ret: any = { syntaxType: syntaxTypes[v.type] };
         if (v.datatype)
-            ret.datatype = v.datatype;
-        return ret;
+            return v.datatype.toString();
+        return { syntaxType: syntaxTypes[v.type] };
     },
 
     // Debug js stack trace
@@ -76,7 +74,9 @@ const debugOperators: { [k: string]: (ctx: Context, token: LexerToken) => any } 
                     : v instanceof value.NumberValue
                         ? v.value.value
                         : 'unknown'
-                : v.value || v;
+                : v.type === value.ValueType.Type
+                    ? v.value.toString()
+                    : v.value || v;
         return depict(ctx.pop());
     },
 

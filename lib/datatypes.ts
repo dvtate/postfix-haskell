@@ -8,7 +8,6 @@ interface DataTypeInterface {
     getWasmTypeName(name?: string): string;
     flatPrimitiveList(): Array<PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>>;
     isUnit(): boolean;
-    checkValue(v: Value): boolean;
 }
 
 
@@ -33,14 +32,9 @@ export abstract class Type {
     abstract check(type : Type): boolean;
 
     /**
-     *
-     * @param v value
-     * @returns
+     * Pretty print
      */
-    checkValue(v: Value): boolean {
-        return this.check(v.datatype);
-    }
-
+    abstract toString(): string;
 }
 
 /**
@@ -62,6 +56,9 @@ export class AnyType extends Type implements DataTypeInterface {
     isUnit(): boolean {
         throw new error.SyntaxError('AnyType can only exist at compile-time', [this.token]);
     }
+    toString(): string {
+        return "Any";
+    }
 }
 
 /**
@@ -82,6 +79,9 @@ export class NeverType extends Type implements DataTypeInterface {
     }
     isUnit(): boolean {
         throw new error.SyntaxError('NeverType can only exist at compile-time', [this.token]);
+    }
+    toString(): string {
+        return "Never";
     }
 }
 
@@ -136,6 +136,12 @@ export class NeverType extends Type implements DataTypeInterface {
     isUnit(): boolean {
         throw new error.SyntaxError('UnionType can only exist at compile-time', [this.token]);
     }
+    toString(): string {
+        let ret = this.types[0].toString();
+        for (let i = 1; i < this.types.length; i++)
+            ret += ` ${this.types[i].toString()} |`;
+        return ret;
+    }
 }
 
 /**
@@ -176,10 +182,12 @@ export class SyntaxType extends Type {
         return false;
     }
 
-    checkValue(v: Value) {
-        return this.valueType === v.type;
+    /**
+     * @overrride
+     */
+    toString(): string {
+        return 'Syntax:' + ValueType[this.valueType];
     }
-
 }
 
 /**
@@ -322,6 +330,10 @@ export class ClassType<T extends DataType> extends DataType {
     isUnit() {
         return this.getBaseType().isUnit();
     }
+
+    toString(): string {
+       return `${this.type.toString()} ${this.id} #class`;
+    }
 }
 
 /**
@@ -413,6 +425,10 @@ export class TupleType extends DataType {
     getBaseType(): Type {
         return this;
     }
+
+    toString(): string {
+        return `( ${this.types.map(t => t.toString()).join(' ')} )`;
+    }
 }
 
 /**
@@ -489,6 +505,9 @@ export class PrimitiveType extends DataType {
     }
     getBaseType(): Type {
         return this;
+    }
+    toString(): string {
+        return this.name.toUpperCase();
     }
 }
 
@@ -568,6 +587,11 @@ export class ArrowType extends DataType {
     isUnit(): boolean {
         return false;
     }
+    toString(): string {
+        const inpTypes = this.inputTypes.map(t => t.toString()).join(' ');
+        const outTypes = this.outputTypes.map(t => t.toString()).join(' ');
+        return `( ${inpTypes} ) ( ${outTypes} ) Arrow`;
+    }
 }
 
 /**
@@ -624,6 +648,10 @@ export class RefType<T extends DataType> extends DataType {
         // It makes no sense for us to have a reference to a unit value
         return false; // this.type.isUnit();
     }
+
+    toString(): string {
+        return this.type.toString() + " Ref";
+    }
 }
 
 /**
@@ -669,6 +697,9 @@ export class RefRefType<T extends RefType<DataType>> extends DataType {
     isUnit(): boolean {
         return false;
     }
+    toString(): string {
+        return this.type.toString() + " Ptr";
+    }
 }
 
 /**
@@ -683,9 +714,10 @@ export class EnumBaseType extends Type {
         public subtypes: { [k: string]: EnumClassType<any> }
     ) {
         super(token);
-        Object.values(this.subtypes).forEach((t, i) => {
+        Object.entries(this.subtypes).forEach(([sym, t], i) => {
             t.parent = this;
             t.index = i;
+            t.name = sym;
         });
     }
 
@@ -705,11 +737,16 @@ export class EnumBaseType extends Type {
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
     getWasmTypeName(name?: string): string {
-        // Is this right?
+        // type index + ref address
         return 'i32 i32';
     }
     getBaseType(): Type {
         return this;
+    }
+    toString(): string {
+        return `(:\n${
+            Object.entries(this.subtypes).map(([sym, t]) => `${t.toString()} $${sym} =`).join('\n')
+        }\n) enum`
     }
 }
 
@@ -720,6 +757,7 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
     /**
      * Metadata associating this class with the parent
      */
+    name: string;
     parent: EnumBaseType;
     index: number;
 
