@@ -62,6 +62,34 @@ export class AnyType extends Type implements DataTypeInterface {
 }
 
 /**
+ * Type variables - idk might not even implement this
+ * ie: (($A $A $B): ( $v1 $v2 $obj ) = "field" v1 v2 + obj JSON.withMember )
+ */
+export class TypeVarType extends AnyType {
+    type?: Type;
+
+    constructor(token: LexerToken, public identifier: string, public scope: object) {
+        super(token);
+    }
+
+    check(type: Type): boolean {
+        if (type instanceof ClassType)
+            type = type.getBaseType();
+        if  (!type)
+            return false;
+        if (type instanceof TypeVarType)
+            return this.identifier === type.identifier && this.scope === type.scope;
+        if (this.type)
+            return this.type.check(type);
+        return true;
+    }
+
+    toString(): string {
+        return '$' + this.identifier;
+    }
+}
+
+/**
  * Type which never matches
  */
 export class NeverType extends Type implements DataTypeInterface {

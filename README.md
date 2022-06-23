@@ -2,7 +2,7 @@
 A very low-level functional programming language designed to compile to WebAssembly in the browser. The language actually bears very little resemblance to Haskell despite the name.
 
 ## How to use
-The all examples can be run in an interactive shell like below. Note that this is unfinished and possibly out of date. For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/planning/stdlib/*`.
+The all examples can be run in an interactive shell like below. Alternatively you can install [the more stable npm package](https://www.npmjs.com/package/postfix-haskell)). For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/planning/stdlib/*`.
 ```
 $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell
@@ -193,7 +193,8 @@ add_and_double apply_operator :data
 - Modules are imported using the `require` keyword which gives a namespace
 - the `export` keyword
 ```php
-# Import the prelude library which defines `+` and `-`
+# Import the prelude library which defines `+` and `-` among other things
+# And apply it to the current scope
 "./planning/stdlib/prelude.phs" require use
 
 # Create a namespace 'ns'
