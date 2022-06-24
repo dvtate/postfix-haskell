@@ -10,7 +10,6 @@ interface DataTypeInterface {
     isUnit(): boolean;
 }
 
-
 /**
  * Abstract base for datatypes
  */
@@ -166,6 +165,7 @@ export class SyntaxType extends Type {
         [ValueType.Fxn]: new SyntaxType(new IdToken('Syntax:Fxn', 0, undefined), ValueType.Fxn),
         [ValueType.Str]: new SyntaxType(new IdToken('Syntax:Str', 0, undefined), ValueType.Str),
         [ValueType.Ns]: new SyntaxType(new IdToken('Syntax:Ns', 0, undefined), ValueType.Ns),
+        [ValueType.EnumNs]: new SyntaxType(new IdToken('Syntax:EnumNs', 0, undefined), ValueType.EnumNs),
     };
 
     /**
@@ -705,7 +705,7 @@ export class RefRefType<T extends RefType<DataType>> extends DataType {
 /**
  * Matches anything within same enum type
  */
-export class EnumBaseType extends Type {
+export class EnumBaseType extends DataType {
     /**
      * Enum members defined by this class
      */
@@ -725,9 +725,23 @@ export class EnumBaseType extends Type {
      * @override
      */
     check(type: Type): boolean {
+        // Any type
         if (type instanceof AnyType)
             return true;
-        return type && this.token === type.token;
+
+        // Drop classes
+        if (type instanceof ClassType)
+            type = type.getBaseType();
+        if (!type)
+            return false;
+
+        // Yikes
+        const isChild = () => Object.values(this.subtypes).some(t => t.check(type));
+        const isCompat = () => type instanceof EnumBaseType
+            && this.token === type.token
+            && Object.keys(this.subtypes).length === Object.keys(type.subtypes).length
+            && Object.values(this.subtypes).every(t => t.check(type));
+        return type && (this === type || isChild() || isCompat());
     }
     isUnit(): boolean {
         return Object.values(this.subtypes).every(t => t.isUnit());
@@ -753,16 +767,16 @@ export class EnumBaseType extends Type {
 /**
  * Matches class defined within an enum
  */
+// TODO maybe shouldn't extend ClassType?
 export class EnumClassType<T extends DataType> extends ClassType<T> {
     /**
      * Metadata associating this class with the parent
      */
-    name: string;
     parent: EnumBaseType;
     index: number;
 
-    constructor(token: LexerToken, type: T) {
-        super(token, type);
+    constructor(token: LexerToken, type: T, public name: string, id?: number) {
+        super(token, type, id);
     }
 
     /**
@@ -771,8 +785,11 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
     check(type: Type): boolean {
         if (type instanceof AnyType)
             return true;
+        if (type === this.parent)
+            return true;
         return type instanceof EnumClassType
-            && this.token === type.token    // also implies same parent
+            && this.token === type.token    // corrolaries: same parent, same class id
+            && this.index === type.index
             && this.type.check(type.type);
     }
     isUnit(): boolean {

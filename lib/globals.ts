@@ -11,6 +11,7 @@ import Fun from './function.js';
 import scan, { LexerToken, MacroToken } from './scan.js';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
 import { invokeAsm } from './asm.js';
+import { EnumNs } from './enum.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -488,6 +489,7 @@ const operators : MacroOperatorsSpec = {
 
     // Promote some of the members of a namespace to current scope
     // <namespace> <include rxp> <exclude rxp> use_some
+    // TODO this is unintuitive
     'use_some' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get params
@@ -674,6 +676,29 @@ const operators : MacroOperatorsSpec = {
             ctx.module.setStaticData(Number(ptr.value.value), Number(v.value.value));
         },
     },
+
+    'enum' : {
+        action: (ctx, token) => {
+            // Get arg
+            if (ctx.stack.length === 0)
+                return ['expected a macro namespace'];
+            const arg = ctx.pop();
+            if (!(arg instanceof LiteralMacro))
+                return ['expected a macro literal'];
+
+            // Create ns
+            const ns = arg.getNamespace(ctx, token);
+            if (!(ns instanceof value.NamespaceValue))
+                return ns;
+
+            // Create enum type value
+            const ret = EnumNs.fromNamespace(ns.value, token, ctx);
+            if (ret instanceof EnumNs)
+                ctx.push(ret);
+            else
+                return ret;
+        }
+    }
 };
 
 // Global functions that the user can overload

@@ -13,14 +13,18 @@ import globalOps from './globals.js';
 import ModuleManager, { CompilerOptions } from './module.js';
 import { LiteralMacro, Macro } from './macro.js';
 import { formatErrorPos } from '../tools/util.js';
-import { Namespace } from './namespace.js';
+import Namespace from './namespace.js';
 import Fun from './function.js';
+import { EnumNs } from './enum.js';
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
 
 // TODO this class is fucking massive and should be split into different components
 //  so that the amount of state it manages is better organized
+// - Context.stack: StackCtx: manages state associated with stack
+// - Context.scopes: ScopesCtx: manages state associated with scopes and identifiers
+// - Context.tracer: TraceCtx: manages state associated with tracing
 
 // Return Types for Context.traceIO() method
 export class TraceResults {
@@ -62,39 +66,40 @@ interface TraceResultTracker {
  * TODO reduce public API's
  */
 export default class Context {
-    // Place to push/pop arugments & exprs
+    /// Place to push/pop arugments & exprs
     stack: value.Value[] = [];
 
-    // Identifier map
+    /// Local Identifier map
     scopes: Array<{ [k: string] : value.Value }> = [{}];
 
-    // Invoke stack
-    trace: value.Value[] = [];
-
-    // Tracking for traceIO and recursion stuff
-    traceResults: Map<value.Value, TraceResultTracker> = new Map();
+    /// Global Identifier map
     globals: { [k: string] : value.Value };
 
-    // Stack tracing cunters
+    /// Invoke stack
+    trace: value.Value[] = [];
+
+    /// Tracking for traceIO and recursion stuff
+    traceResults: Map<value.Value, TraceResultTracker> = new Map();
+
+    /// Stack tracing counters
     initialStackSize = 0;
     minStackSize = 0;
 
-    // Warnings
+    /// Warnings
     warnings: Array<{ token: LexerToken, msg: string }> = [];
 
-    // WebAssembly Module imports and exports
+    /// WebAssembly Module imports and exports
     module: ModuleManager;
 
-    // Some optimizations can be slow with larger projects
+    /// Some optimizations can be slow with larger projects
     optLevel: number;
 
-    // Link external class
+    /// Link external class
     static TraceResults = TraceResults;
 
-    // Recycled `include` namespaces
+    /// Recycled `include` namespaces
     includedFiles: { [k: string]: Namespace } = {};
 
-    // Default constructor
     constructor(private entryPoint?: string, opts: CompilerOptions = {}) {
         // Initialize Module Manager
         this.optLevel = opts.optLevel || 2;
@@ -195,6 +200,8 @@ export default class Context {
         for (let i = 1; i < id.length; i++)
             if (ret instanceof value.NamespaceValue)
                 ret = ret.value.getId(id[i]);
+            else if (ret instanceof EnumNs)
+                ret = ret.getId(id[i]);
             else
                 return undefined;
         return ret;

@@ -3,7 +3,7 @@ import type { IdToken, LexerToken } from './scan.js';
 import type Context from './context.js';
 import type ModuleManager from './module.js';
 import type { Expr, FunExpr } from './expr/index.js';
-import type { Namespace } from './namespace.js';
+import type Namespace from './namespace.js';
 import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
 
 /*
@@ -24,6 +24,7 @@ export enum ValueType {
     Fxn     = 5, // Function/Branch
     Str     = 6, // String literal, (note not directly usable)
     Ns      = 7, // Namespace
+    EnumNs  = 8, // Enum base type / namespace value
 }
 
 // TODO should be abstract

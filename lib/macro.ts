@@ -2,7 +2,7 @@ import * as types from './datatypes.js';
 import Context from "./context.js";
 import { BlockToken, LexerToken, MacroToken } from "./scan.js";
 import parse from "./parse.js";
-import { Namespace } from "./namespace.js";
+import Namespace from "./namespace.js";
 import * as error from './error.js';
 import * as value from './value.js';
 import * as expr from './expr/index.js';
