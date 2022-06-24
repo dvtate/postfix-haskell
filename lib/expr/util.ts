@@ -5,6 +5,8 @@ import * as types from '../datatypes.js';
 import { Expr, DataExpr, FunExpr } from './expr.js';
 import ModuleManager from '../module.js';
 import Context from '../context.js';
+import { EnumValue } from '../enum.js';
+import { EnumConstructor } from './enum.js';
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -25,14 +27,25 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): 
         if (v instanceof value.TupleValue)
             return fromDataValue(v.value, ctx);
 
+        // Convert enum values to enum exprs
+        if (v instanceof EnumValue)
+            return new EnumConstructor(v.token, v.value, v.getEnumClassType());
+
         // If a macro gets here it's because it should be a rt closure
 
-        throw new error.TypeError("incompatible type", [v.token], [v], null);
+        throw new error.TypeError("incompatible value", [v.token], [v], null);
     }).reduce(
         (a: DataExpr[], v: DataExpr | DataExpr[]) =>
             v instanceof Array ? a.concat(v) : (a.push(v), a),
         [],
     );
+}
+
+// Construct gc'd value
+export function constructGc(e: DataExpr, ctx: ModuleManager, fun?: FunExpr): string {
+    const mkObj = e.out(ctx, fun);
+    // e.datatype.flatPrimitiveList().forEach(p => {})
+    return 'todo';
 }
 
 /**
@@ -74,6 +87,9 @@ export class NumberExpr extends DataExpr {
     }
 }
 
+/**
+ * @depricated don't remember why I made this, not used currently... thonkers
+ */
 export class TupleExpr extends DataExpr {
     declare value: DataExpr[];
 
@@ -195,7 +211,7 @@ export class TeeExpr extends DataExpr {
         //     return this.value.out(ctx, fun);
 
         if (this.locals === null) {
-            this.locals = fun.addLocal(this.datatype);
+            this.locals = fun.addLocal(this._datatype);
             if (this.locals.length === 1)
                 return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0]})`;
             else
@@ -211,6 +227,9 @@ export class TeeExpr extends DataExpr {
      */
     get expensive(): boolean {
         return false;
+    }
+    children(): Expr[] {
+        return [];
     }
 }
 
@@ -262,7 +281,6 @@ export class MultiInstrExpr extends Expr {
     get expensive(): boolean {
         return true;
     }
-
     children() {
         return this.args;
     }

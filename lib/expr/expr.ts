@@ -43,9 +43,7 @@ export abstract class Expr extends value.Value {
      * @returns child nodes
      * @virtual
      */
-    children(): Expr[] {
-        return [];
-    }
+    abstract children(): Expr[];
 
     /**
      * Would it be better to store the value in a local or inline it multiple times?
@@ -147,7 +145,6 @@ export class DummyDataExpr extends DataExpr {
         return new DummyDataExpr(token, datatype as types.DataType);
     }
 
-
     invoke(token: LexerToken, ctx: Context): void | error.SyntaxError {
         // Callable
         if (this._datatype instanceof types.ArrowType) {
@@ -198,7 +195,10 @@ export class DummyDataExpr extends DataExpr {
      * @override
      */
     out(): string {
-        throw new Error('Invalid Intermediate Representation node: ' + this.constructor.name);
+        throw new Error('Invalid Compile-Time only Expr: ' + this.constructor.name);
+    }
+    children(): Expr[] {
+        throw new Error('Invalid Compile-Time only Expr: ' + this.constructor.name);
     }
 }
 
@@ -226,7 +226,6 @@ export abstract class FunExpr extends Expr {
 
     // Parameter expressions
     readonly params: ParamExpr[];
-
 
     /**
      * @param token - Source location
@@ -315,6 +314,10 @@ export class FunExportExpr extends FunExpr {
             outs.join('\n\t')
         })\n(export "${this.name}" (func $${this.name}))`;
     }
+
+    children(): Expr[] {
+        throw new Error('Invalid call to ' + this.constructor.name + '.children()');
+    }
 }
 
 /**
@@ -341,6 +344,13 @@ export class ParamExpr extends DataExpr {
         super(token, datatype);
         this.source = source;
         this.localInds = localInds;
+    }
+
+    /**
+     * @override
+     */
+    children(): Expr[] {
+        return [];
     }
 
     /**

@@ -6,7 +6,7 @@ import { Expr, DataExpr, FunExpr, ParamExpr } from './expr.js';
 import { TeeExpr, DependentLocalExpr, } from './util.js';
 
 /**
- * Used to wrap arguments passed to recursive functions as they are being tracd in a way that
+ * Used to wrap arguments passed to recursive functions as they are being traced in a way that
  * they can later be used to determine the bindings for parameters in
  * recursive calls within the body
  */
@@ -27,6 +27,10 @@ export class RecursiveTakesExpr extends DataExpr {
 
     out(ctx: ModuleManager, fun: FunExpr) {
         return this.value.out(ctx, fun);
+    }
+
+    children(): Expr[] {
+        return [];
     }
 }
 
@@ -203,7 +207,6 @@ export class RecursiveBodyExpr extends Expr {
         //  - otherwise it's not tr
 
         // TODO actually detect tail-recursion lol
-        // return true;
         return false;
     }
 }
@@ -282,6 +285,15 @@ export class RecFunExpr extends FunExpr {
             e.localInds = originalIndicies[i];
         });
         return ret;
+    }
+
+    /**
+     * @overrride
+     */
+    children(): Expr[] {
+        return []
+            .concat(...this.takeExprs.map(e => e.children()))
+            .concat(...this.copiedParams.map(e => e.children()));
     }
 }
 

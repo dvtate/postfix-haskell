@@ -166,6 +166,7 @@ export class SyntaxType extends Type {
         [ValueType.Str]: new SyntaxType(new IdToken('Syntax:Str', 0, undefined), ValueType.Str),
         [ValueType.Ns]: new SyntaxType(new IdToken('Syntax:Ns', 0, undefined), ValueType.Ns),
         [ValueType.EnumNs]: new SyntaxType(new IdToken('Syntax:EnumNs', 0, undefined), ValueType.EnumNs),
+        [ValueType.EnumK]:  new SyntaxType(new IdToken('Syntax:EnumK', 0, undefined), ValueType.EnumK),
     };
 
     /**
@@ -335,6 +336,11 @@ export class ClassType<T extends DataType> extends DataType {
        return `${this.type.toString()} ${this.id} #class`;
     }
 }
+
+/**
+ * Type T or class of type T
+ */
+export type ClassOrType<T extends DataType> = T | ClassType<ClassOrType<T>>;
 
 /**
  * When need to store more than one piece of data in a single value

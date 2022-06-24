@@ -2,6 +2,7 @@ export * from './expr.js';
 export * from './branch.js';
 export * from './recursion.js';
 export * from './util.js';
+export * from './enum.js';
 
 /*
  * This directory contains datatypes related to a graph IR used to output webassembly

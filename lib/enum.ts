@@ -4,6 +4,7 @@ import { LexerToken } from './scan.js';
 import Namespace from './namespace.js';
 import type Context from './context.js';
 import * as error from './error.js';
+import * as expr from './expr/index.js';
 
 export class EnumNs extends value.Value {
     declare value: types.EnumBaseType;
@@ -45,5 +46,42 @@ export class EnumNs extends value.Value {
                 );
             }
         return new EnumNs(token, ns, new types.EnumBaseType(token, memberTypes));
+    }
+}
+
+
+export class EnumValue extends value.Value {
+    declare value: value.Value;
+    declare type: value.ValueType.EnumK;
+    declare _datatype: types.ClassOrType<types.EnumClassType<types.DataType>>;
+
+    /**
+     * @param token location in code
+     * @param v value stored in the enum
+     * @param t subtype of the enum
+     */
+    constructor(token: LexerToken, v: value.Value, t: types.EnumClassType<types.DataType>) {
+        super(token, value.ValueType.EnumK, v, t);
+    }
+
+    // Fix set and get methods
+    get datatype(): typeof this._datatype {
+        return this._datatype;
+    }
+    set datatype(t: typeof this._datatype) {
+        this._datatype = t;
+    }
+
+    getEnumClassType() {
+        let t: types.ClassType<any> = this._datatype;
+        while (t instanceof types.ClassType)
+            t = t.type;
+        if (!(t as any instanceof types.EnumClassType))
+            throw new Error('wtf');
+        return t;
+    }
+
+    toExpr() {
+        new expr.EnumConstructor(this.token, this.value, this.getEnumClassType());
     }
 }

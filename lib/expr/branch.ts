@@ -43,7 +43,7 @@ export class BranchInputExpr extends DataExpr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExpr) {
-        if (!this.datatype.isUnit() && !this.index) {
+        if (!this._datatype.isUnit() && !this.index) {
             console.log(this.value);
             console.log(new Error('bt'));
         }
@@ -55,6 +55,13 @@ export class BranchInputExpr extends DataExpr {
      */
     get expensive(): boolean {
         return false;
+    }
+
+    /**
+     * @override
+     */
+    children(): Expr[] {
+        return [this.value];
     }
 }
 

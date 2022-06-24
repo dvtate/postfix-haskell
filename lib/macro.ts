@@ -13,11 +13,6 @@ import * as expr from './expr/index.js';
 export type ActionRet = Context | Array<string> | undefined | SyntaxError | void;
 
 /**
- * Type T or class of type T
- */
-type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>;
-
-/**
  * Invokable block of code
  */
 export abstract class Macro extends value.Value {
@@ -123,7 +118,7 @@ export abstract class Macro extends value.Value {
      */
     typeCheck(
         ctx: Context,
-        datatype: ClassOrType<types.TupleType | types.ArrowType>,
+        datatype: types.ClassOrType<types.TupleType | types.ArrowType>,
         token: LexerToken = this.token,
         safe = false,
     ): boolean | error.SyntaxError {

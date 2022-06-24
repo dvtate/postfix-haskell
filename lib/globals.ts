@@ -207,6 +207,7 @@ const operators : MacroOperatorsSpec = {
 
     // Assign classes to value, instantate class
     // TODO Exprs
+    // TODO Enums
     // TODO make this a function?
     'make' : {
         action: (ctx, token) => {

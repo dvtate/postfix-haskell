@@ -25,6 +25,7 @@ export enum ValueType {
     Str     = 6, // String literal, (note not directly usable)
     Ns      = 7, // Namespace
     EnumNs  = 8, // Enum base type / namespace value
+    EnumK   = 9, // Enum value known at compile-time
 }
 
 // TODO should be abstract
@@ -118,7 +119,7 @@ export class NamespaceValue extends Value {
  * Primitive data, native wasm types
  */
 export class NumberValue extends DataValue {
-    declare _datatype: ClassOrType<types.PrimitiveType>;
+    declare _datatype: types.ClassOrType<types.PrimitiveType>;
 
     constructor(token: LexerToken, wasmNumber: WasmNumber) {
         super(token, types.PrimitiveType.typeMap[wasmNumber.type], wasmNumber);
@@ -167,18 +168,13 @@ export class IdValue extends Value {
 }
 
 /**
- * Type T or class of type T
- */
-type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>;
-
-/**
  * Packed values
  */
 export class TupleValue extends DataValue {
     declare value: Value[];
-    declare _datatype: ClassOrType<types.TupleType>;
+    declare _datatype: types.ClassOrType<types.TupleType>;
 
-    constructor(token: LexerToken, values: Value[], datatype?: ClassOrType<types.TupleType>) {
+    constructor(token: LexerToken, values: Value[], datatype?: types.ClassOrType<types.TupleType>) {
         const type = datatype || new types.TupleType(token, values.map(v => v.datatype || null));
         super(token, type, values);
     }

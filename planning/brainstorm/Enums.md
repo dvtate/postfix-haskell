@@ -15,7 +15,7 @@ All enums consist of 2 i32 values
 ### Pattern Matching
 This way of defining enums allows us to use the same function overloading system we currently use for pattern matching.
 
-```
+```phs
 # WIP syntax for recursive enum type definition for an LL
 I32 I64 | F32 F64 | | $Num =
 (rec:

@@ -147,7 +147,6 @@ export default class Fun {
             //         ret.tokens = e.tokens.map((t: LexerToken) => ({t: t.token, f: t.file, p: t.position }));
             //     return ret;
             // }));
-            // TODO we need to make an error datatype that combines these into a single error
             errs.forEach(e => ctx.warn(e.tokens[0], `[warn] ${this.name}: fn err: ${e.message || e}`));
             // console.warn(`[warn] ${this.name}: fn errs: ${errs.map(e => e.message || e).join('\n')} `);
             // return errs.reverse()[0];

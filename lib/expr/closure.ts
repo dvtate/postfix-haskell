@@ -33,6 +33,11 @@ export class ClosureCreateExpr extends DataExpr {
 
         return '';
     }
+
+
+    children(): Expr[] {
+        throw new Error('todo');
+    }
 }
 
 export class ClosureInvokeExpr extends DataExpr {
@@ -42,5 +47,9 @@ export class ClosureInvokeExpr extends DataExpr {
         // Put closure object pointer back onto stack
         // Invoke function in via function table
         return '';
+    }
+
+    children(): Expr[] {
+        throw new Error('todo');
     }
 }

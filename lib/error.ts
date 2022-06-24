@@ -10,6 +10,8 @@ import type { Type } from "./datatypes.js";
 import type * as value from './value.js';
 import type { Expr } from "./expr/index.js";
 
+// TODO need to make an error datatype that combines these into a single error
+
 // TODO Only a few of these are used atm ...
 
 export class CompilerError extends Error {}
