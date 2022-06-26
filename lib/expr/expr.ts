@@ -67,12 +67,7 @@ export abstract class Expr extends value.Value {
             ret = [...ret]
                 .map(e => {
                     const ret = e.children();
-
-                    // ts-ignore
-                    if (ret.some(e => !e.children)) {
-                        console.log('no cs', e);
-                    }
-                    return ret.length === 0 ? e : ret;
+                    return (!ret || ret.length === 0) ? e : ret;
                 }).reduce((a, v) => {
                     if (v instanceof Array) {
                         v.forEach(e => a.add(e));
@@ -202,6 +197,110 @@ export class DummyDataExpr extends DataExpr {
     }
 }
 
+// Methods for storing and accessing locals
+// enum FunLocalStorageMethod {
+//     Prim,       // primitives via local.set and local.get
+//     RVPtr,      // pointers to address on the RV Stack
+//     RVOffset,   // offset from rv stack pointer
+// }
+
+class FunLocalTracker {
+    // static Type = FunLocalStorageMethod;
+    // method: FunLocalStorageMethod;
+
+    watTypename: string;
+
+    constructor(
+        public fun: FunExpr,
+        public datatype: types.PrimitiveType
+        | types.RefType<types.DataType>,
+        public index: number,
+    ) {
+        if (datatype instanceof types.PrimitiveType) {
+            // Use WASM Locals
+            // this.method = FunLocalStorageMethod.Prim;
+            fun.locals.push(this);
+            this.watTypename = datatype.name;
+        } else {
+            // Use RV Stack
+            // this.method = FunLocalStorageMethod.RVOffset;
+            this.watTypename = datatype.type instanceof types.PrimitiveType
+                ? datatype.type.name
+                : 'i32';
+        }
+    }
+
+    /**
+     *
+     * @param getValue if true then we only ask for the
+     */
+    getLocalWat(getValue = false) {
+        // Primitives are easy
+        if (this.datatype instanceof types.PrimitiveType)
+            return `(local.get ${this.index})`;
+
+        type RDT = types.RefType<types.DataType>;
+        if (getValue)
+            // Reference
+                // Load pointer from RV stack pointer offset
+                // Load value from pointer
+            return `\n\t(${this.watTypename}.load offset=${
+                (this.datatype as RDT).offsetBytes
+            } (i32.load offset=${this.index} (global.get $__rv_sp)))${
+                // If value is also a reference then we can't keep it on wasm stack
+                (this.datatype as RDT).type instanceof types.RefType
+                    ? '\n\t call $__ref_stack_push'
+                    : ''
+            }`;
+
+        if (this.index !== 0)
+            return '';
+
+        return `\n\t(call $__ref_stack_push (i32.load offset=${this.index
+            } (global.get $__rv_sp)))`;
+    }
+
+    setLocalWat(): string {
+        if (this.datatype instanceof types.PrimitiveType)
+            return `local.set ${this.index}`;
+
+        type RDT = types.RefType<types.DataType>;
+        const isRefMember = this.datatype.type instanceof types.RefType;
+
+        return this.datatype.offsetBytes === 0
+                ? `(i32.store offset=${this.index} (global.get $__rv_sp) (call $__ref_stack_pop))`
+                : '';
+
+        // if (!this.fun._i32Reg)
+        //     this.fun._i32Reg = new FunLocalTracker(
+        //         this.fun,
+        //         types.PrimitiveType.Types.I32,
+        //         this.fun.locals.length,
+        //     );
+
+        // // *((__rv_sp[index] = __ref_stack_pop()) + offset) = ____
+        // return `
+        //     ${ // Move pointer to rv stack
+        //         this.datatype.offsetBytes === 0
+        //         ? `(i32.store offset=${this.index} (global.get $__rv_sp) (call $__ref_stack_pop))`
+        //         : ''
+        //     }
+        //     ;; move ptr to rv store
+        //     global.get $__rv_sp
+        //     call $__ref_stack_pop
+        //     i32.store offset=${this.index}
+
+        //     ;; Copy ptr back onto stack
+        //     global.get $__rv_sp
+        //     i32.load offset=${this.index}
+
+        //     ${ isRefMember ? 'call $__ref_stack_pop' : ''}
+        //     ;;
+        // `
+    }
+}
+
+
 /**
  * `func` expressions. Compilation contexts
  */
@@ -216,13 +315,13 @@ export abstract class FunExpr extends Expr {
     outputs: Array<DataExpr | value.NumberValue> = [];
 
     // Locals store primitives or pointers
-    _locals: Array<
-        types.PrimitiveType
-        | types.RefType<types.DataType>
-        | types.RefRefType<types.RefType<types.DataType>>> = [];
+    locals: Array<FunLocalTracker> = [];
 
     // Index of transition between parameters and locals
     nparams: number;
+
+    // Space to allocate on the RV stack for this function
+    rvStackOffset: number;
 
     // Parameter expressions
     readonly params: ParamExpr[];
@@ -240,8 +339,21 @@ export abstract class FunExpr extends Expr {
                 ? !t.getBaseType().isUnit()
                 : t.isUnit());
         this.params = inputTypes.map(t =>
-            new ParamExpr(token, t, this, t.isUnit() ? [] : this.addLocal(t)));
-        this.nparams = this._locals.length;
+            new ParamExpr(token, t, this, t.isUnit() ? [] : this.addLocal(t).map(l => l.index)));
+        this.nparams = this.locals.length;
+    }
+
+    /**
+     * Locals and stack stuff
+     * @param body original body
+     * @returns wrapped body
+     */
+    protected wrapBody(body: string): string {
+        return `\n\t(local ${
+            this.locals.map(l => l.watTypename).join(' ')
+        })\n\t(global.set $__rv_sp (i32.sub (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))${
+            body
+        }\n\t(global.set $__rv_sp (i32.add (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`;
     }
 
     /**
@@ -249,24 +361,29 @@ export abstract class FunExpr extends Expr {
      * @param type type of the value to be stored in locals
      * @returns array of locals indicies designated
      */
-    addLocal(type: types.DataType): number[] {
-        // For references we need to store the address
-        if (type instanceof types.RefType)
-            return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
-
-        // Add relevant locals
+    addLocal(type: types.DataType): FunLocalTracker[] {
+        // Drop classes
         if (type instanceof types.ClassType)
-        type = type.getBaseType();
-        if (type instanceof types.TupleType) {
-            let i = this._locals.length;
-            const prims = type.flatPrimitiveList();
-            this._locals.push(...prims);
-            return prims.map(() => i++);
+            type = type.getBaseType();
+
+        // Potentially packed values
+        if (type instanceof types.TupleType)
+            return type.flatPrimitiveList().map(p =>
+                new FunLocalTracker(this, p, this.locals.length));
+
+        // Referenced values
+        if (type instanceof types.RefType) {
+            const ret = type.flatPrimitiveList().map(p =>
+                new FunLocalTracker(this, p, this.rvStackOffset));
+            this.rvStackOffset += 4;
+            return ret;
         }
+
         if (type instanceof types.PrimitiveType)
-            return [this._locals.push(type) - 1];
-        if (type instanceof types.ArrowType)
-            return [this._locals.push(types.PrimitiveType.Types.I32) - 1];
+            return [new FunLocalTracker(this, type, this.locals.length)];
+
+        // if (type instanceof types.ArrowType)
+        //     return [this.locals.push(types.PrimitiveType.Types.I32) - 1];
 
         // Can't be stored
         console.error(type, type);
@@ -275,11 +392,12 @@ export abstract class FunExpr extends Expr {
 
     /**
      * Generate webassembly to capture locals from stack
-     * @param indicies local indicies to set
+     * @param locals local trackers for locals to set
+     * @param args @depricated passed tracker method
      * @returns webassembly text
      */
-    setLocalWat(indicies: number[]): string {
-        return indicies.map(ind => `(local.set ${ind})`).reverse().join(' ');
+    setLocalWat(locals: FunLocalTracker[], ...args: any[]): string {
+        return locals.map(l => l.getLocalWat(...args)).reverse().join(' ');
     }
 
     /**
@@ -301,17 +419,15 @@ export class FunExportExpr extends FunExpr {
     out(ctx: ModuleManager): string {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
-        const paramTypes = this._locals.slice(0, this.nparams).map(t => t.getWasmTypeName()).join(' ');
+        const paramTypes = this.locals.slice(0, this.nparams).map(t => t.datatype.getWasmTypeName()).join(' ');
         const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
         return `(func $${this.name} ${
             paramTypes ? `(param ${paramTypes})` : ''
         } ${
             resultTypes ? `(result ${resultTypes})` : ''
-        }\n\t\t${
-            this._locals.filter(Boolean).slice(this.nparams).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
-        }\n\t${
-            outs.join('\n\t')
+        } ${
+            this.wrapBody(outs.join('\n\t'))
         })\n(export "${this.name}" (func $${this.name}))`;
     }
 
