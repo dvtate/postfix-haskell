@@ -40,8 +40,9 @@ export class FunLocalTracker {
     }
 
     /**
-     *
-     * @param getValue if true then we only ask for the
+     * Generate wat to load this local's value onto stack
+     * @param getValue if true we load only this part of the referenced value instead of just loading a pointer
+     * @returns WASM Text source code
      */
     getLocalWat(getValue = false) {
         // Primitives are easy
@@ -69,16 +70,21 @@ export class FunLocalTracker {
             } (global.get $__rv_sp)))`;
     }
 
+    /**
+     * Generate wat to store this value into a local
+     * @returns WASM Text source code
+     */
     setLocalWat(): string {
         if (this.datatype instanceof types.PrimitiveType)
-            return `local.set ${this.index}`;
-
-        type RDT = types.RefType<types.DataType>;
-        const isRefMember = this.datatype.type instanceof types.RefType;
+            return `(local.set ${this.index})`;
 
         return this.datatype.offsetBytes === 0
-                ? `(i32.store offset=${this.index} (global.get $__rv_sp) (call $__ref_stack_pop))`
-                : '';
+            ? `(i32.store offset=${this.index} (global.get $__rv_sp) (call $__ref_stack_pop))`
+            : '';
+
+
+        // type RDT = types.RefType<types.DataType>;
+        // const isRefMember = this.datatype.type instanceof types.RefType;
 
         // if (!this.fun._i32Reg)
         //     this.fun._i32Reg = new FunLocalTracker(
@@ -111,7 +117,7 @@ export class FunLocalTracker {
 
 
 /**
- * `func` expressions. Compilation contexts
+ * `(func ... )` expressions. Compilation contexts
  */
 export abstract class FunExpr extends Expr {
     // Exported symbol
@@ -130,7 +136,7 @@ export abstract class FunExpr extends Expr {
     nparams: number;
 
     // Space to allocate on the RV stack for this function
-    rvStackOffset: number;
+    rvStackOffset = 0;
 
     // Parameter expressions
     readonly params: ParamExpr[];
@@ -160,9 +166,15 @@ export abstract class FunExpr extends Expr {
     protected wrapBody(body: string): string {
         return `\n\t(local ${
             this.locals.slice(this.nparams).map(l => l.watTypename).join(' ')
-        })\n\t(global.set $__rv_sp (i32.sub (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))${
+        })\n\t${ this.rvStackOffset
+            ? `(global.set $__rv_sp (i32.sub (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`
+            : ''
+        }${
             body
-        }\n\t(global.set $__rv_sp (i32.add (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`;
+        }\n\t${ this.rvStackOffset
+            ? `(global.set $__rv_sp (i32.add (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`
+            : ''
+        }`;
     }
 
     /**

@@ -43,7 +43,7 @@ export class AnyType extends Type implements DataTypeInterface {
     /**
      * @override
      */
-    check(type: Type): boolean {
+    check(): boolean {
         return true;
     }
     flatPrimitiveList(): PrimitiveType[] {
@@ -67,7 +67,7 @@ export class NeverType extends Type implements DataTypeInterface {
     /**
      * @override
      */
-    check(type: Type): boolean {
+    check(): boolean {
         return false;
     }
     flatPrimitiveList(): PrimitiveType[] {
@@ -245,7 +245,7 @@ export class ClassType<T extends DataType> extends DataType {
      * @param type - Underlying Data type
      * @param [id] - Clone a class
      */
-    constructor(token: LexerToken, type: T, id?: number) {
+    constructor(token: LexerToken, type: T, id?: number, public recursive: boolean = false) {
         super(token);
         this.type = type;
         this.id = id === undefined ? genId() : id;
@@ -335,6 +335,14 @@ export class ClassType<T extends DataType> extends DataType {
     toString(): string {
        return `${this.type.toString()} ${this.id} #class`;
     }
+
+    // /**
+    //  * Does an object of this type need to be stored on the heap?
+    //  */
+    // isRecursive(): boolean {
+    //     return this.recursive
+    //     || (this.type instanceof ClassType && this.type.isRecursive());
+    // }
 }
 
 /**
@@ -633,7 +641,7 @@ export class RefType<T extends DataType> extends DataType {
     /**
      * @override
      */
-    getWasmTypeName(name?: string): string {
+    getWasmTypeName(): string {
         return 'i32';
     }
 
@@ -726,7 +734,7 @@ export class RefRefType<T extends DataType> extends DataType {
     /**
      * @override
      */
-    getWasmTypeName(name?: string): string {
+    getWasmTypeName(): string {
         return 'i32';
     }
 
@@ -805,7 +813,7 @@ export class EnumBaseType extends DataType {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
-    getWasmTypeName(name?: string): string {
+    getWasmTypeName(): string {
         // type index + ref address
         return 'i32 i32';
     }
@@ -855,7 +863,7 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
-    getWasmTypeName(name?: string): string {
+    getWasmTypeName(): string {
         // Is this right?
         // type index + ref address
         return 'i32 i32';

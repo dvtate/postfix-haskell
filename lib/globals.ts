@@ -117,24 +117,26 @@ const operators : MacroOperatorsSpec = {
     // Make a type wrapper that assigns class tag to output datatype
     'class' : {
         action: (ctx, token) => {
-            // Pull a macro or convert to one
+            // Pull a macro or type
             if (ctx.stack.length === 0)
                 return ['expected a macro or type'];
-            let arg = ctx.pop();
+            const arg = ctx.pop();
+
+            // For types it's faster
             if (arg.type == value.ValueType.Type) {
-                const cpy = arg;
-                arg = new CompilerMacro(token, ctx => void ctx.push(cpy));
+                ctx.push(
+                    new value.Value(token, value.ValueType.Type,
+                        new types.ClassType(token, arg.value)));
+                return;
             }
 
             // Validate input
             if (!(arg instanceof Macro))
                 return ['expected a type or macro to make a class of'];
             const v: Macro = arg;
-            if (v.recursive)
-                return ['recursive types currently not supported'];
 
             // Generate new class
-            const id = new types.ClassType(token, null).id;
+            const id = new types.ClassType(token, null, undefined, v.recursive).id;
 
             // Wrap macro with one that appends class type to return value
             const wrapper = (ctx: Context, tok: LexerToken) => {
@@ -151,14 +153,17 @@ const operators : MacroOperatorsSpec = {
                 const retlen = ctx.stack.length - ctx.cmpStack(oldStack);
                 if (retlen > 1)
                     return ['type macro should only return one value']; // TODO need to find a way to improve error tracing
-                const t = ctx.pop();
+                let t: any = ctx.pop();
                 if (t.type !== value.ValueType.Type)
                     return ['expected a type to append class to'];
+                t = t.value;
+                if (v.recursive)
+                    t = new types.RefType(tok, t);
 
                 // Use class wrapper
                 ctx.push(
                     new value.Value(tok, value.ValueType.Type,
-                        new types.ClassType(tok, t.value, id)));
+                        new types.ClassType(tok, t, id, v.recursive)));
             };
 
             // Push

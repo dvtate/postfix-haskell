@@ -217,7 +217,7 @@ export default class Fun {
         const maxTakes = ios.map(t => t.takes).reduce((acc, v) => v.length > acc.length ? v : acc, []);
         const maxGives = Math.max(...ios.map(t => t.gives.length));
 
-        // Allgin all branch ios
+        // Align all branch ios
         ios.forEach(t => {
             if (t.gives.length < maxGives) {
                 // Pull from stack
@@ -232,7 +232,7 @@ export default class Fun {
         const first = ios[0].gives;
         const givesInconsistent = ios.some(t =>
             t.gives.some((v, i) =>
-                wideCompat(first[i], v.datatype)));
+                !wideCompat(first[i], v.datatype)));
         if (givesInconsistent) {
             console.error("ios", ios);
             return ['possible function branches give inconsistent results'];

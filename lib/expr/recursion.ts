@@ -4,7 +4,7 @@ import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
 import { TeeExpr, DependentLocalExpr, } from './util.js';
-import { FunLocalTracker, FunExpr, ParamExpr } from './fun.js';
+import { FunExpr, ParamExpr } from './fun.js';
 
 /**
  * Used to wrap arguments passed to recursive functions as they are being traced in a way that

@@ -1,0 +1,33 @@
+"../../stdlib/prelude.phs" require use
+
+# Recursive macro
+( $fib (I32)(I32):
+    (: true ) (: 1 ) $branch fun
+    (: 1 > ) (: $n = n fib n 1 - fib + ) $branch fun
+    branch
+) $fib =
+
+# Recursive type
+( $List :
+    () class $Nil =
+    ( I32 List ) class $Node =
+) enum $List =
+
+
+
+######
+# Current syntax:
+######
+
+# Recursive macro
+(rec (I32)(I32):
+    (: true ) (: 1 ) $branch fun
+    (: 1 > ) (: $n = n fib n 1 - fib + ) $branch fun
+    branch
+) $fib =
+
+# Recursive type
+(rec:
+    () class $Nil =
+    ( I32 List ) class $Node =
+) enum $List =

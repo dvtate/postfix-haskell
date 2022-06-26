@@ -23,7 +23,7 @@ export default async function compileFile(
     trackTime = true,
     fast = false,
     folding = false,
-    optimize = false,
+    optimize = 0,
     stackSize: number = undefined,
     nurserySize: number = undefined,
     noRuntime = false,
@@ -59,7 +59,7 @@ export default async function compileFile(
         start = performance.now();
         const ctx = parse(ptree, new Context(fname, {
             stackSize, nurserySize, noRuntime,
-            optLevel: optimize ? 3 : fast ? 1 : 2,
+            optLevel: optimize,
         }));
         if (ctx instanceof error.SyntaxError) {
             // console.log(ctx.tokens);
@@ -74,8 +74,8 @@ export default async function compileFile(
 
         // Output assembly
         start = performance.now();
-        const wast = await (ctx as Context).outWast({ folding, fast, optimize, });
-        // console.log(wast);
+        const wast = await (ctx as Context).outWast({ folding, fast, optimize: optimize !== 0, });
+        // TODO if optimize level is 3 pass through wasm-opt afterwards
         if (trackTime)
             console.log('compile:', performance.now() - start);
 
