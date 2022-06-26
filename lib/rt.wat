@@ -42,32 +42,33 @@
         ;; return ret
     )
 
-    ;; Store a reference on the rv stack
-    (func $__rv_stack_push (result i32)
-        ;; return *(--__rv_sp) = ref_stack_pop()
+    ;; Instead functions allocate chunks of known sizes based on needs
+    ;; ;; Store a reference on the rv stack
+    ;; (func $__rv_stack_push (result i32)
+    ;;     ;; return *(--__rv_sp) = ref_stack_pop()
 
-        global.get $__rv_sp
-        i32.const 4
-        i32.sub
-        global.set $__rv_sp
+    ;;     global.get $__rv_sp
+    ;;     i32.const 4
+    ;;     i32.sub
+    ;;     global.set $__rv_sp
 
-        global.get $__rv_sp
-        call $__ref_stack_pop
-        i32.store
+    ;;     global.get $__rv_sp
+    ;;     call $__ref_stack_pop
+    ;;     i32.store
 
-        global.get $__ref_sp
-    )
+    ;;     global.get $__ref_sp
+    ;; )
 
-    ;; Pop N references from the rv stack
-    (func $__rv_stack_pop (param $n i32)
-        ;; __rv_sp += 4*n
-        global.get $__rv_sp
-        local.get $n
-        i32.const 2
-        i32.shl
-        i32.add
-        global.set $__rv_sp
-    )
+    ;; ;; Pop N references from the rv stack
+    ;; (func $__rv_stack_pop (param $n i32)
+    ;;     ;; __rv_sp += 4*n
+    ;;     global.get $__rv_sp
+    ;;     local.get $n
+    ;;     i32.const 2
+    ;;     i32.shl
+    ;;     i32.add
+    ;;     global.set $__rv_sp
+    ;; )
 
     ;; Initialize static data
     (data (i32.const {{STACK_SIZE}}) "{{STATIC_DATA_STR}}")

@@ -6,6 +6,11 @@ import type Context from './context.js';
 import * as error from './error.js';
 import * as expr from './expr/index.js';
 
+/**
+ * User accessible Enum base type value
+ *
+ * operates as both a type and a namespace
+ */
 export class EnumNs extends value.Value {
     declare value: types.EnumBaseType;
 
@@ -49,7 +54,9 @@ export class EnumNs extends value.Value {
     }
 }
 
-
+/**
+ * When enum value is known at compile time thus we can freely use and convert it
+ */
 export class EnumValue extends value.Value {
     declare value: value.Value;
     declare type: value.ValueType.EnumK;
@@ -72,6 +79,9 @@ export class EnumValue extends value.Value {
         this._datatype = t;
     }
 
+    /**
+     * Drop classes but keep enum classtype
+     */
     getEnumClassType() {
         let t: types.ClassType<any> = this._datatype;
         while (t instanceof types.ClassType)
@@ -82,6 +92,8 @@ export class EnumValue extends value.Value {
     }
 
     toExpr() {
-        new expr.EnumConstructor(this.token, this.value, this.getEnumClassType());
+        return new expr.EnumConstructor(this.token, this.value, this.getEnumClassType());
     }
+
+    // ; // TOOD should have same interface as the Exprs
 }

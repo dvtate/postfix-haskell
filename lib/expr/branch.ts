@@ -2,7 +2,8 @@ import * as value from '../value.js';
 import * as error from '../error.js';
 import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
-import { DataExpr, Expr, FunExpr } from './expr.js';
+import { DataExpr, Expr } from './expr.js';
+import type { FunExpr, FunLocalTracker } from './fun.js';
 import { DependentLocalExpr } from './util.js';
 
 /**
@@ -14,7 +15,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * Id for local variable into which it should be stored
      */
-    index: number[] = null;
+    index: FunLocalTracker[] = null;
 
     /**
      * Expression that this should capture

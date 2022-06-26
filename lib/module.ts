@@ -388,7 +388,7 @@ export default class ModuleManager {
         const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
         // const STACK_START = 0;
         const STACK_END = STACK_SIZE;
-        const RV_STACK_END = STACK_END / 2;
+        const RV_STACK_END = STACK_END / 2; // TODO see planning/brainstorm/ref_stack_vars.md about removing this stack
         const NURSERY_START = STACK_SIZE + STATIC_DATA_LEN;
         const NURSERY_END = STACK_SIZE + NURSERY_SIZE;
         const NURSERY_SP_INIT = NURSERY_END - OBJ_HEAD_SIZE;

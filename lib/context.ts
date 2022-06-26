@@ -326,6 +326,10 @@ export default class Context {
             return this;
         }
 
+        // Try to invoke dummy exprs
+        if (v instanceof expr.DummyDataExpr)
+            return v.invoke(token, this) || this;
+
         // If not invokable just put it on the stack
         if (![value.ValueType.Fxn, value.ValueType.Macro].includes(v.type)) {
             this.push(v);

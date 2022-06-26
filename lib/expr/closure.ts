@@ -2,9 +2,10 @@ import * as value from '../value.js';
 import * as types from '../datatypes.js';
 import * as error from '../error.js';
 import { LexerToken } from '../scan.js';
-import ModuleManager from '../module.js';
+import type ModuleManager from '../module.js';
 
-import { DataExpr, Expr, FunExpr } from './expr.js';
+import { DataExpr, Expr } from './expr.js';
+import type { FunExpr } from './fun.js';
 import { LiteralMacro, Macro } from '../macro.js';
 
 /**
@@ -18,10 +19,10 @@ export class ClosureCreateExpr extends DataExpr {
     public captured: DataExpr[];
 
 
-    constructor(public macro: LiteralMacro) {
+    constructor(token: LexerToken, public macro: LiteralMacro) {
         if (!(macro.datatype instanceof types.ArrowType))
-            throw new error.SyntaxError('invalid runtime closure', [macro.token]);
-        super(macro.token, macro.datatype);
+            throw new error.SyntaxError('invalid runtime closure', [token, macro.token]);
+        super(token, macro.datatype);
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {

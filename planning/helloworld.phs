@@ -1,6 +1,5 @@
 # Import stuff from modules
 "stdlib/prelude.phs" require use
-"stdlib/monad.phs"   require use
 "stdlib/io.phs"      require $io =
 "stdlib/str.phs"     require use
 

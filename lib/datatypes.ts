@@ -6,7 +6,7 @@ import * as error from './error.js';
 interface DataTypeInterface {
     // See documentation in DataType
     getWasmTypeName(name?: string): string;
-    flatPrimitiveList(): Array<PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>>;
+    flatPrimitiveList(): Array<PrimitiveType | RefType<DataType>>;
     isUnit(): boolean;
 }
 
@@ -215,7 +215,7 @@ export abstract class DataType extends SyntaxType implements DataTypeInterface {
      * @throws if union encountered throws string "union"
      * @virtual
      */
-    abstract flatPrimitiveList(): Array<PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>>;
+    abstract flatPrimitiveList(): Array<PrimitiveType | RefType<DataType>>;
 
     /**
      * Does this type hold a value in wasm?
@@ -235,13 +235,13 @@ export class ClassType<T extends DataType> extends DataType {
     declare type: T;
 
     /**
-     * Unique identifier for the class
+     * Unique identifier for each class
      */
     id: number;
     static _tokenIdMap: Map<LexerToken, number> = new Map();
 
     /**
-     * @param token - code where
+     * @param token - Code where
      * @param type - Underlying Data type
      * @param [id] - Clone a class
      */
@@ -433,6 +433,8 @@ export class TupleType extends DataType {
     }
 
     toString(): string {
+        if (this.types.length === 0)
+            return 'Unit';
         return `( ${this.types.map(t => t.toString()).join(' ')} )`;
     }
 }
@@ -587,7 +589,7 @@ export class ArrowType extends DataType {
     /**
      * @override
      */
-    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         throw new Error('Invalid call: ArrowType.flatPrimitiveList()');
     }
     isUnit(): boolean {
@@ -602,13 +604,19 @@ export class ArrowType extends DataType {
 
 /**
  * Reference for a value of a given type T
+ *
+ * Pointer stored on gc value stack, points to value in heap
+ *
+ * see: planning/brainstorm/ref_stack_vars.md
  */
 export class RefType<T extends DataType> extends DataType {
+
     /**
      * @param token location in source code
      * @param type type of value being referenced
+     * @param offsetBytes When accessing a member of an object need to use reference
      */
-    constructor(token: LexerToken, public type: T) {
+    constructor(token: LexerToken, public type: T, public offsetBytes = 0) {
         super(token);
     }
 
@@ -626,16 +634,42 @@ export class RefType<T extends DataType> extends DataType {
      * @override
      */
     getWasmTypeName(name?: string): string {
-        // TODO think
-        // NOTE the object is on ref_stack and only used only indirectly there
-        // i32 = pointer type
-        return '';
+        return 'i32';
     }
 
-    flatPrimitiveList(): RefType<TupleType>[] {
-        return [new RefType(this.token,
-            new TupleType(this.token,
-                this.type.flatPrimitiveList()))];
+    /**
+     * Prevent recursive calls to RefType.flatPrimitiveList()
+     *
+     * @remarks Correct solution would be to pass an argument but that's ugly
+     */
+    private static noRecFlatPrimitiveList = false;
+
+    /**
+     * @override
+     */
+    flatPrimitiveList(): RefType<DataType>[] {
+        let offset = 0;
+        if (!RefType.noRecFlatPrimitiveList) {
+            RefType.noRecFlatPrimitiveList = true;
+            this.type.flatPrimitiveList().map(t => {
+                const oldOffset = offset;
+                if (t instanceof PrimitiveType)
+                    switch ((t as PrimitiveType).name) {
+                        case 'i32': case 'f32': offset += 4; break;
+                        case 'i64': case 'f64': offset += 8; break;
+                        default: throw new Error('wtf?');
+                    }
+                else {
+                    // Otherwise it's a reference
+                    offset += 4;
+                    console.log('RefType.fpl(): other type: ', t);
+                }
+                return new RefType(this.token, t, oldOffset);
+            });
+            RefType.noRecFlatPrimitiveList = false;
+        }
+
+        return [this];
     }
 
     /**
@@ -662,13 +696,20 @@ export class RefType<T extends DataType> extends DataType {
 
 /**
  * Reference to a pointer which is stored on rv_stack to an object managed by gc
+ *
+ * Stored in wasm locals, point to location on, gc rv stack, where lie pointers to objects on the heap
+ *
+ * see: planning/brainstorm/ref_stack_vars.md
+ *
+ * @depricated - I feel like conversion should be implicit
  */
-export class RefRefType<T extends RefType<DataType>> extends DataType {
+export class RefRefType<T extends DataType> extends DataType {
     /**
      * @param token location in source code
      * @param type type of value being referenced
+     * @param offsetBytes When accessing a member of an object need to use reference
      */
-    constructor(token: LexerToken, public type: T) {
+    constructor(token: LexerToken, public type: T, public offsetBytes = 0) {
         super(token);
     }
 
@@ -686,20 +727,27 @@ export class RefRefType<T extends RefType<DataType>> extends DataType {
      * @override
      */
     getWasmTypeName(name?: string): string {
-        // TODO think
-        // NOTE the object is on ref_stack and only used only indirectly there
-        // i32 = pointer type
-        return '';
+        return 'i32';
     }
 
-    flatPrimitiveList() {
-        // Note that we return empty arr here because the value is stored on the ref/rv stack
-        return [
-            new RefRefType(this.token,
-                new RefType(this.token,
-                    new TupleType(this.token,
-                        this.type.flatPrimitiveList())))];
+    flatPrimitiveList(): RefType<DataType>[] {
+        let offset = 0;
+        return this.type.flatPrimitiveList().map(t => {
+            const oldOffset = offset;
+            if (t instanceof PrimitiveType)
+                switch (t.name) {
+                    case 'i32': case 'f32': offset += 4; break;
+                    case 'i64': case 'f64': offset += 8; break;
+                    default: throw new Error('wtf?');
+                }
+            else
+                // Otherwise it's a pointer
+                offset += 4;
+
+            return new RefType(this.token, t, oldOffset);
+        });
     }
+
     isUnit(): boolean {
         return false;
     }
@@ -713,7 +761,7 @@ export class RefRefType<T extends RefType<DataType>> extends DataType {
  */
 export class EnumBaseType extends DataType {
     /**
-     * Enum members defined by this class
+     * @param subtypes Enum members defined by this class
      */
     constructor(
         token: LexerToken,
@@ -750,9 +798,10 @@ export class EnumBaseType extends DataType {
         return type && (this === type || isChild() || isCompat());
     }
     isUnit(): boolean {
-        return Object.values(this.subtypes).every(t => t.isUnit());
+        // return Object.values(this.subtypes).every(t => t.isUnit());
+        return false;
     }
-    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
@@ -799,9 +848,10 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
             && this.type.check(type.type);
     }
     isUnit(): boolean {
-        return this.type.isUnit();
+        return false;
+        // return this.type.isUnit();
     }
-    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }

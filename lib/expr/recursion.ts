@@ -2,8 +2,9 @@ import * as value from '../value.js';
 import * as types from '../datatypes.js';
 import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
-import { Expr, DataExpr, FunExpr, ParamExpr } from './expr.js';
+import { Expr, DataExpr } from './expr.js';
 import { TeeExpr, DependentLocalExpr, } from './util.js';
+import { FunLocalTracker, FunExpr, ParamExpr } from './fun.js';
 
 /**
  * Used to wrap arguments passed to recursive functions as they are being traced in a way that
@@ -214,6 +215,8 @@ export class RecursiveBodyExpr extends Expr {
 /**
  * Function that gets added to module but isn't exported
  */
+// TODO need to figure out how to share rv locals between functions
+// Should reference function host function
 export class RecFunExpr extends FunExpr {
     public takeExprs: DependentLocalExpr[];
     public copiedParams: ParamExpr[];
@@ -242,27 +245,15 @@ export class RecFunExpr extends FunExpr {
         const originalIndicies = this.copiedParams.map(e => e.localInds);
 
         // Alias our DependentLocalExpr inputs to params
-        let ind = 0;
-        // len => [ind .. ind += len]
-        const paramsRange = (len: number) => {
-            const ret: number[] = [];
-            for (; len > 0; len--)
-                ret.push(ind++);
-            return ret;
-        };
-        this.takeExprs.forEach(e => {
-            e.inds = paramsRange(e.datatype.flatPrimitiveList().length);
-        });
+        this.takeExprs.forEach(e => e.inds = this.addLocal(e.datatype));
 
         // Temporarily update indicies to refer to our params
-        this.copiedParams.forEach(e => {
-            e.localInds = paramsRange(e.localInds.length);
-        });
+        this.copiedParams.forEach(e => e.localInds = this.addLocal(e.datatype));
 
         // Compile body & generate type signatures
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this)); // Body of fxn
-        const paramTypes = this._locals.slice(0, this.nparams).map(t => t.getWasmTypeName()).join(' ');
+        const paramTypes = this.locals.slice(0, this.nparams).map(t => t.datatype.getWasmTypeName()).join(' ');
         const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
         // Generate output wat
@@ -272,18 +263,13 @@ export class RecFunExpr extends FunExpr {
         } ${
             // Return types
             resultTypes ? `(result ${resultTypes})` : ''
-        }\n\t\t${
-            // Local variables
-            this._locals.slice(this.nparams).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
-        }\n\t${
+        } ${
             // Write body
-            outs.join('\n\t')
+            this.wrapBody(outs.join('\n\n'))
         })`;
 
         // Revert modifications to the exprs so that other places they're referenced don't break
-        this.copiedParams.forEach((e, i) => {
-            e.localInds = originalIndicies[i];
-        });
+        this.copiedParams.forEach((e, i) => e.localInds = originalIndicies[i]);
         return ret;
     }
 
