@@ -1,9 +1,11 @@
+/* eslint-disable */
+
 // const inline = require('../dist/tools/inline');
 
 // Load WAT source
 const fs = require('fs');
 
-const fname = 'wat.wasm';
+const fname = 'swap_benchmark.wasm';
 const bin = fs.readFileSync(fname);
 console.log('bin:', bin);
 const valid = WebAssembly.validate(bin);
@@ -29,12 +31,21 @@ const env = {
 WebAssembly.instantiate(bin, env).then(mod => {
 	// mod.instance.exports.main();
 
-	// Test fac
-	for (let i = 0n; i < 10n; i++)
-		console.log(mod.instance.exports.fac(i));
+	let start = performance.now();
+	mod.instance.exports.no_swap();
+	console.log('no swap: ', performance.now() - start);
 
-	// Test abs
-	for (let i = -4; i < 5; i++)
-		console.log(mod.instance.exports.abs(i));
+	start = performance.now();
+	mod.instance.exports.swap();
+	console.log('swap: ', performance.now() - start);
+
+	// // Test fac
+	// for (let i = 0n; i < 10n; i++)
+	// 	console.log(mod.instance.exports.fac(i));
+
+	// // Test abs
+	// for (let i = -4; i < 5; i++)
+	// 	console.log(mod.instance.exports.abs(i));
+
 
 }).catch(e => console.error(e));
