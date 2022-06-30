@@ -4,16 +4,38 @@ import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
 import type { FunExpr } from './fun.js';
+import { constructGc } from './gc_util.js';
+import { SyntaxError } from '../error.js';
 
 export class EnumContainsCheckExpr extends DataExpr {
     _datatype: types.ClassOrType<types.PrimitiveType> = types.PrimitiveType.Types.I32;
 
+    constructor(token: LexerToken, public enumExpr: DataExpr, public checkType: types.EnumClassType<any>) {
+        super(token, types.PrimitiveType.Types.I32);
+        // TODO typecheck
+    }
+
     get datatype(): typeof this._datatype  { return this._datatype; }
     set datatype(t: typeof this._datatype) { this._datatype = t; }
-    children(): Expr[] { return null; }
+    children(): Expr[] { return this.enumExpr.children(); }
 
-    out() {
-        return 'i32.const 0';
+    out(ctx: ModuleManager, fun?: FunExpr) {
+        // Extract type
+        let eedt = this.enumExpr.datatype;
+        if (eedt instanceof types.ClassType)
+            eedt = eedt.getBaseType();
+
+        // Known at compile-time
+        if (eedt instanceof types.EnumClassType)
+            return `(i32.const ${this.checkType.check(eedt) ? '1' : '0'})`;
+
+        // Need to determine dynamically
+        if (eedt instanceof types.EnumBaseType)
+            return `${this.enumExpr.out(ctx, fun)
+                }\n\t(call $__ref_stack_pop)(i32.load)(i32.const ${
+                    this.checkType.index})(i32.eq)`;
+
+        throw new SyntaxError('Not cannot check if non-enum contains type', [this.enumExpr.token, this.token]);
     }
 }
 
@@ -22,8 +44,7 @@ export class EnumGetExpr extends DataExpr {
 
     enumExpr: UnknownEnumExpr | EnumConstructor;
 
-
-    out() {
+    out(ctx: ModuleManager, fun?: FunExpr) {
         return 'todo';
     }
 
@@ -41,7 +62,7 @@ export class UnknownEnumExpr extends DataExpr {
     }
 
     children(): Expr[] {
-        return null;
+        return this.source.children();
     }
 
     // containsType(t: number | types.EnumClassType<types.DataType>): EnumContainsCheckExpr {
@@ -56,18 +77,16 @@ export class UnknownEnumExpr extends DataExpr {
  * Used to construct a gc'd object and reference it via enum
  */
 export class EnumConstructor extends DataExpr {
-    knownValue: DataExpr;
-
-    constructor(token: LexerToken, v: value.Value, datatype: types.EnumClassType<types.DataType>) {
+    constructor(token: LexerToken, public knownValue: value.Value, datatype: types.EnumClassType<types.DataType>) {
         super(token, datatype);
     }
 
     out(ctx: ModuleManager, fun?: FunExpr): string {
-        return 'todo';
+        return constructGc(this.knownValue as DataExpr, ctx, fun);
     }
 
     children(): Expr[] {
-        return null;
+        return [];
     }
 
     // containsType(t: number | types.EnumClassType<types.DataType>): value.NumberValue {
@@ -75,11 +94,6 @@ export class EnumConstructor extends DataExpr {
     // }
 }
 
-// Construct gc'd value
-export function constructGc(e: DataExpr, ctx: ModuleManager, fun?: FunExpr): string {
-    let ret = e.out(ctx, fun);
-    const locals = fun.addLocal(e.datatype);
-    ret += fun.setLocalWat(locals);
 
-    return 'todo';
-}
+// export class EnumMatch extends Expr {
+// }

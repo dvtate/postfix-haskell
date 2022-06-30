@@ -10,6 +10,16 @@ import type { FunExpr } from './fun.js';
 // This way they can also emit warnings
 
 /**
+ * Some values are compatible
+ */
+export interface Compileable {
+    out(ctx: ModuleManager, fun?: FunExpr): string;
+    children(): Expr[];
+    datatype?: types.DataType;
+}
+
+
+/**
  * This stores expressions that we can reason about
  * but can't completly eliminate from the code.
  *

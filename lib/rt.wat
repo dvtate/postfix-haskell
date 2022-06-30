@@ -290,9 +290,7 @@
             local.tee $bit_ind
             local.get $m_mark_size
             i32.lt_u
-            if
-                br $for_each_bit
-            end
+            br_if $for_each_bit
         end
     )
 
@@ -411,9 +409,7 @@
             local.tee $bit_ind
             local.get $m_mark_size
             i32.le_u
-            if
-                br $for_each_bit
-            end
+            br_if $for_each_bit
         end
     )
 
@@ -703,9 +699,7 @@
                 ;; Do while dest < len
                 local.get $len
                 i32.lt_u
-                if
-                    br $cp_loop
-                end
+                br_if $cp_loop
             end $cp_loop
         end
     )
@@ -714,6 +708,9 @@
     (global $__gc_cycle (mut i32) (i32.const 0))
 
     ;; Collect Garbage
+    (; TODO lots of room for optimization for minor gc/nursery
+    - don't need next ptr
+    ;)
     (func $__do_gc
         (local $p i32)          ;; stack pointer
         (local $dest i32)       ;; pointer to where object is being moved
@@ -793,9 +790,7 @@
                 local.tee $p
                 i32.const {{STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop
-                end
+                br_if $mark_loop
             end $mark_loop
         else
             loop $mark_loop
@@ -811,9 +806,7 @@
                 local.tee $p
                 i32.const {{STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop
-                end
+                br_if $mark_loop
             end $mark_loop
         end
 
@@ -837,9 +830,7 @@
                 local.tee $p
                 i32.const {{RV_STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop2
-                end
+                br_if $mark_loop2
             end $mark_loop2
         else
             loop $mark_loop2
@@ -855,9 +846,7 @@
                 local.tee $p
                 i32.const {{RV_STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop2
-                end
+                br_if $mark_loop2
             end $mark_loop2
         end
 
@@ -893,9 +882,7 @@
                     local.get $dest
                     i32.load offset=8
                     local.tee $p
-                    if
-                        br $sweep
-                    end
+                    br_if $sweep
                 else
                     ;; Remove mark
                     local.get $p
@@ -910,8 +897,7 @@
                 local.tee $dest
                 i32.load offset=8
                 local.tee $p
-                if
-                    br $sweep
+                br_if $sweep
                 end
             end $sweep
 
@@ -976,9 +962,7 @@
             local.tee $p
             i32.const {{NURSERY_SP_INIT}}
             i32.lt_u
-            if
-                br $cp_loop
-            end
+            br_if $cp_loop
         end $cp_loop
 
         ;; Update references
@@ -1009,9 +993,7 @@
             local.tee $p
             i32.const {{STACK_SIZE}}
             i32.lt_u
-            if
-                br $rsu_loop
-            end
+            br_if $rsu_loop
         end
 
         ;; Update references to objs previously stored in nursery
@@ -1172,9 +1154,7 @@
                         local.tee $i
                         local.get $size
                         i32.lt_u
-                        if
-                            br $rbf_loop
-                        end
+                        br_if $rbf_loop
                     end
                 end
             end
@@ -1194,10 +1174,7 @@
             local.tee $p
             i32.const {{NURSERY_SP_INIT}}
             i32.lt_u
-            if
-                br $cp_loop
-
-            end
+            br_if $cp_loop
         )
     )
 
@@ -1280,9 +1257,7 @@
             ;; Repeat while ((p = p->next))
             local.get $next
             local.tee $p
-            if
-                br $walk
-            end
+            br_if $walk
         end
     )
 
@@ -1345,9 +1320,7 @@
                         local.tee $i
                         local.get $insize
                         i32.lt_u
-                        if
-                            br $step
-                        end
+                        br_if $step
                     end
                 end
 
@@ -1433,9 +1406,7 @@
                         local.get $psize
                         local.get $q
                         select
-                        if
-                            br $merge_loop
-                        end
+                        br_if $merge_loop
                     end
                 end
 

@@ -2,7 +2,7 @@ import WasmNumber from './numbers.js';
 import type { IdToken, LexerToken } from './scan.js';
 import type Context from './context.js';
 import type ModuleManager from './module.js';
-import type { Expr, FunExpr } from './expr/index.js';
+import { Expr, fromDataValue, FunExpr } from './expr/index.js';
 import type Namespace from './namespace.js';
 import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
 
@@ -63,7 +63,9 @@ export class Value {
      * @param ctx compilation context
      * @param fun function export body
      */
-    out?(ctx: ModuleManager, fun?: FunExpr): string
+    out(ctx: ModuleManager, fun?: FunExpr): string {
+        return fromDataValue([this]).map(e => e.out(ctx, fun)).join(' ');
+    }
 
     /**
      * Name for type of this value

@@ -15,7 +15,7 @@ import { FunExpr, FunLocalTracker } from './fun.js';
  * @param vs array of values
  * @returns array of expressions
  */
-export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx: Context): DataExpr[] {
+export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx?: Context): DataExpr[] {
     return vs.map(v => {
         // Already an expression
         if (v instanceof DataExpr)

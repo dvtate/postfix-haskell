@@ -70,6 +70,11 @@ export default class ModuleManager {
     private staticData: number[] = [];
 
     /**
+     * Indicates if data is const or user modifiyable
+     */
+    private staticDataConst: boolean[] = [];
+
+    /**
      * Primarily function exports. Compiled functions and stuff that go in main body of module
      */
     definitions: string[] = [];
@@ -157,6 +162,33 @@ export default class ModuleManager {
             typeName: type.getWasmTypeName(importId),
         });
         return importId;
+    }
+
+    /**
+     * Track helper necessary functions generated
+     */
+    definedHelpers: Set<string>;
+
+    /**
+     * Define a helper/utility function that we don't really care about
+     * If it's already been defined return early
+     * @param helperId identifier for the helper function
+     */
+    addHelper(helperId: string) {
+        if (this.definedHelpers.has(helperId))
+            return;
+
+        // Helper to swap 2 values on the stack
+        if (helperId.startsWith('__swap_')) {
+            const [t1, t2] = helperId.slice(7).split('_');
+            this.definitions.push(`(func $${helperId
+                } (param ${t1} ${t2}) (result ${t2} ${t1
+                }) (local.get 1) (local.get 0))`);
+            this.definedHelpers.add(helperId);
+            return;
+        }
+
+        throw new Error('invalid helper: ' + helperId);
     }
 
     /**
@@ -269,17 +301,17 @@ export default class ModuleManager {
      * @returns - memory address for start of region
      */
     addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string, isConst = false): number {
-        // TODO OPTIMIZATION we should segregate strings vs non-string static data
+        // TODO OPTIMIZATION we should segregate strings vs non-string static data (also const vs non-const)
 
         // Convert data to byte array
         const bytes = ModuleManager.toByteArray(data);
 
         // Check to see if same value already exists
-        if (isConst && this.optLevel >= 1)
+        if (isConst && this.optLevel >= 2)
             for (let i = 0; i < this.staticData.length; i++) {
                 let j = 0;
                 for (; j < bytes.length; j++)
-                    if (this.staticData[i + j] !== bytes[j])
+                    if (this.staticData[i + j] !== bytes[j] || !this.staticDataConst[i + j])
                         break;
 
                 // The data already exists
@@ -290,6 +322,7 @@ export default class ModuleManager {
         // Append to static data
         const ret = this.staticData.length + (this.noRuntime ? 0 : this.stackSize);
         this.staticData.push(...bytes);
+        this.staticDataConst.push(...new Array(bytes.length).fill(isConst));
         return ret;
     }
 
