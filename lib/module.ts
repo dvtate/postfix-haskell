@@ -173,8 +173,9 @@ export default class ModuleManager {
      * Define a helper/utility function that we don't really care about
      * If it's already been defined return early
      * @param helperId identifier for the helper function
+     * @depricated
      */
-    addHelper(helperId: string) {
+    addHelper(helperId: string): void {
         if (this.definedHelpers.has(helperId))
             return;
 

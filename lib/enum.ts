@@ -5,6 +5,7 @@ import Namespace from './namespace.js';
 import type Context from './context.js';
 import * as error from './error.js';
 import * as expr from './expr/index.js';
+import ModuleManager from './module.js';
 
 /**
  * User accessible Enum base type value
@@ -93,6 +94,10 @@ export class EnumValue extends value.Value {
 
     toExpr() {
         return new expr.EnumConstructor(this.token, this.value, this.getEnumClassType());
+    }
+
+    out(ctx: ModuleManager, fun: expr.FunExpr) {
+        return this.toExpr().out(ctx, fun);
     }
 
     // ; // TOOD should have same interface as the Exprs

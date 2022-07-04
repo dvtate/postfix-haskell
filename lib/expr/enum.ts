@@ -1,11 +1,13 @@
 import * as types from '../datatypes.js';
-import type * as value from '../value.js';
+import * as value from '../value.js';
 import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
 import type { FunExpr } from './fun.js';
-import { constructGc } from './gc_util.js';
+import { constructGc, loadRef } from './gc_util.js';
 import { SyntaxError } from '../error.js';
+import { DependentLocalExpr, fromDataValue } from './util.js';
+import WasmNumber from '../numbers.js';
 
 export class EnumContainsCheckExpr extends DataExpr {
     _datatype: types.ClassOrType<types.PrimitiveType> = types.PrimitiveType.Types.I32;
@@ -40,15 +42,23 @@ export class EnumContainsCheckExpr extends DataExpr {
 }
 
 export class EnumGetExpr extends DataExpr {
-    declare _datatype: types.RefType<any>;
+    declare _datatype: types.RefType<types.DataType>;
 
-    enumExpr: UnknownEnumExpr | EnumConstructor;
-
-    out(ctx: ModuleManager, fun?: FunExpr) {
-        return 'todo';
+    constructor(
+        token: LexerToken,
+        public enumExpr: UnknownEnumExpr | EnumConstructor,
+        dt: types.EnumClassType<types.DataType>
+    ) {
+        super(token, dt.type);
     }
 
-    children(): Expr[] { return null; }
+    out(ctx: ModuleManager, fun?: FunExpr) {
+        return this.enumExpr.out(ctx, fun)
+            + '(drop)'
+            + loadRef(new types.RefType(this.token, this._datatype.type), fun);
+    }
+
+    children(): Expr[] { return this.enumExpr.children(); }
 }
 
 export class UnknownEnumExpr extends DataExpr {
@@ -77,12 +87,20 @@ export class UnknownEnumExpr extends DataExpr {
  * Used to construct a gc'd object and reference it via enum
  */
 export class EnumConstructor extends DataExpr {
-    constructor(token: LexerToken, public knownValue: value.Value, datatype: types.EnumClassType<types.DataType>) {
+    // outExprs: [value.NumberValue, DependentLocalExpr];
+    declare _datatype: types.EnumClassType<types.DataType>;
+    constructor(
+        token: LexerToken,
+        public knownValue: value.Value | DataExpr[],
+        datatype: types.EnumClassType<types.DataType>
+    ) {
         super(token, datatype);
     }
 
     out(ctx: ModuleManager, fun?: FunExpr): string {
-        return constructGc(this.knownValue as DataExpr, ctx, fun);
+        if (this.knownValue instanceof value.Value)
+            this.knownValue = fromDataValue([this.knownValue]);
+        return `\n\t${constructGc(this.knownValue, this.datatype, ctx, fun)}(i32.const ${this._datatype.index})`;
     }
 
     children(): Expr[] {
@@ -96,4 +114,10 @@ export class EnumConstructor extends DataExpr {
 
 
 // export class EnumMatch extends Expr {
+
+//     results: DependentLocalExpr[];
+
+//     constructor(token: LexerToken, public branches) {
+//         super(token);
+//     }
 // }

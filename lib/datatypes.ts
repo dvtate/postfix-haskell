@@ -656,6 +656,7 @@ export class RefType<T extends DataType> extends DataType {
      * @override
      */
     flatPrimitiveList(): RefType<DataType>[] {
+        // This should just give i32. For caller to get this functionality they should have to call this.type.flatPrimitiveList()
         let offset = 0;
         if (!RefType.noRecFlatPrimitiveList) {
             RefType.noRecFlatPrimitiveList = true;
@@ -824,6 +825,10 @@ export class EnumBaseType extends DataType {
         return `(:\n${
             Object.entries(this.subtypes).map(([sym, t]) => `${t.toString()} $${sym} =`).join('\n')
         }\n) enum`
+    }
+
+    sortedSubtypes() {
+        return Object.values(this.subtypes).sort((a, b) => a.index - b.index);
     }
 }
 

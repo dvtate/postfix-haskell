@@ -160,11 +160,10 @@ export default class Fun {
                 !(ret instanceof Array || ret instanceof error.SyntaxError)
                 && (ret instanceof expr.Expr
                     || (ret instanceof value.DataValue && ret.value.value != BigInt(0)))
-                && [ret, this.actions[i]])
+                && [ret, this.actions[i], this.conditions[i]])
             .filter(b => !!b)) as Array<[value.DataValue | expr.DataExpr, Macro]>;
 
         // No truthy condition found
-        // TODO non-const-expr
         if (branches.length === 0) {
             console.error("stack", ctx.stack);
             return new error.SyntaxError(`${this.name}: no matching function case`, [token], ctx);
@@ -194,10 +193,18 @@ export default class Fun {
         // Runtime checks... fmllll
         // Unfortunately we have to trace in order to construct the branch expression
 
+        // TODO need to make inputs match patterns in conditions
+
         // Trace ios, filter recursive branches
         const traceResults = branches
             .slice(i)
-            .map(b => ctx.traceIO(b[1], b[1].token || token))
+            .map(b => {
+                // change stack types
+                const stackCp = ctx.stack.slice();
+                const ret = ctx.traceIO(b[1], b[1].token || token)
+                // revert stack types
+                return ret;
+            })
             .filter(io => io !== null);
 
         // Look for an error

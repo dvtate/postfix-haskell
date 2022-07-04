@@ -703,8 +703,94 @@ const operators : MacroOperatorsSpec = {
                 ctx.push(ret);
             else
                 return ret;
-        }
-    }
+        },
+    },
+
+    'match' : {
+        action: (ctx, token) => {
+            // Get arg
+            if (ctx.stack.length === 0)
+                return ['no arg branches given to `match`'];
+            const arg = ctx.pop();
+            if (!(arg instanceof value.TupleValue))
+                return ['expected a tuple of macro branches'];
+            if (arg.value.length === 0)
+                return ['empty tuple passed to `match`'];
+
+            // Check first instance of
+            const firstDt = arg.value[0].datatype;
+            let enumType: types.EnumBaseType;
+            let elseCase: Macro = null;
+            if (!(firstDt instanceof types.ArrowType))
+                return new error.SyntaxError(
+                    'All values in tuple should be typed macros',
+                    [firstDt.token, arg.value[0].token, arg.token, token],
+                    ctx,
+                );
+            if (firstDt.inputTypes[0] instanceof types.EnumClassType)
+                enumType = firstDt.inputTypes[0].parent;
+            else if (firstDt.inputTypes[0] instanceof types.EnumBaseType)
+                enumType = firstDt.inputTypes[0];
+            else
+                return new error.SyntaxError(
+                    'Input types must start with ',
+                    [firstDt.inputTypes[0].token, firstDt.token, arg.value[0].token, arg.token, token],
+                    ctx,
+                );
+
+            // Populate the cases
+            const indiciesFound: Macro[] = new Array(Object.keys(enumType.subtypes).length);
+            for (const v of arg.value) {
+                if (!(v instanceof Macro))
+                    return new error.SyntaxError(
+                        'all values in tuple passed to match must be macros',
+                        [v.token, arg.token, token],
+                        ctx,
+                    );
+
+                // Acccept typed macros
+                const dt = v.datatype;
+                if (dt instanceof types.SyntaxType && dt.valueType === value.ValueType.Macro) {
+                    if (elseCase) {
+                        return new error.SyntaxError(
+                            'Too many else cases',
+                            [v.token, token],
+                            ctx,
+                        );
+                    } else {
+                        elseCase = v;
+                        continue;
+                    }
+                } else if (!(dt instanceof types.ArrowType))
+                    return new error.SyntaxError(
+                        'All macros in tuple passed to match should be typed macros',
+                        [firstDt.token, arg.value[0].token, arg.token, token],
+                        ctx,
+                    );
+
+                // Branch on first input type
+                if (dt.inputTypes[0] instanceof types.EnumBaseType)
+                    if (elseCase)
+                        return new error.SyntaxError(
+                            'Too many else cases',
+                            [v.token, token],
+                            ctx,
+                        );
+                    else
+                        elseCase = v;
+                else if (dt.inputTypes[0] instanceof types.EnumClassType)
+                    indiciesFound[dt.inputTypes[0].index] = v;
+                else
+                    return new error.SyntaxError(
+                        'Expected first input type to be an enum',
+                        [dt.inputTypes[0].token, v.token, token],
+                        ctx,
+                    );
+            }
+
+            // construct enum match expr
+        },
+    },
 };
 
 // Global functions that the user can overload

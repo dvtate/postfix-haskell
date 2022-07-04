@@ -8,7 +8,7 @@ import ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
 import { EnumConstructor } from './enum.js';
-import { FunExpr, FunLocalTracker } from './fun.js';
+import { FunExpr, FunLocalTracker, FunLocalTrackerStored } from './fun.js';
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -208,7 +208,9 @@ export class TeeExpr extends DataExpr {
 
         if (this.locals === null) {
             this.locals = fun.addLocal(this._datatype);
-            if (this.locals.length === 1 && this.locals[0].datatype instanceof types.PrimitiveType)
+            if (this.locals.length === 1
+                && this.locals[0].datatype instanceof types.PrimitiveType
+                && this.locals[0] instanceof FunLocalTrackerStored)
                 return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0].index})`;
             else
                 return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)

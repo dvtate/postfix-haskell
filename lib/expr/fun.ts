@@ -13,7 +13,8 @@ import { Expr, DataExpr } from './expr.js';
 //     RVOffset,   // offset from rv stack pointer
 // }
 
-export class FunLocalTracker {
+
+export abstract class FunLocalTracker {
     // static Type = FunLocalStorageMethod;
     // method: FunLocalStorageMethod;
 
@@ -21,10 +22,21 @@ export class FunLocalTracker {
 
     constructor(
         public fun: FunExpr,
-        public datatype: types.PrimitiveType
-        | types.RefType<types.DataType>,
+        public datatype: types.PrimitiveType | types.RefType<types.DataType>,
+    ) {
+    }
+
+    abstract getLocalWat(getValue?: boolean): string;
+    abstract setLocalWat(): string;
+}
+
+export class FunLocalTrackerStored extends FunLocalTracker {
+    constructor(
+        fun: FunExpr,
+        datatype: types.PrimitiveType | types.RefType<types.DataType>,
         public index: number,
     ) {
+        super(fun, datatype);
         if (datatype instanceof types.PrimitiveType) {
             // Use WASM Locals
             // this.method = FunLocalStorageMethod.Prim;
@@ -115,6 +127,23 @@ export class FunLocalTracker {
     }
 }
 
+export class FunLocalTrackerConstexpr extends FunLocalTracker {
+    constructor(
+        fun: FunExpr,
+        datatype: types.PrimitiveType,
+        public wat: string,
+        watType = wat.slice(1, 4)
+    ) {
+        super(fun, datatype);
+    }
+
+    getLocalWat(getValue?: boolean): string {
+        return this.wat;
+    }
+    setLocalWat(): string {
+        throw '(drop)';
+    }
+}
 
 /**
  * `(func ... )` expressions. Compilation contexts
@@ -190,18 +219,30 @@ export abstract class FunExpr extends Expr {
         // Potentially packed values
         if (type instanceof types.TupleType)
             return type.flatPrimitiveList().map(p =>
-                new FunLocalTracker(this, p, this.locals.length));
+                new FunLocalTrackerStored(this, p, this.locals.length));
 
         // Referenced values
         if (type instanceof types.RefType) {
             const ret = type.flatPrimitiveList().map(p =>
-                new FunLocalTracker(this, p, this.rvStackOffset));
+                new FunLocalTrackerStored(this, p, this.rvStackOffset));
             this.rvStackOffset += 4;
             return ret;
         }
 
+        // Unknown enum type
+        if (type instanceof types.EnumBaseType) {
+            const ret = [
+                new FunLocalTrackerStored(this, types.PrimitiveType.Types.I32, this.locals.length),
+                new FunLocalTrackerStored(this, new types.RefType(type.token, types.PrimitiveType.Types.I32), this.rvStackOffset),
+            ];
+            this.rvStackOffset += 4;
+            return ret;
+        }
+
+        if (type instanceof types.EnumClassType)
+
         if (type instanceof types.PrimitiveType)
-            return [new FunLocalTracker(this, type, this.locals.length)];
+            return [new FunLocalTrackerStored(this, type, this.locals.length)];
 
         // if (type instanceof types.ArrowType)
         //     return [this.locals.push(types.PrimitiveType.Types.I32) - 1];
@@ -214,7 +255,6 @@ export abstract class FunExpr extends Expr {
     /**
      * Generate webassembly to capture locals from stack
      * @param locals local trackers for locals to set
-     * @param args @depricated passed tracker method
      * @returns webassembly text
      */
     setLocalWat(locals: FunLocalTracker[]): string {
@@ -223,7 +263,8 @@ export abstract class FunExpr extends Expr {
 
     /**
      * Generate webassembly to push locals onto the stack
-     * @param indicies locals to push onto stack
+     * @param locals locals to push onto stack
+     * @param args @depricated passed tracker method
      * @returns webassembly text
      */
     getLocalWat(locals: FunLocalTracker[], ...args: any[]): string {
