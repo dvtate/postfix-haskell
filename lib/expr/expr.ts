@@ -1,9 +1,7 @@
 import * as value from '../value.js';
 import * as types from '../datatypes.js';
-import * as error from '../error.js';
 import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
-import type Context from '../context.js';
 import type { FunExpr } from './fun.js';
 
 // TODO expr constructors should be augmented to also take in Context object
@@ -17,7 +15,6 @@ export interface Compileable {
     children(): Expr[];
     datatype?: types.DataType;
 }
-
 
 /**
  * This stores expressions that we can reason about

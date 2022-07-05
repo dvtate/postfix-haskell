@@ -199,10 +199,10 @@ export default class Fun {
         const traceResults = branches
             .slice(i)
             .map(b => {
-                // change stack types
-                const stackCp = ctx.stack.slice();
+                // Change stack types
+                // const stackCp = ctx.stack.slice();
                 const ret = ctx.traceIO(b[1], b[1].token || token)
-                // revert stack types
+                // Revert stack types
                 return ret;
             })
             .filter(io => io !== null);

@@ -1,15 +1,16 @@
-import WasmNumber from './numbers.js';
+import type WasmNumber from './numbers.js';
 import type { IdToken, LexerToken } from './scan.js';
 import type Context from './context.js';
 import type ModuleManager from './module.js';
-import { Expr, fromDataValue, FunExpr } from './expr/index.js';
+import type * as expr from './expr/index.js';
 import type Namespace from './namespace.js';
 import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
 
-/*
+// TODO should move this to /expr/value.ts so that cyclic imports are less anal
+
+/**
  * In this context, Values are like nodes on an AST, but also used to simplify constexprs/partial evaluation
  */
-
 
 /**
  * Enum to represent what syntactic type is currently on the stack
@@ -63,9 +64,10 @@ export class Value {
      * @param ctx compilation context
      * @param fun function export body
      */
-    out(ctx: ModuleManager, fun?: FunExpr): string {
-        return fromDataValue([this]).map(e => e.out(ctx, fun)).join(' ');
-    }
+    out?(ctx: ModuleManager, fun?: expr.FunExpr): string;
+    // out(ctx: ModuleManager, fun?: expr.FunExpr): string {
+    //     return expr.fromDataValue([this]).map(e => e.out(ctx, fun)).join(' ');
+    // }
 
     /**
      * Name for type of this value
@@ -137,7 +139,7 @@ export class NumberValue extends DataValue {
     /**
      * See code in expr/expr.ts
      */
-    children(): Expr[] {
+    children(): expr.Expr[] {
         return [];
     }
 
@@ -181,7 +183,11 @@ export class TupleValue extends DataValue {
         super(token, type, values);
     }
 
-    out(ctx: ModuleManager, fun?: FunExpr) {
+    children(): expr.Expr[] {
+        // @ts-ignore
+        return [].concat(...this.value.map(v => v.children && v.children()));
+    }
+    out(ctx: ModuleManager, fun?: expr.FunExpr) {
         return this.value.map(v => v.out(ctx, fun)).join('');
     }
 

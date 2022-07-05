@@ -1,6 +1,5 @@
 import * as types from '../datatypes.js';
 import type ModuleManager from '../module.js';
-import type { DataExpr } from './expr.js';
 import type { FunExpr, FunLocalTracker } from './fun.js';
 
 

@@ -3,7 +3,6 @@ import * as error from '../error.js';
 import * as value from '../value.js';
 import * as types from '../datatypes.js';
 import { Expr, DataExpr } from './expr.js';
-
 import ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
@@ -42,6 +41,14 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx?: Context):
         [],
     );
 }
+
+// Provide default implementation of .out for values
+// TODO this is ghetto... fuck ESM
+// TODO this should go in Value class
+value.Value.prototype.out = function (ctx: ModuleManager, fun?: FunExpr): string {
+    return fromDataValue([this]).map(e => e.out(ctx, fun)).join(' ');
+};
+
 
 /**
  * Constant value that we're treating as an Expr
@@ -428,5 +435,19 @@ export class DummyDataExpr extends DataExpr {
     }
     children(): Expr[] {
         throw new Error('Invalid Compile-Time only Expr: ' + this.constructor.name);
+    }
+}
+
+/**
+ * Wrapper around another expr with possibly different datatype
+ */
+export class ProxyExpr extends DataExpr {
+    constructor(token: LexerToken, public expr: DataExpr, dt: types.DataType = expr.datatype) {
+        super(token, dt);
+    }
+    children() { return this.expr.children(); }
+    out(ctx: ModuleManager, fun: FunExpr) {
+        this._isCompiled = true;
+        return this.expr.out(ctx, fun);
     }
 }

@@ -6,8 +6,7 @@ import { Expr, DataExpr } from './expr.js';
 import type { FunExpr } from './fun.js';
 import { constructGc, loadRef } from './gc_util.js';
 import { SyntaxError } from '../error.js';
-import { DependentLocalExpr, fromDataValue } from './util.js';
-import WasmNumber from '../numbers.js';
+import { fromDataValue } from './util.js';
 
 export class EnumContainsCheckExpr extends DataExpr {
     _datatype: types.ClassOrType<types.PrimitiveType> = types.PrimitiveType.Types.I32;
@@ -98,9 +97,12 @@ export class EnumConstructor extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun?: FunExpr): string {
-        if (this.knownValue instanceof value.Value)
-            this.knownValue = fromDataValue([this.knownValue]);
-        return `\n\t${constructGc(this.knownValue, this.datatype, ctx, fun)}(i32.const ${this._datatype.index})`;
+        const v = this.knownValue instanceof value.Value
+            ? fromDataValue([this.knownValue])
+            : this.knownValue;
+        return `\n\t${v.map(v => v.out(ctx, fun)).join(' ')
+            }\n\t${constructGc(this.datatype, ctx, fun)
+            }(i32.const ${this._datatype.index})`;
     }
 
     children(): Expr[] {

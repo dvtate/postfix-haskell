@@ -132,12 +132,12 @@ export class FunLocalTrackerConstexpr extends FunLocalTracker {
         fun: FunExpr,
         datatype: types.PrimitiveType,
         public wat: string,
-        watType = wat.slice(1, 4)
     ) {
         super(fun, datatype);
+        this.watTypename = wat.slice(1, 4);
     }
 
-    getLocalWat(getValue?: boolean): string {
+    getLocalWat(): string {
         return this.wat;
     }
     setLocalWat(): string {
