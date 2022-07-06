@@ -85,7 +85,7 @@ export default class Context {
     trace: value.Value[] = [];
 
     /// Tracking for traceIO and recursion stuff
-    traceResults: Map<value.Value, TraceResultTracker> = new Map();
+    private traceResults: Map<value.Value, TraceResultTracker> = new Map();
 
     /// Stack tracing counters
     initialStackSize = 0;

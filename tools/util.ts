@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import * as lex from '../lib/scan.js';
 
-interface FileSnapshot {
+export interface FileSnapshot {
     line: string;
     lineNumber: number;
     lineOffset: number;
@@ -24,7 +24,7 @@ export function fileLocate(file: string, pos: number): FileSnapshot {
 }
 
 /**
- * Could be defined in error.ts or an js object
+ * Could be defined in error.ts or a js object
  */
 interface CompileError extends Error {
     message: string;
