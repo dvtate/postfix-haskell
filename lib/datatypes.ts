@@ -3,10 +3,13 @@ import { Value, ValueType } from './value.js';
 import WasmNumber from './numbers.js';
 import * as error from './error.js';
 
+/**
+ * Some methods available on types representable on hardware
+ */
 interface DataTypeInterface {
     // See documentation in DataType
-    getWasmTypeName(name?: string): string;
     flatPrimitiveList(): Array<PrimitiveType | RefType<DataType>>;
+    getWasmTypeName(name?: string): string;
     isUnit(): boolean;
 }
 
@@ -123,9 +126,6 @@ export class NeverType extends Type implements DataTypeInterface {
         return this.types.includes(type);
     }
 
-    /**
-     * @override
-     */
     flatPrimitiveList(): PrimitiveType[] {
         throw new error.SyntaxError('UnionType can only exist at compile-time', [this.token]);
     }
@@ -201,13 +201,6 @@ export abstract class DataType extends SyntaxType implements DataTypeInterface {
         super(token, ValueType.Data);
     }
 
-    /**
-     * Gives the wasm typename for given type
-     * @returns - typename
-     * @virtual
-     */
-    abstract getWasmTypeName(name?: string): string;
-
     // TODO this only really makes sense for tuples and classes of them...
     /**
      * Get a flat list of primitive types that constitute this type
@@ -218,11 +211,22 @@ export abstract class DataType extends SyntaxType implements DataTypeInterface {
     abstract flatPrimitiveList(): Array<PrimitiveType | RefType<DataType>>;
 
     /**
+     * Gives the wasm typename for given type
+     * @returns - typename
+     * @virtual
+     */
+    getWasmTypeName(name?: string): string {
+        return this.flatPrimitiveList().map(t => t instanceof PrimitiveType ? t.name : 'i32').join(' ');
+    }
+
+    /**
      * Does this type hold a value in wasm?
      * @returns false if the value doesn't carry a value
      * @virtual
      */
-    abstract isUnit(): boolean;
+    isUnit(): boolean {
+        return this.flatPrimitiveList().length === 0;
+    }
 }
 
 /**
@@ -372,16 +376,16 @@ export class TupleType extends DataType {
             return new error.SyntaxError('Unexpected compile-only type', [t.token, this.token]);
     }
 
-    /**
-     * @override
-     */
-    getWasmTypeName(name?: string) {
-        const err = this.assertIsDataType();
-        if (err)
-            throw err;
+    // /**
+    //  * @override
+    //  */
+    // getWasmTypeName(name?: string) {
+    //     const err = this.assertIsDataType();
+    //     if (err)
+    //         throw err;
 
-        return (this.types as DataType[]).map(t => t.getWasmTypeName(name)).join(' ');
-    }
+    //     return (this.types as DataType[]).map(t => t.getWasmTypeName(name)).join(' ');
+    // }
 
     /**
      * @override
@@ -531,10 +535,11 @@ export class PrimitiveType extends DataType {
  * Datatype to describe function/macros
  */
 export class ArrowType extends DataType {
-    constructor(token: LexerToken,
+    constructor(
+        token: LexerToken,
         public inputTypes: Type[],
-        public outputTypes?: Type[])
-    {
+        public outputTypes?: Type[]
+    ) {
         super(token);
     }
 
@@ -618,7 +623,6 @@ export class ArrowType extends DataType {
  * see: planning/brainstorm/ref_stack_vars.md
  */
 export class RefType<T extends DataType> extends DataType {
-
     /**
      * @param token location in source code
      * @param type type of value being referenced
@@ -656,6 +660,7 @@ export class RefType<T extends DataType> extends DataType {
      * @override
      */
     flatPrimitiveList(): RefType<DataType>[] {
+        // TODO this is bad, should just be [I32]
         // This should just give i32. For caller to get this functionality they should have to call this.type.flatPrimitiveList()
         let offset = 0;
         if (!RefType.noRecFlatPrimitiveList) {
@@ -740,6 +745,7 @@ export class RefRefType<T extends DataType> extends DataType {
     }
 
     flatPrimitiveList(): RefType<DataType>[] {
+        // TODO this is bad, should just be [I32]
         let offset = 0;
         return this.type.flatPrimitiveList().map(t => {
             const oldOffset = offset;
@@ -862,7 +868,6 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
     }
     isUnit(): boolean {
         return false;
-        // return this.type.isUnit();
     }
     flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         // Is this right?
