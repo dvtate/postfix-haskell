@@ -17,11 +17,14 @@ import type { FunExpr, FunLocalTracker } from './fun.js';
 }
 
 /**
+ * Create the reference bitfield used by garbage collector when tracing
  *
- * @param dt
- * @param fpl
- * @param sizes
- * @returns
+ * See the documentation on linear memory and garbage collection in planning/
+ *
+ * @param dt datatype to add bitfield for
+ * @param fpl primitive components for the datatype dt.flatPrimitiveList()
+ * @param sizes sizes for the components of the datatype
+ * @returns bits constituting the bitfield
  */
 export function genGcBitfield(
     dt: types.DataType,
@@ -33,7 +36,8 @@ export function genGcBitfield(
         t instanceof types.PrimitiveType
             ? sizes[i] === 4
                 ? '0' : '00'
-            : '1').join('');
+            : '1'
+    ).join('');
 
     // Converty bitstring to int8 array
     const ret: number[] = [];
@@ -52,17 +56,19 @@ export function genGcBitfield(
     return new Uint8Array(ret);
 }
 
-
 /**
  * Construct a gc'd object
- * @param e expression for object
  * @param ctx compiler context
  * @param fun function containing object construction
  * @returns wat
  */
 export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr): string {
-    // Get reference to gc'd object
+    // No reason to allocate object for unit values
     const fpl = dt.flatPrimitiveList();
+    if (fpl.length == 0)
+        return '(call $__ref_stack_push (i32.const 0))';
+
+    // Get reference to gc'd object
     const fpSizes = fpl.map(primDtSize);
     const bf = genGcBitfield(dt, fpl, fpSizes);
     const bfAddr = ctx.addStaticData(bf, true);
@@ -97,8 +103,7 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
     });
 
     // Push gc reference onto ref stack for safety
-    ret += `(call $__ref_stack_push ${local.getLocalWat()})`;
-    return ret;
+    return ret + `(call $__ref_stack_push ${local.getLocalWat()})`;
 }
 
 export function loadRef(

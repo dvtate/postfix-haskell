@@ -66,7 +66,7 @@ const operators : MacroOperatorsSpec = {
                 // Single identifier to pull from stack
                 syms = [sym];
             } else if (sym instanceof value.TupleValue) {
-                // TUple of identifiers
+                // Tuple of identifiers
                 if (sym.value.some(sym => !(sym instanceof value.IdValue)))
                     return ['expected a tuple of identifiers'];
                 if (ctx.stack.length < sym.value.length)
@@ -721,26 +721,36 @@ const operators : MacroOperatorsSpec = {
             const firstDt = arg.value[0].datatype;
             let enumType: types.EnumBaseType;
             let elseCase: Macro = null;
-            if (!(firstDt instanceof types.ArrowType))
-                return new error.SyntaxError(
-                    'All values in tuple should be typed macros',
-                    [firstDt.token, arg.value[0].token, arg.token, token],
-                    ctx,
-                );
-            if (firstDt.inputTypes[0] instanceof types.EnumClassType)
-                enumType = firstDt.inputTypes[0].parent;
-            else if (firstDt.inputTypes[0] instanceof types.EnumBaseType)
-                enumType = firstDt.inputTypes[0];
-            else
-                return new error.SyntaxError(
-                    'Input types must start with ',
-                    [firstDt.inputTypes[0].token, firstDt.token, arg.value[0].token, arg.token, token],
-                    ctx,
-                );
+            let nInputs: number;
+            if (!(firstDt instanceof types.ArrowType) ) {
+                if (!(firstDt instanceof types.SyntaxType && arg.value[0].type !== value.ValueType.Macro))
+                    return new error.SyntaxError(
+                        'All values in tuple should be typed macros',
+                        [firstDt.token, arg.value[0].token, arg.token, token],
+                        ctx,
+                    );
+                elseCase = arg.value[0].value;
+            } else {
+                const l = firstDt.inputTypes.length - 1;
+                if (firstDt.inputTypes[l] instanceof types.EnumClassType) {
+                    enumType = (firstDt.inputTypes[l] as types.EnumClassType<any>).parent;
+                } else if (firstDt.inputTypes[l] instanceof types.EnumBaseType) {
+                    enumType = firstDt.inputTypes[l] as types.EnumBaseType;
+                    elseCase = arg.value[0].value;
+                } else {
+                    return new error.SyntaxError(
+                        'Input types must end with an enum type',
+                        [firstDt.inputTypes[l].token, firstDt.token, arg.value[0].token, arg.token, token],
+                        ctx,
+                    );
+                }
+                nInputs = firstDt.inputTypes.length;
+            }
 
             // Populate the cases
-            const indiciesFound: Macro[] = new Array(Object.keys(enumType.subtypes).length);
-            for (const v of arg.value) {
+            const subtypes = enumType.sortedSubtypes();
+            const indiciesFound: Macro[] = new Array(subtypes.length);
+            for (const v of arg.value.slice(1)) {
                 if (!(v instanceof Macro))
                     return new error.SyntaxError(
                         'all values in tuple passed to match must be macros',
@@ -749,6 +759,7 @@ const operators : MacroOperatorsSpec = {
                     );
 
                 // Acccept typed macros
+                // Untyped macro is else case
                 const dt = v.datatype;
                 if (dt instanceof types.SyntaxType && dt.valueType === value.ValueType.Macro) {
                     if (elseCase) {
@@ -763,13 +774,17 @@ const operators : MacroOperatorsSpec = {
                     }
                 } else if (!(dt instanceof types.ArrowType))
                     return new error.SyntaxError(
-                        'All macros in tuple passed to match should be typed macros',
+                        'All values in tuple passed to match should be macros',
                         [firstDt.token, arg.value[0].token, arg.token, token],
                         ctx,
                     );
 
+                if (!nInputs)
+                    nInputs = dt.inputTypes.length;
+
                 // Branch on first input type
-                if (dt.inputTypes[0] instanceof types.EnumBaseType)
+                const l = dt.inputTypes.length - 1;
+                if (dt.inputTypes[l] instanceof types.EnumBaseType)
                     if (elseCase)
                         return new error.SyntaxError(
                             'Too many else cases',
@@ -778,17 +793,43 @@ const operators : MacroOperatorsSpec = {
                         );
                     else
                         elseCase = v;
-                else if (dt.inputTypes[0] instanceof types.EnumClassType)
-                    indiciesFound[dt.inputTypes[0].index] = v;
+                else if (dt.inputTypes[l] instanceof types.EnumClassType)
+                    indiciesFound[(dt.inputTypes[l] as types.EnumClassType<any>).index] = v;
                 else
                     return new error.SyntaxError(
                         'Expected first input type to be an enum',
-                        [dt.inputTypes[0].token, v.token, token],
+                        [dt.inputTypes[l].token, v.token, token],
                         ctx,
                     );
             }
 
-            // TODO construct enum match expr
+            let outputs: value.Value[][];
+            const subtypeBranchBindings: number[] = new Array(subtypes.length);
+            let outputDt: types.ArrowType;
+            let elseOutputsInd = -1;
+            for(let i = 0; i < subtypes.length; i++) {
+                if (!indiciesFound[i]) {
+                    if (!elseCase)
+                        return [`Missing \`match\` case for subtype ${subtypes[i].name}, For else case, use enum base type or an untyped macro.`];
+                    if (elseOutputsInd < 0) {
+                        const trs =  ctx.traceIO(elseCase, token);
+                        if (trs instanceof error.SyntaxError)
+                            return trs;
+                        elseOutputsInd = outputs.push(trs.gives) - 1;
+                        subtypeBranchBindings[i] = elseOutputsInd;
+                        if (outputDt) {
+                            const t = trs.toArrowType(token);
+                            if (!outputDt.check(t))
+                                return new error.SyntaxError(
+                                    'Incompatible macro types in tuple passed to match',
+                                    []
+                                )
+                        }
+                    } else {
+
+                    }
+                }
+            }
         },
     },
 };

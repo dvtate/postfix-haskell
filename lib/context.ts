@@ -29,25 +29,31 @@ const wabtProm = wabtMod();
 // Return Types for Context.traceIO() method
 export class TraceResults {
     /**
-     * Consumed by operation
+     * @param takes Consumed by operation
+     * @param gives Results of operation
+     * @param delta Change in stack size
      */
-    takes: value.Value[];
+    constructor(
+        public takes: value.Value[],
+        public gives: value.Value[],
+        public delta: number,
+    ) {}
 
     /**
-     * Results of operation
+     * Generate arrow type representative of this
+     * @param token
+     * @returns
      */
-    gives: value.Value[];
-
-    /**
-     * Difference in lengths
-     */
-    delta: number;
-
-    constructor(takes: value.Value[], gives: value.Value[], delta: number) {
-        this.takes = takes;
-        this.gives = gives;
-        this.delta = delta;
+    toArrowType(token: LexerToken) {
+        return new types.ArrowType(
+            token,
+            this.takes.map(v => v.datatype),
+            this.gives.map(v => v.datatype),
+        );
     }
+
+    // TODO most of the logic in Fun.action() should be moved to methods here
+    ;
 }
 
 /**
@@ -209,11 +215,12 @@ export default class Context {
 
     /**
      * Store value into identifier
-     *
-     * @param id - identifier
-     * @param value - value to set identifier to
+     * @param id identifier
+     * @param v value to set identifier to
+     * @param token location in code
+     * @returns void or error
      */
-    setId(id: string[], v: value.Value, token: LexerToken) {
+    setId(id: string[], v: value.Value, token: LexerToken): void | error.SyntaxError {
         // Handle fast case first
         if (id.length == 1) {
             this.scopes[this.scopes.length - 1][id[0]] = v;

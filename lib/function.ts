@@ -237,8 +237,8 @@ export default class Fun {
 
         // Verify all branches give values of same types
         const first = ios[0].gives;
-        const givesInconsistent = ios.some(t =>
-            t.gives.some((v, i) =>
+        const givesInconsistent = ios.some(e =>
+            e.gives.some((v, i) =>
                 !wideCompat(first[i], v.datatype)));
         if (givesInconsistent) {
             console.error("ios", ios);
