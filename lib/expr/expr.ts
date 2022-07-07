@@ -98,7 +98,7 @@ export abstract class Expr extends value.Value {
 export abstract class DataExpr extends Expr {
     /**
      * @param token - location in code
-     * @param datatype - Datatype for value
+     * @param _datatype - Datatype for value
      */
     constructor(token: LexerToken, protected _datatype: types.DataType) {
         super(token);

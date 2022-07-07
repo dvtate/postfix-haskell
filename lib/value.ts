@@ -86,6 +86,14 @@ export class Value {
     set datatype(t: typeof this._datatype) {
         this._datatype = t;
     }
+
+    get expensive() {
+        return false;
+    }
+
+    children(): expr.Expr[] {
+        return [];
+    }
 }
 
 /**

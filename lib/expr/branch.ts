@@ -126,10 +126,11 @@ export class BranchExpr extends Expr {
     out(ctx: ModuleManager, fun: FunExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
-        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n');
+        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n\t');
 
         // Compile body
         // Notice order of compilation from top to bottom so that locals are assigned before use
+        // TODO FIXME still not perfect... may need to convert tee-exprs
         const conds = new Array(this.conditions.length);
         const acts = new Array(this.actions.length);
         for (let i = this.conditions.length - 1; i >= 0; i--) {

@@ -52,8 +52,7 @@ export class TraceResults {
         );
     }
 
-    // TODO most of the logic in Fun.action() should be moved to methods here
-    ;
+    // TODO much of the logic in Fun.action() should be moved to methods here
 }
 
 /**

@@ -70,6 +70,8 @@ export class EnumValue extends value.Value {
      */
     constructor(token: LexerToken, v: value.Value, t: types.EnumClassType<types.DataType>) {
         super(token, value.ValueType.EnumK, v, t);
+        if (!t.type.check(v.datatype))
+            throw new error.SyntaxError('Enum instance incompatible types', [v.token, t.token, token]);
     }
 
     // Fix set and get methods

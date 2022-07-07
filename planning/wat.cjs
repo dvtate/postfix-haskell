@@ -31,13 +31,13 @@ const env = {
 WebAssembly.instantiate(bin, env).then(mod => {
 	// mod.instance.exports.main();
 
-	let start = performance.now();
-	mod.instance.exports.no_swap();
-	console.log('no swap: ', performance.now() - start);
+	// let start = performance.now();
+	// mod.instance.exports.no_swap();
+	// console.log('no swap: ', performance.now() - start);
 
-	start = performance.now();
-	mod.instance.exports.swap();
-	console.log('swap: ', performance.now() - start);
+	// start = performance.now();
+	// mod.instance.exports.swap();
+	// console.log('swap: ', performance.now() - start);
 
 	// // Test fac
 	// for (let i = 0n; i < 10n; i++)
@@ -47,5 +47,12 @@ WebAssembly.instantiate(bin, env).then(mod => {
 	// for (let i = -4; i < 5; i++)
 	// 	console.log(mod.instance.exports.abs(i));
 
+
+	console.log(0, '=>', mod.instance.exports.test(0));
+	console.log(1, '=>', mod.instance.exports.test(1));
+	console.log(2, '=>', mod.instance.exports.test(2));
+	console.log(3, '=>', mod.instance.exports.test(3));
+	console.log(4, '=>', mod.instance.exports.test(4));
+	console.log(5, '=>', mod.instance.exports.test(5));
 
 }).catch(e => console.error(e));

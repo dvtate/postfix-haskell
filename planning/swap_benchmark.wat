@@ -84,4 +84,23 @@
         end
     )
 
+    (func (export "test") (param i32) (result f32)
+        (block $branch (result f32)
+            (block
+                (block
+                    (block
+                        (block
+                            (br_table 1 2 3 0 (local.get 0))
+                        )
+                        unreachable
+                    )
+                    f32.const 1
+                    br $branch
+                )
+                f32.const 2
+                br $branch
+            )
+            f32.const 3
+        )
+    )
 )

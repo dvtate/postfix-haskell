@@ -857,8 +857,17 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
      * @override
      */
     check(type: Type): boolean {
+        // Wildcard type
         if (type instanceof AnyType)
             return true;
+
+        // Drop classes
+        if (type instanceof ClassType)
+            type = type.getBaseType();
+        if (!type)
+            return false;
+
+
         if (type === this.parent)
             return true;
         return type instanceof EnumClassType

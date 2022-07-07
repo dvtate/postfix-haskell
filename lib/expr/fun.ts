@@ -141,7 +141,7 @@ export class FunLocalTrackerConstexpr extends FunLocalTracker {
         return this.wat;
     }
     setLocalWat(): string {
-        throw '(drop)';
+        return '(drop)';
     }
 }
 
@@ -230,7 +230,7 @@ export abstract class FunExpr extends Expr {
         }
 
         // Unknown enum type
-        if (type instanceof types.EnumBaseType) {
+        if (type instanceof types.EnumBaseType || type instanceof types.EnumClassType) {
             const ret = [
                 new FunLocalTrackerStored(this, types.PrimitiveType.Types.I32, this.locals.length),
                 new FunLocalTrackerStored(this, new types.RefType(type.token, types.PrimitiveType.Types.I32), this.rvStackOffset),
@@ -238,8 +238,15 @@ export abstract class FunExpr extends Expr {
             this.rvStackOffset += 4;
             return ret;
         }
-
-        if (type instanceof types.EnumClassType)
+        // Known enum type
+        if (type instanceof types.EnumClassType) {
+            const ret = [
+                new FunLocalTrackerConstexpr(this, types.PrimitiveType.Types.I32, `(i32.const ${type.index})`),
+                new FunLocalTrackerStored(this, new types.RefType(type.token, types.PrimitiveType.Types.I32), this.rvStackOffset),
+            ];
+            this.rvStackOffset += 4;
+            return ret;
+        }
 
         if (type instanceof types.PrimitiveType)
             return [new FunLocalTrackerStored(this, type, this.locals.length)];

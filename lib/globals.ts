@@ -11,7 +11,8 @@ import Fun from './function.js';
 import scan, { LexerToken, MacroToken } from './scan.js';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
 import { invokeAsm } from './asm.js';
-import { EnumNs } from './enum.js';
+import { EnumNs, EnumValue } from './enum.js';
+import { BranchInputExpr, EnumMatchExpr } from './expr/index.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -721,7 +722,7 @@ const operators : MacroOperatorsSpec = {
             const firstDt = arg.value[0].datatype;
             let enumType: types.EnumBaseType;
             let elseCase: Macro = null;
-            let nInputs: number;
+            let nInputs: number; // has to be at least 1
             if (!(firstDt instanceof types.ArrowType) ) {
                 if (!(firstDt instanceof types.SyntaxType && arg.value[0].type !== value.ValueType.Macro))
                     return new error.SyntaxError(
@@ -803,33 +804,116 @@ const operators : MacroOperatorsSpec = {
                     );
             }
 
+            // Constexpr
+            const enumv = ctx.stack[ctx.stack.length - 1];
+            const edt = enumv.datatype instanceof types.ClassType
+                ? enumv.datatype.getBaseType()
+                : enumv.datatype;
+            if (edt instanceof types.EnumClassType && edt.parent.check(enumType)) {
+                if (indiciesFound[edt.index]) {
+                    // Branch found, remove enum wrapper
+                    if (enumv instanceof expr.EnumConstructor && enumv.knownValue instanceof value.Value)
+                        ctx.stack[ctx.stack.length - 1] = enumv.knownValue;
+                    else if (enumv instanceof EnumValue)
+                        ctx.stack[ctx.stack.length - 1] = enumv.value;
+                    else
+                        ctx.stack[ctx.stack.length - 1] = new expr.EnumGetExpr(token, enumv, edt);
+                    return ctx.invoke(indiciesFound[edt.index], token, false);
+                }
+                if (elseCase)
+                    return ctx.invoke(elseCase, token, false);
+                return [`Missing case for ${edt.name} in match`];
+            }
+
+            // To prevent duplicate expressions we can copy input exprs to locals
+            // FIXME: once we know inputs and shit we then need to store them into the Branch expr so that
+            //  the value they're capturing is captured before branch body and only accessed via relevant local
+            const oldStack = ctx.stack.slice();
+            ctx.stack = ctx.stack.map(v =>
+                v instanceof expr.DataExpr && v.expensive
+                    ? new expr.BranchInputExpr(v.token, v)
+                    : v);
+
+            // Trace the branches
             let outputs: value.Value[][];
             const subtypeBranchBindings: number[] = new Array(subtypes.length);
             let outputDt: types.ArrowType;
             let elseOutputsInd = -1;
-            for(let i = 0; i < subtypes.length; i++) {
+            for (let i = 0; i < subtypes.length; i++) {
                 if (!indiciesFound[i]) {
+                    // Misssing case
+
+                    // Missing case + no else => error
                     if (!elseCase)
                         return [`Missing \`match\` case for subtype ${subtypes[i].name}, For else case, use enum base type or an untyped macro.`];
+
                     if (elseOutputsInd < 0) {
+                        // Else case hasn't been traced yet
+
+                        // Trace
                         const trs =  ctx.traceIO(elseCase, token);
                         if (trs instanceof error.SyntaxError)
                             return trs;
-                        elseOutputsInd = outputs.push(trs.gives) - 1;
-                        subtypeBranchBindings[i] = elseOutputsInd;
+
+                        // Validate
+                        const t = trs.toArrowType(elseCase.token);
                         if (outputDt) {
-                            const t = trs.toArrowType(token);
                             if (!outputDt.check(t))
                                 return new error.SyntaxError(
                                     'Incompatible macro types in tuple passed to match',
-                                    []
-                                )
+                                    [elseCase.token, outputDt.token, token],
+                                    ctx,
+                                );
+                        } else {
+                            outputDt = t;
                         }
-                    } else {
 
+                        // Add binding
+                        elseOutputsInd = outputs.push(trs.gives) - 1;
+                        subtypeBranchBindings[i] = elseOutputsInd;
+                    } else {
+                        // Use else case
+                        subtypeBranchBindings[i] = elseOutputsInd;
                     }
+                } else {
+                    // Trace
+                    const tmp = ctx.stack[ctx.stack.length - 1];
+                    ctx.stack[ctx.stack.length - 1] = new expr.EnumGetExpr(token, tmp, subtypes[i]);
+                    const trs = ctx.traceIO(indiciesFound[i], token);
+                    if (trs instanceof error.SyntaxError)
+                        return trs;
+                    ctx.stack[ctx.stack.length - 1] = tmp;
+
+                    // Validate
+                    const t = trs.toArrowType(indiciesFound[i].token);
+                    if (outputDt) {
+                        if (!outputDt.check(t))
+                            return new error.SyntaxError(
+                                'Incompatible macro types in tuple passed to match',
+                                [t.token, outputDt.token, token],
+                                ctx,
+                            );
+                    } else {
+                        outputDt = t;
+                    }
+
+                    // Add binding
+                    subtypeBranchBindings[i] = outputs.push(trs.gives) - 1;
                 }
             }
+
+            // Construct expression
+            const matchExpr = expr.EnumMatchExpr.create(
+                token,
+                ctx.stack.slice(-outputDt.inputTypes.length) as BranchInputExpr[],
+                outputs,
+                subtypeBranchBindings,
+            );
+            if (!(matchExpr instanceof EnumMatchExpr))
+                return matchExpr;
+            ctx.stack = oldStack;
+            ctx.popn(outputDt.inputTypes.length);
+            ctx.push(...matchExpr.results);
         },
     },
 };

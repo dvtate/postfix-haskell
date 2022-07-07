@@ -898,7 +898,6 @@
                 i32.load offset=8
                 local.tee $p
                 br_if $sweep
-                end
             end $sweep
 
             ;; Coalese adjacent free spaces
@@ -994,7 +993,7 @@
             i32.const {{STACK_SIZE}}
             i32.lt_u
             br_if $rsu_loop
-        end
+        end $rsu_loop
 
         ;; Update references to objs previously stored in nursery
         call $__update_nursery_refs
@@ -1058,7 +1057,7 @@
         ;; For each pointer p in nursery
         global.get $__nursery_sp
         local.set $p
-        (loop $cp_loop
+        loop $cp_loop
             ;; Load header
             local.get $p
             i32.load
@@ -1175,7 +1174,7 @@
             i32.const {{NURSERY_SP_INIT}}
             i32.lt_u
             br_if $cp_loop
-        )
+        end $cp_loop
     )
 
     ;; Free an object from the heap
@@ -1258,10 +1257,10 @@
             local.get $next
             local.tee $p
             br_if $walk
-        end
+        end $walk
     )
 
-    ;; Sort freelist such that elements are in order by memory address
+    ;; Merge-sort freelist such that elements are in order by memory address
     (func $___sort_freelist
         (local $list i32) ;; list head (always = $global.__free_head)
         (local $p i32) ;; merge list p
@@ -1442,7 +1441,7 @@
 
             ;; infinite loop
             br $pass
-        end
+        end $pass
     )
 
     ;; Debugging

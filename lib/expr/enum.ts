@@ -1,12 +1,16 @@
 import * as types from '../datatypes.js';
 import * as value from '../value.js';
+import * as error from '../error.js';
 import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
 import type { FunExpr } from './fun.js';
 import { constructGc, loadRef } from './gc_util.js';
 import { SyntaxError } from '../error.js';
-import { fromDataValue } from './util.js';
+import { DependentLocalExpr, fromDataValue } from './util.js';
+import { BranchInputExpr } from './branch.js';
+import { uid } from '../../tools/util.js';
+import Context from '../context.js';
 
 export class EnumContainsCheckExpr extends DataExpr {
     _datatype: types.ClassOrType<types.PrimitiveType> = types.PrimitiveType.Types.I32;
@@ -45,7 +49,7 @@ export class EnumGetExpr extends DataExpr {
 
     constructor(
         token: LexerToken,
-        public enumExpr: UnknownEnumExpr | EnumConstructor,
+        public enumExpr: value.Value,
         dt: types.EnumClassType<types.DataType>
     ) {
         super(token, dt.type);
@@ -57,7 +61,28 @@ export class EnumGetExpr extends DataExpr {
             + loadRef(new types.RefType(this.token, this._datatype.type), fun);
     }
 
-    children(): Expr[] { return this.enumExpr.children(); }
+    children(): Expr[] {
+        return this.enumExpr.children();
+    }
+}
+
+export class EnumTypeIndexExpr extends DataExpr {
+    declare _datatype: types.PrimitiveType;
+
+    constructor(token: LexerToken, public enumExpr: value.Value) {
+        super(token, types.PrimitiveType.Types.I32);
+    }
+
+    children() {
+        return this.enumExpr.children();
+    }
+
+    out(ctx: ModuleManager, fun?: FunExpr) {
+        // Simply discard the reference
+        return this.enumExpr.out(ctx, fun)
+        // equiv (call $__ref_stack_pop) (drop)
+        + '(global.set $__ref_sp (i32.add (global.get $__ref_sp) (i32.const 4)))'
+    }
 }
 
 export class UnknownEnumExpr extends DataExpr {
@@ -115,11 +140,90 @@ export class EnumConstructor extends DataExpr {
 }
 
 
-// export class EnumMatch extends Expr {
+export class EnumMatchExpr extends Expr {
 
-//     results: DependentLocalExpr[];
+    /**
+     * Given results
+     */
+    results: DependentLocalExpr[];
 
-//     constructor(token: LexerToken, public branches) {
-//         super(token);
-//     }
-// }
+    constructor(
+        token: LexerToken,
+        public inputs: BranchInputExpr[],
+        public branches: value.Value[][],
+        public outputTypes: types.DataType[],
+        public branchBindings: number[],
+        private typeIndexExpr: EnumTypeIndexExpr,
+    ) {
+        super(token);
+        this.results = outputTypes.map(t => new DependentLocalExpr(token, t, this));
+    }
+
+    static create(
+        token: LexerToken,
+        inputs: BranchInputExpr[],
+        branches: value.Value[][],
+        branchBindings: number[],
+        ctx?: Context,
+    ): EnumMatchExpr | error.SyntaxError {
+        // Verify types
+        const outputTypes = branches[0].map(v => v.datatype);
+        for (let i = 0; i < outputTypes.length; i++)
+            if (!(outputTypes[i] instanceof types.DataType))
+                return new error.SyntaxError(
+                    'all given values must be of data types',
+                    [branches[0][i].token, token],
+                    ctx,
+                );
+        for (let b = 0; b < branches.length; b++)
+            for (let i = 0; outputTypes.length; i++)
+                if (!outputTypes[i].check(branches[b][i].datatype))
+                    return new error.SyntaxError(
+                        'branches must all give same types',
+                        [branches[b][i].token, branches[0][i].token, token],
+                        ctx,
+                    );
+
+        // Make instance
+        return new EnumMatchExpr(
+            token,
+            inputs,
+            branches,
+            outputTypes as types.DataType[],
+            branchBindings,
+            new EnumTypeIndexExpr(token, inputs[inputs.length - 1]),
+        );
+    }
+
+    children() {
+        return []
+            .concat(...this.branches.map(vs => [].concat(...vs.map(v => v.children()))))
+            .concat(...this.inputs.map(inp => inp.children()))
+            // .concat(...this.results.map(r => r.children()));
+    }
+
+    out(ctx: ModuleManager, fun: FunExpr): string {
+        // Prevent multiple compilations
+        this._isCompiled = true;
+
+        let ret = this.inputs.map(inp => inp.capture(ctx, fun)).join('\n\t');
+        this.results.forEach(r => r.inds = fun.addLocal(r.datatype));
+
+        const retType = this.outputTypes.map(t => t.getWasmTypeName()).join(' ');
+        const branchId = `$branch_${uid()}`;
+        ret += `(block ${branchId} (result ${retType}) ${
+            this.branches.map(() => '(block ').join('')
+        } (block (block ${
+            this.typeIndexExpr.out(ctx, fun)
+        }\n\t (br_table ${
+            this.branchBindings.map(n => String(n + 1)).join(' ')
+        } 0)) unreachable) ${
+            this.branches
+                .map(vs => vs.map(v => v.out(ctx, fun)).join(' '))
+                .join(`(br ${branchId}) )`)
+        } ))`;
+        ret += this.results.map(dl => fun.setLocalWat(dl.inds));
+
+        return ret;
+    }
+}
