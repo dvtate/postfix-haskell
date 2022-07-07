@@ -298,10 +298,10 @@ export default class Context {
         }
 
         // Determine state change
-        const ntakes = initialState.stack.length - this.minStackSize;
+        // const ntakes = initialState.stack.length - this.minStackSize;
         const ngives = this.stack.length - this.minStackSize;
-        const takes = initialState.stack.slice(0, ntakes); // TODO this is probably wrong
-        const gives = this.stack.slice(-ngives);
+        const takes = initialState.stack.slice(this.minStackSize);
+        const gives = ngives ? this.stack.slice(-ngives) : [];
         const delta = this.stack.length - initialState.stack.length;
         // const delta = gives.length - takes.length;
         // console.log({
@@ -522,7 +522,10 @@ export default class Context {
         // Create tuple from values pushed onto stack
         if (sl > this.stack.length)
             return new error.SyntaxError('invalid tuple, takes more values than gives', t, this);
-        const vs = this.stack.splice(sl);
+        const vs = this.stack.splice(sl).map(v =>
+            isType && v instanceof EnumNs
+                ? new value.Value(v.token, value.ValueType.Type, v.value)
+                : v);
 
         // Get return value
         const val = (isType && !vs.length)

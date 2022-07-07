@@ -1,0 +1,33 @@
+"./stdlib/prelude.phs" require use
+
+(:
+    I32 class $Number =
+    (I32 I32) class $PointRel =
+    (I32 I32 I32) class $SemVer3 =
+) enum $Version =
+
+251 Version.Number make $systemd_version =
+(8 1) Version.PointRel make $windows_version =
+(18 3 0) Version.SemVer3 make $nodejs_version =
+
+
+((Version):
+    # I just implemented this but it doesn't rly work
+    (
+        ((Version.Number): $v = v )
+        ((Version.PointRel): unpack pop )
+        ((Version.SemVer3): unpack pop pop )
+    ) match
+
+    #
+    (
+        Version.Number   (: $v = v )
+        Version.PointRel (: unpack pop )
+        Version.SemVer3  (: unpack pop pop )
+    ) match
+) $get_major_version =
+
+
+systemd_version get_major_version :data
+windows_version get_major_version :data
+nodejs_version get_major_version :data

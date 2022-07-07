@@ -751,7 +751,7 @@ const operators : MacroOperatorsSpec = {
             // Populate the cases
             const subtypes = enumType.sortedSubtypes();
             const indiciesFound: Macro[] = new Array(subtypes.length);
-            for (const v of arg.value.slice(1)) {
+            for (const v of arg.value) {
                 if (!(v instanceof Macro))
                     return new error.SyntaxError(
                         'all values in tuple passed to match must be macros',
@@ -835,7 +835,7 @@ const operators : MacroOperatorsSpec = {
                     : v);
 
             // Trace the branches
-            let outputs: value.Value[][];
+            const outputs: value.Value[][] = [];
             const subtypeBranchBindings: number[] = new Array(subtypes.length);
             let outputDt: types.ArrowType;
             let elseOutputsInd = -1;

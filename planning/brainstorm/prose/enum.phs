@@ -31,6 +31,10 @@ I32 I64 | F32 F64 | | $Num =
         ((List.Nil): pop Infinity )
         ((List.Node): unpack min' )
     ) match
+    (
+        List.Nil (: pop Infinity )
+        List.Node (: unpack min' )
+    ) match
 ) $min =
 
 # Make LL

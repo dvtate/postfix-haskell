@@ -85,10 +85,10 @@ export abstract class Macro extends value.Value {
         // Validate trace
         if (ios.takes.length > inputs.length)
             return 'differing input lengths';
-        if (ios.takes.some((e, i) => e !== inputs[i])) {
-            console.error(ios.takes, 'vs', inputs);
-            return 'differing input values';
-        }
+        // if (ios.takes.some((e, i) => e !== inputs[i])) {
+        //     console.error(ios.takes, 'vs', inputs);
+        //     return 'differing input values';
+        // }
         if (ios.takes.some(v => !v.datatype))
             throw new Error('wtf?');
         if (ios.gives.some(v => !v.datatype))
