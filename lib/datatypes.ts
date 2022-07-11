@@ -887,4 +887,7 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
         // type index + ref address
         return 'i32 i32';
     }
+    toString(): string {
+        return `${super.toString()} ${this.name}#${this.index}_enum`;
+    }
 }

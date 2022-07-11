@@ -108,7 +108,7 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
 
 export function loadRef(
     dt: types.RefType<types.DataType>,
-    fun: FunExpr
+    fun: FunExpr,
 ): string {
     const fpl = dt.flatPrimitiveList();
 

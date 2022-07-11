@@ -3,7 +3,6 @@ import * as types from "./datatypes.js";
 import * as expr from './expr/index.js';
 import * as error from './error.js';
 
-
 // Import WAST template as a string
 import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
 

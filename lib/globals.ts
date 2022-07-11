@@ -237,8 +237,12 @@ const operators : MacroOperatorsSpec = {
                 // console.log('make: incompatible', t.value, t.value.getBaseType(), v.datatype);
                 ctx.warn(token, 'class applied to incompatible data');
             }
-            v.datatype = t.value;
-            ctx.push(v);
+            if (t.value instanceof types.EnumClassType) {
+                ctx.push(new EnumValue(v.token, v, t.value));
+            } else {
+                v.datatype = t.value;
+                ctx.push(v);
+            }
         },
     },
 
@@ -707,6 +711,7 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
+    // temporary pattern match operator for enums
     'match' : {
         action: (ctx, token) => {
             // Get arg
@@ -718,97 +723,54 @@ const operators : MacroOperatorsSpec = {
             if (arg.value.length === 0)
                 return ['empty tuple passed to `match`'];
 
-            // Check first instance of
-            const firstDt = arg.value[0].datatype;
+            // Get the shit from the tuple they gave us
             let enumType: types.EnumBaseType;
             let elseCase: Macro = null;
-            let nInputs: number; // has to be at least 1
-            if (!(firstDt instanceof types.ArrowType) ) {
-                if (!(firstDt instanceof types.SyntaxType && arg.value[0].type !== value.ValueType.Macro))
-                    return new error.SyntaxError(
-                        'All values in tuple should be typed macros',
-                        [firstDt.token, arg.value[0].token, arg.token, token],
-                        ctx,
-                    );
-                elseCase = arg.value[0].value;
-            } else {
-                const l = firstDt.inputTypes.length - 1;
-                if (firstDt.inputTypes[l] instanceof types.EnumClassType) {
-                    enumType = (firstDt.inputTypes[l] as types.EnumClassType<any>).parent;
-                } else if (firstDt.inputTypes[l] instanceof types.EnumBaseType) {
-                    enumType = firstDt.inputTypes[l] as types.EnumBaseType;
-                    elseCase = arg.value[0].value;
-                } else {
-                    return new error.SyntaxError(
-                        'Input types must end with an enum type',
-                        [firstDt.inputTypes[l].token, firstDt.token, arg.value[0].token, arg.token, token],
-                        ctx,
-                    );
-                }
-                nInputs = firstDt.inputTypes.length;
-            }
-
-            // Populate the cases
-            const subtypes = enumType.sortedSubtypes();
-            const indiciesFound: Macro[] = new Array(subtypes.length);
-            for (const v of arg.value) {
-                if (!(v instanceof Macro))
-                    return new error.SyntaxError(
-                        'all values in tuple passed to match must be macros',
-                        [v.token, arg.token, token],
-                        ctx,
-                    );
-
-                // Acccept typed macros
-                // Untyped macro is else case
-                const dt = v.datatype;
-                if (dt instanceof types.SyntaxType && dt.valueType === value.ValueType.Macro) {
-                    if (elseCase) {
-                        return new error.SyntaxError(
-                            'Too many else cases',
-                            [v.token, token],
-                            ctx,
-                        );
-                    } else {
-                        elseCase = v;
-                        continue;
-                    }
-                } else if (!(dt instanceof types.ArrowType))
-                    return new error.SyntaxError(
-                        'All values in tuple passed to match should be macros',
-                        [firstDt.token, arg.value[0].token, arg.token, token],
-                        ctx,
-                    );
-
-                if (!nInputs)
-                    nInputs = dt.inputTypes.length;
-
-                // Branch on first input type
-                const l = dt.inputTypes.length - 1;
-                if (dt.inputTypes[l] instanceof types.EnumBaseType)
+            const indiciesFound: Macro[] = []; // used like a sparse array
+            for (let i = 0; i < arg.value.length;) {
+                const k = arg.value[i++];
+                const m = arg.value[i++];
+                if (k.type !== value.ValueType.Type)
+                    return new error.SyntaxError('Expected an enum type here', [k.token, token], ctx);
+                if (!(m instanceof Macro))
+                    return new error.SyntaxError('Expected a macro here', [m.token, token], ctx);
+                if (k.value instanceof types.ClassType && !(k.value instanceof types.EnumClassType))
+                    k.value = k.value.getBaseType();
+                if (k.value instanceof types.EnumBaseType) {
                     if (elseCase)
-                        return new error.SyntaxError(
-                            'Too many else cases',
-                            [v.token, token],
-                            ctx,
-                        );
+                        return new error.SyntaxError('Too many else cases', [k.token, token], ctx);
+
+                    enumType = k.value;
+                    elseCase = m.value;
+                } else if (k.value instanceof types.EnumClassType) {
+                    if (!enumType)
+                        enumType = k.value.parent;
+                    if (enumType === k.value.parent) // TODO use .check()
+                        indiciesFound[k.value.index] = m;
                     else
-                        elseCase = v;
-                else if (dt.inputTypes[l] instanceof types.EnumClassType)
-                    indiciesFound[(dt.inputTypes[l] as types.EnumClassType<any>).index] = v;
-                else
-                    return new error.SyntaxError(
-                        'Expected first input type to be an enum',
-                        [dt.inputTypes[l].token, v.token, token],
-                        ctx,
-                    );
+                        return new error.SyntaxError('For now only one enum type allowed per match expresson', [k.token, token], ctx);
+                } else
+                    return new error.SyntaxError('Expected an enum type here', [k.token, token], ctx);
             }
 
-            // Constexpr
+            // impossible to branch from here lol
+            if (!enumType)
+                return ['No type to match on'];
+
+            // Get values from stack
             const enumv = ctx.stack[ctx.stack.length - 1];
-            const edt = enumv.datatype instanceof types.ClassType
+            const edt = (enumv.datatype instanceof types.ClassType && !(enumv.datatype instanceof types.EnumClassType))
                 ? enumv.datatype.getBaseType()
                 : enumv.datatype;
+            if (!edt.check(enumType))
+                return new error.SyntaxError(
+                    'Attempt to match on type incompatible with that of given value',
+                    [edt.token, enumv.token, enumType.token, token],
+                    ctx,
+                );
+
+            // Constexpr
+            const subtypes = enumType.sortedSubtypes();
             if (edt instanceof types.EnumClassType && edt.parent.check(enumType)) {
                 if (indiciesFound[edt.index]) {
                     // Branch found, remove enum wrapper

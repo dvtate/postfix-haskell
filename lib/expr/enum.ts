@@ -18,6 +18,7 @@ export class EnumContainsCheckExpr extends DataExpr {
     constructor(token: LexerToken, public enumExpr: DataExpr, public checkType: types.EnumClassType<any>) {
         super(token, types.PrimitiveType.Types.I32);
         // TODO typecheck
+        const l = new Array(333);
     }
 
     get datatype(): typeof this._datatype  { return this._datatype; }
@@ -85,28 +86,6 @@ export class EnumTypeIndexExpr extends DataExpr {
     }
 }
 
-export class UnknownEnumExpr extends DataExpr {
-
-    constructor(token: LexerToken, public source: DataExpr, dt: types.EnumBaseType) {
-        super(token, dt);
-    }
-
-    out(ctx: ModuleManager, fun?: FunExpr): string {
-        return 'todo';
-    }
-
-    children(): Expr[] {
-        return this.source.children();
-    }
-
-    // containsType(t: number | types.EnumClassType<types.DataType>): EnumContainsCheckExpr {
-
-    // }
-
-    // getType(t: number | types.EnumClassType<types.DataType>): EnumGetExpr {}
-
-}
-
 /**
  * Used to construct a gc'd object and reference it via enum
  */
@@ -133,10 +112,6 @@ export class EnumConstructor extends DataExpr {
     children(): Expr[] {
         return [];
     }
-
-    // containsType(t: number | types.EnumClassType<types.DataType>): value.NumberValue {
-
-    // }
 }
 
 

@@ -41,6 +41,7 @@ export class EnumNs extends value.Value {
         for (const [id, v] of Object.entries(ns.scope))
             if (v.value instanceof types.ClassType) {
                 // Make member type constructor
+                // TODO support class macro types
                 memberTypes[id] = new types.EnumClassType(v.token, v.value.type, id, v.value.id);
                 ns.scope[id] = new value.Value(v.token, value.ValueType.Type, memberTypes[id]);
             } else {
