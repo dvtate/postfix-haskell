@@ -4,7 +4,7 @@ import * as error from '../error.js';
 import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
-import type { FunExpr } from './fun.js';
+import type { FunExpr, FunLocalTracker } from './fun.js';
 import { constructGc, loadRef } from './gc_util.js';
 import { SyntaxError } from '../error.js';
 import { DependentLocalExpr, fromDataValue } from './util.js';
@@ -48,22 +48,58 @@ export class EnumContainsCheckExpr extends DataExpr {
 export class EnumGetExpr extends DataExpr {
     declare _datatype: types.RefType<types.DataType>;
 
-    constructor(
+    public results?: DependentLocalExpr[];
+
+    private constructor(
         token: LexerToken,
         public enumExpr: value.Value,
-        dt: types.EnumClassType<types.DataType>
+        dt: types.EnumClassType<types.DataType>,
     ) {
         super(token, dt.type);
     }
 
     out(ctx: ModuleManager, fun?: FunExpr) {
-        return this.enumExpr.out(ctx, fun)
-            + '(drop)'
-            + loadRef(new types.RefType(this.token, this._datatype.type), fun);
+        if (!this.results)
+            return this.enumExpr.out(ctx, fun)
+                + '(drop)'
+                + loadRef(new types.RefType(this.token, this._datatype.type), fun);
+
+        this.results.forEach(r => r.inds = fun.addLocal(r.datatype));
+        return `${
+            this.enumExpr.out(ctx, fun)
+        } (drop) ${
+            loadRef(new types.RefType(this.token, this._datatype.type), fun)
+        } ${
+            this.results.map(r => fun.setLocalWat(r.inds)).join(' ')
+        }`;
     }
 
     children(): Expr[] {
         return this.enumExpr.children();
+    }
+
+    static create(
+        token: LexerToken,
+        enumExpr: value.Value,
+        dt: types.EnumClassType<types.DataType>,
+        ctx: Context,
+    ): EnumGetExpr | value.TupleValue | error.SyntaxError {
+        let retDt = dt.type;
+        if (retDt instanceof types.ClassType)
+            retDt = retDt.getBaseType();
+        if (retDt instanceof types.TupleType) {
+
+            // Shouldn't have to check this
+            const badT = retDt.types.find(t => !(t instanceof types.DataType));
+            if (badT)
+            return new error.SyntaxError('Compile-time only type cannot be used in an enum', [badT.token, token], ctx);
+
+            // Pack Components of loaded value into a tuple
+            const ret = new EnumGetExpr(token, enumExpr, dt);
+            ret.results = retDt.types.map(t => new DependentLocalExpr(token, t as types.DataType, ret));
+            return new value.TupleValue(token, ret.results, dt.type as types.ClassOrType<types.TupleType>);
+        }
+        return new EnumGetExpr(token, enumExpr, dt);
     }
 }
 
@@ -151,7 +187,7 @@ export class EnumMatchExpr extends Expr {
                     ctx,
                 );
         for (let b = 0; b < branches.length; b++)
-            for (let i = 0; outputTypes.length; i++)
+            for (let i = 0; i < outputTypes.length; i++)
                 if (!outputTypes[i].check(branches[b][i].datatype))
                     return new error.SyntaxError(
                         'branches must all give same types',

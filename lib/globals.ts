@@ -158,8 +158,8 @@ const operators : MacroOperatorsSpec = {
                 if (t.type !== value.ValueType.Type)
                     return ['expected a type to append class to'];
                 t = t.value;
-                if (v.recursive)
-                    t = new types.RefType(tok, t);
+                // if (v.recursive)
+                //     t = new types.RefType(tok, t);
 
                 // Use class wrapper
                 ctx.push(
@@ -223,7 +223,7 @@ const operators : MacroOperatorsSpec = {
             const t = ctx.pop();
             if (t.type !== value.ValueType.Type)
                 return ['expected a class to apply'];
-            if (!(t.value instanceof types.ClassType))
+            if (!(t.value instanceof types.ClassType || t.value instanceof types.EnumClassType))
                 return ['invalid type, expected a class'];
 
             // Get data
@@ -232,7 +232,9 @@ const operators : MacroOperatorsSpec = {
                 return ['expected data to apply class to'];
 
             // Apply class to data
-            const compatible = (t.value as types.ClassType<types.DataType>).getBaseType().check(v.datatype);
+            const compatible = t.value instanceof types.ClassType
+                ? t.value.getBaseType().check(v.datatype)
+                : t.value.type.check(v.datatype);
             if (!compatible) {
                 // console.log('make: incompatible', t.value, t.value.getBaseType(), v.datatype);
                 ctx.warn(token, 'class applied to incompatible data');
@@ -734,7 +736,7 @@ const operators : MacroOperatorsSpec = {
                     return new error.SyntaxError('Expected an enum type here', [k.token, token], ctx);
                 if (!(m instanceof Macro))
                     return new error.SyntaxError('Expected a macro here', [m.token, token], ctx);
-                if (k.value instanceof types.ClassType && !(k.value instanceof types.EnumClassType))
+                if (k.value instanceof types.ClassType)
                     k.value = k.value.getBaseType();
                 if (k.value instanceof types.EnumBaseType) {
                     if (elseCase)
@@ -759,7 +761,7 @@ const operators : MacroOperatorsSpec = {
 
             // Get values from stack
             const enumv = ctx.stack[ctx.stack.length - 1];
-            const edt = (enumv.datatype instanceof types.ClassType && !(enumv.datatype instanceof types.EnumClassType))
+            const edt = (enumv.datatype instanceof types.ClassType)
                 ? enumv.datatype.getBaseType()
                 : enumv.datatype;
             if (!edt.check(enumType))
@@ -778,8 +780,12 @@ const operators : MacroOperatorsSpec = {
                         ctx.stack[ctx.stack.length - 1] = enumv.knownValue;
                     else if (enumv instanceof EnumValue)
                         ctx.stack[ctx.stack.length - 1] = enumv.value;
-                    else
-                        ctx.stack[ctx.stack.length - 1] = new expr.EnumGetExpr(token, enumv, edt);
+                    else {
+                        const v = expr.EnumGetExpr.create(token, enumv, edt, ctx);
+                        if (v instanceof error.SyntaxError)
+                            return v;
+                        ctx.stack[ctx.stack.length - 1] = v;
+                    }
                     return ctx.invoke(indiciesFound[edt.index], token, false);
                 }
                 if (elseCase)
@@ -820,7 +826,10 @@ const operators : MacroOperatorsSpec = {
                         // Validate
                         const t = trs.toArrowType(elseCase.token);
                         if (outputDt) {
-                            if (!outputDt.check(t))
+                            if (t.inputTypes.length !== outputDt.inputTypes.length
+                                || t.outputTypes.length !== outputDt.outputTypes.length
+                                || !outputDt.outputTypes.every((ot, i) => ot.check(t.outputTypes[i]))
+                            )
                                 return new error.SyntaxError(
                                     'Incompatible macro types in tuple passed to match',
                                     [elseCase.token, outputDt.token, token],
@@ -840,7 +849,10 @@ const operators : MacroOperatorsSpec = {
                 } else {
                     // Trace
                     const tmp = ctx.stack[ctx.stack.length - 1];
-                    ctx.stack[ctx.stack.length - 1] = new expr.EnumGetExpr(token, tmp, subtypes[i]);
+                    const v = expr.EnumGetExpr.create(token, tmp, subtypes[i], ctx);
+                    if (v instanceof error.SyntaxError)
+                        return v;
+                    ctx.stack[ctx.stack.length - 1] = v;
                     const trs = ctx.traceIO(indiciesFound[i], token);
                     if (trs instanceof error.SyntaxError)
                         return trs;
@@ -848,8 +860,12 @@ const operators : MacroOperatorsSpec = {
 
                     // Validate
                     const t = trs.toArrowType(indiciesFound[i].token);
+                    t.inputTypes = [];
                     if (outputDt) {
-                        if (!outputDt.check(t))
+                        if (t.inputTypes.length !== outputDt.inputTypes.length
+                            || t.outputTypes.length !== outputDt.outputTypes.length
+                            || !outputDt.outputTypes.every((ot, i) => ot.check(t.outputTypes[i]))
+                        )
                             return new error.SyntaxError(
                                 'Incompatible macro types in tuple passed to match',
                                 [t.token, outputDt.token, token],

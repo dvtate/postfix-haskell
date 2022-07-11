@@ -39,10 +39,10 @@ export class EnumNs extends value.Value {
     static fromNamespace(ns: Namespace, token: LexerToken, ctx: Context) {
         const memberTypes: { [k: string]: types.EnumClassType<types.DataType> } = {};
         for (const [id, v] of Object.entries(ns.scope))
+            // TODO support class macro types
             if (v.value instanceof types.ClassType) {
                 // Make member type constructor
-                // TODO support class macro types
-                memberTypes[id] = new types.EnumClassType(v.token, v.value.type, id, v.value.id);
+                memberTypes[id] = new types.EnumClassType(v.token, v.value.type, id, v.value.recursive);
                 ns.scope[id] = new value.Value(v.token, value.ValueType.Type, memberTypes[id]);
             } else {
                 // We force user to pass classes so that they remember to use `make`
@@ -87,7 +87,7 @@ export class EnumValue extends value.Value {
      * Drop classes but keep enum classtype
      */
     getEnumClassType() {
-        let t: types.ClassType<any> = this._datatype;
+        let t = this._datatype;
         while (t instanceof types.ClassType)
             t = t.type;
         if (!(t as any instanceof types.EnumClassType))

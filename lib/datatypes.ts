@@ -220,8 +220,8 @@ export abstract class DataType extends SyntaxType implements DataTypeInterface {
     }
 
     /**
-     * Does this type hold a value in wasm?
-     * @returns false if the value doesn't carry a value
+     * Can input/output values of this type be ignored by compiler (no value held)
+     * @returns true if the value doesn't carry a value
      * @virtual
      */
     isUnit(): boolean {
@@ -248,6 +248,7 @@ export class ClassType<T extends DataType> extends DataType {
      * @param token - Code where
      * @param type - Underlying Data type
      * @param [id] - Clone a class
+     * @param recursive - Does this class need to be stored on the heap?
      */
     constructor(token: LexerToken, type: T, id?: number, public recursive: boolean = false) {
         super(token);
@@ -340,13 +341,13 @@ export class ClassType<T extends DataType> extends DataType {
        return `${this.type.toString()} ${this.id} #class`;
     }
 
-    // /**
-    //  * Does an object of this type need to be stored on the heap?
-    //  */
-    // isRecursive(): boolean {
-    //     return this.recursive
-    //     || (this.type instanceof ClassType && this.type.isRecursive());
-    // }
+    /**
+     * Does an object of this type need to be stored on the heap?
+     */
+    isRecursive(): boolean {
+        return this.recursive
+        || (this.type instanceof ClassType && this.type.isRecursive());
+    }
 }
 
 /**
@@ -842,15 +843,21 @@ export class EnumBaseType extends DataType {
  * Matches class defined within an enum
  */
 // TODO maybe shouldn't extend ClassType?
-export class EnumClassType<T extends DataType> extends ClassType<T> {
+export class EnumClassType<T extends DataType> extends DataType {
     /**
      * Metadata associating this class with the parent
      */
     parent: EnumBaseType;
     index: number;
 
-    constructor(token: LexerToken, type: T, public name: string, id?: number) {
-        super(token, type, id);
+    /**
+     * @param token - Code where
+     * @param type - Underlying data type stored
+     * @param name - Name assigned to type
+     * @param recursive - Does this class need to be stored on the heap?
+     */
+    constructor(token: LexerToken, public type: T, public name: string, public recursive = false) {
+        super(token);
     }
 
     /**
@@ -889,5 +896,11 @@ export class EnumClassType<T extends DataType> extends ClassType<T> {
     }
     toString(): string {
         return `${super.toString()} ${this.name}#${this.index}_enum`;
+    }
+    getBaseType() {
+        let ret = this.type;
+        while (ret instanceof EnumClassType || ret instanceof ClassType)
+            ret = ret.getBaseType();
+        return ret;
     }
 }
