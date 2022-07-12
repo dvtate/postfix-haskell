@@ -22,3 +22,17 @@ We need stack 1 because we can't have GC pointers on the wasm stack because we n
 Thus when we need to make a local for a gc'd reference we move that reference from stack 1 to stack 2 and store a pointer to it's location in stack 2 into a local. This way if the GC moves it out of the nursery, the program won't break.
 
 Alternatively we could directly store the reference in a wasm variable after putting it into stack 2, but we'd have to make sure that it's been moved out of the nursery.
+
+## Revision \[unimplemented\]
+This way we can combine Stack 1 and Stack 2 from previous solution. Stack 0 is still unaddressable however
+```
+0x0 ------------------------------------> 0xfff...
+<-[working stack][locals][params][....]
+  ^              ^       ^      ^
+  |              |       |      |
+  |              |       |      L Max accessible to the function
+  |              |       L stack pointer when call was made
+  |              L RV stack pointer
+  L stack pointer
+```
+Only slightly hard part is generating offsets for params since they will be `fn.stackOffset - paramIndex` and stackOffset changes throughout compilation

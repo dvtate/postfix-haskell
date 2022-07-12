@@ -2,11 +2,13 @@ import * as value from '../value.js';
 import * as types from '../datatypes.js';
 import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
-import { Expr, DataExpr, FunExpr, ParamExpr } from './expr.js';
+import { Expr, DataExpr } from './expr.js';
 import { TeeExpr, DependentLocalExpr, } from './util.js';
+import { FunExpr, ParamExpr } from './fun.js';
+import { BranchExpr } from './branch.js';
 
 /**
- * Used to wrap arguments passed to recursive functions as they are being tracd in a way that
+ * Used to wrap arguments passed to recursive functions as they are being traced in a way that
  * they can later be used to determine the bindings for parameters in
  * recursive calls within the body
  */
@@ -27,6 +29,10 @@ export class RecursiveTakesExpr extends DataExpr {
 
     out(ctx: ModuleManager, fun: FunExpr) {
         return this.value.out(ctx, fun);
+    }
+
+    children(): Expr[] {
+        return [];
     }
 }
 
@@ -133,20 +139,21 @@ export class RecursiveBodyExpr extends Expr {
             .map(e => e.getLeaves())
             .reduce((a, v) => a.concat(v), [])
             .filter(e => {
-                // Parameters need to be passed as arguments to helper
-                if (e instanceof ParamExpr)
-                    return true;
-
                 // Should not already be bound, right?
                 if ((e instanceof DependentLocalExpr && e.inds)
-                    || (e instanceof TeeExpr && e.locals))
+                    || (e instanceof TeeExpr && e.inds))
                 {
                     console.error(e);
                     throw new Error("wtf?");
                 }
 
+                // Parameters need to be passed as arguments to helper
+                if (e instanceof ParamExpr)
+                    return true;
+
                 return false;
             })
+            // .filter(e => e.expensive)
             .reverse() as ParamExpr[];
 
         // Make recursive helper function
@@ -185,14 +192,45 @@ export class RecursiveBodyExpr extends Expr {
      * Determine if we can apply tco
      * @returns true if we can use a loop instead of recursive func call
      */
-    private _isTailRecursive(): boolean {
+    _isTailRecursive(): boolean {
+        const isTailRecursive = (e: Expr): boolean => {
+            if (e instanceof RecursiveResultExpr && e.source.body === this)
+                return true;
+            if (e instanceof RecursiveBodyExpr)
+                return true;
+            if (e instanceof BranchExpr)
+                return e.actions
+                    .map(vs => vs.slice(-gives.length))
+                    .every(es => es.every(e => isTailRecursive(e) || isNonRecursive(e)));
+            return false;
+        };
+        const isNonRecursive = (e: Expr): boolean => {
+            if (e instanceof DependentLocalExpr) {
+                if (e.source instanceof RecursiveBodyExpr)
+                    return e.source === this && !this.giveExprs.find(e1 => e1 === e);
+                if (e.source instanceof BranchExpr)
+                    return e.source.actions
+                        .map(vs => vs.slice(-gives.length))
+                        .every(es => es.every(e => isNonRecursive(e)));
+            }
+
+            // TODO glhf implementing this one lmao ;-;
+            return !!process.env.PHC_FORCE_TCO;
+        };
+
         // Covers infinite loop case
         if (this.gives.some(c => c instanceof RecursiveResultExpr))
             return true;
-
-        // function isSameBodyCall(e: Expr): boolean {
-        //     return false
-        // }
+        const nSliceIndex = this.gives.findIndex((e, i) => e !== this.takes[i]);
+        if (this.gives.slice(nSliceIndex).some(e => !(e instanceof DependentLocalExpr)))
+            return false;
+        const gives = this.gives.slice(nSliceIndex) as DependentLocalExpr[];
+        if (!gives.length)
+            return true; // is this right?
+        const firstSrc = gives[0].source;
+        if (gives.some(e => e.source !== firstSrc))
+            return false;
+        return  isTailRecursive(firstSrc);
 
         // If body not a branch result DependentLocalExpr, return false
         // Go through branch conditions, if any of them calls self say no
@@ -203,7 +241,6 @@ export class RecursiveBodyExpr extends Expr {
         //  - otherwise it's not tr
 
         // TODO actually detect tail-recursion lol
-        // return true;
         return false;
     }
 }
@@ -211,6 +248,8 @@ export class RecursiveBodyExpr extends Expr {
 /**
  * Function that gets added to module but isn't exported
  */
+// TODO need to figure out how to share rv locals between functions
+// Should reference function host function
 export class RecFunExpr extends FunExpr {
     public takeExprs: DependentLocalExpr[];
     public copiedParams: ParamExpr[];
@@ -224,42 +263,32 @@ export class RecFunExpr extends FunExpr {
         super(
             token,
             name,
-            takeExprs
-                .map(e => e.datatype.flatPrimitiveList())
-                .concat(copiedParams.map(p => p.datatype.flatPrimitiveList()))
-                .reduce((a, b) => a.concat(b), []),
+            [].concat(...takeExprs.map(e => e.datatype))
+                .concat(...copiedParams.map(p => p.datatype)),
         );
-
         this.takeExprs = takeExprs;
         this.copiedParams = copiedParams.filter(e => !e.datatype.isUnit());
     }
 
     out(ctx: ModuleManager): string {
         // Capture original positions so that we can revert later so that old references don't break
-        const originalIndicies = this.copiedParams.map(e => e.localInds);
+        const originalIndicies = this.copiedParams.map(e => e.inds);
 
         // Alias our DependentLocalExpr inputs to params
-        let ind = 0;
-        // len => [ind .. ind += len]
-        const paramsRange = (len: number) => {
-            const ret: number[] = [];
-            for (; len > 0; len--)
-                ret.push(ind++);
-            return ret;
-        };
+        let paramIdx = 0;
         this.takeExprs.forEach(e => {
-            e.inds = paramsRange(e.datatype.flatPrimitiveList().length);
+            e.inds = this.params[paramIdx++].inds;
         });
 
         // Temporarily update indicies to refer to our params
         this.copiedParams.forEach(e => {
-            e.localInds = paramsRange(e.localInds.length);
+            e.inds = this.params[paramIdx++].inds;
         });
 
         // Compile body & generate type signatures
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this)); // Body of fxn
-        const paramTypes = this._locals.slice(0, this.nparams).map(t => t.getWasmTypeName()).join(' ');
+        const paramTypes = this.locals.slice(0, this.nparams).map(t => t.datatype.getWasmTypeName()).join(' ');
         const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
         // Generate output wat
@@ -269,19 +298,23 @@ export class RecFunExpr extends FunExpr {
         } ${
             // Return types
             resultTypes ? `(result ${resultTypes})` : ''
-        }\n\t\t${
-            // Local variables
-            this._locals.slice(this.nparams).map(l => `(local ${l.getWasmTypeName()})`).join(' ')
-        }\n\t${
+        } ${
             // Write body
-            outs.join('\n\t')
+            this.wrapBody(outs.join('\n\n'))
         })`;
 
         // Revert modifications to the exprs so that other places they're referenced don't break
-        this.copiedParams.forEach((e, i) => {
-            e.localInds = originalIndicies[i];
-        });
+        this.copiedParams.forEach((e, i) => e.inds = originalIndicies[i]);
         return ret;
+    }
+
+    /**
+     * @overrride
+     */
+    children(): Expr[] {
+        return []
+            .concat(...this.takeExprs.map(e => e.children()))
+            .concat(...this.copiedParams.map(e => e.children()));
     }
 }
 
@@ -385,5 +418,6 @@ export class RecursiveResultExpr extends DataExpr {
 
     children() {
         return [this.source];
+        throw new Error('bad wtf');
     }
 }

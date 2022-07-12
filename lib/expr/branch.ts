@@ -2,7 +2,8 @@ import * as value from '../value.js';
 import * as error from '../error.js';
 import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
-import { DataExpr, Expr, FunExpr } from './expr.js';
+import { DataExpr, Expr } from './expr.js';
+import type { FunExpr, FunLocalTracker } from './fun.js';
 import { DependentLocalExpr } from './util.js';
 
 /**
@@ -14,7 +15,7 @@ export class BranchInputExpr extends DataExpr {
     /**
      * Id for local variable into which it should be stored
      */
-    index: number[] = null;
+    index: FunLocalTracker[] = null;
 
     /**
      * Expression that this should capture
@@ -43,7 +44,7 @@ export class BranchInputExpr extends DataExpr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExpr) {
-        if (!this.datatype.isUnit() && !this.index) {
+        if (!this._datatype.isUnit() && !this.index) {
             console.log(this.value);
             console.log(new Error('bt'));
         }
@@ -55,6 +56,13 @@ export class BranchInputExpr extends DataExpr {
      */
     get expensive(): boolean {
         return false;
+    }
+
+    /**
+     * @override
+     */
+    children(): Expr[] {
+        return [this.value];
     }
 }
 
@@ -118,10 +126,11 @@ export class BranchExpr extends Expr {
     out(ctx: ModuleManager, fun: FunExpr) {
         // Prevent multiple compilations
         this._isCompiled = true;
-        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n');
+        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n\t');
 
         // Compile body
         // Notice order of compilation from top to bottom so that locals are assigned before use
+        // TODO FIXME still not perfect... may need to convert tee-exprs
         const conds = new Array(this.conditions.length);
         const acts = new Array(this.actions.length);
         for (let i = this.conditions.length - 1; i >= 0; i--) {

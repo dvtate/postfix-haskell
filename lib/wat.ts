@@ -1,7 +1,6 @@
 import * as expr from './expr/index.js';
 
-
-// Not sure if I'll actually end up using this long term...
+// Not sure if I'll ever actually end up using this...
 
 /**
  * This way we can easily identify where all the expressions originated from

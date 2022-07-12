@@ -2,7 +2,7 @@ import * as types from './datatypes.js';
 import Context from "./context.js";
 import { BlockToken, LexerToken, MacroToken } from "./scan.js";
 import parse from "./parse.js";
-import { Namespace } from "./namespace.js";
+import Namespace from "./namespace.js";
 import * as error from './error.js';
 import * as value from './value.js';
 import * as expr from './expr/index.js';
@@ -11,11 +11,6 @@ import * as expr from './expr/index.js';
  * Return Type for macro implementations
  */
 export type ActionRet = Context | Array<string> | undefined | SyntaxError | void;
-
-/**
- * Type T or class of type T
- */
-type ClassOrType<T extends types.DataType> = T | types.ClassType<ClassOrType<T>>;
 
 /**
  * Invokable block of code
@@ -90,10 +85,10 @@ export abstract class Macro extends value.Value {
         // Validate trace
         if (ios.takes.length > inputs.length)
             return 'differing input lengths';
-        if (ios.takes.some((e, i) => e !== inputs[i])) {
-            console.error(ios.takes, 'vs', inputs);
-            return 'differing input values';
-        }
+        // if (ios.takes.some((e, i) => e !== inputs[i])) {
+        //     console.error(ios.takes, 'vs', inputs);
+        //     return 'differing input values';
+        // }
         if (ios.takes.some(v => !v.datatype))
             throw new Error('wtf?');
         if (ios.gives.some(v => !v.datatype))
@@ -123,7 +118,7 @@ export abstract class Macro extends value.Value {
      */
     typeCheck(
         ctx: Context,
-        datatype: ClassOrType<types.TupleType | types.ArrowType>,
+        datatype: types.ClassOrType<types.TupleType | types.ArrowType>,
         token: LexerToken = this.token,
         safe = false,
     ): boolean | error.SyntaxError {

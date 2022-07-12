@@ -49,9 +49,10 @@ yargs(process.argv.slice(2))
 
                 // TODO convert this to a numeric arg
                 'optimize' : {
-                    describe: 'pass compiled output through binaryen optimizer',
-                    type: 'boolean',
+                    describe: '1 to use additional internal optimizations, 2 to use binaryen optimizer',
+                    type: 'number',
                     alias: 'O',
+                    default: 0,
                 },
                 'stack-size' : {
                     describe: '(advanced) 64bit aligned size in bytes of the references stack section of LM for the runtime',
@@ -69,7 +70,7 @@ yargs(process.argv.slice(2))
                     alias: 'o',
                 },
                 'no-rt' : {
-                    describe: 'do not include boilerplate code which might be required for program to run',
+                    describe: '(advanced) do not include boilerplate code which might be required for program to run',
                     type: 'boolean',
                 },
             }),

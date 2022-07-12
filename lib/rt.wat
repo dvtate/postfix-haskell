@@ -42,32 +42,33 @@
         ;; return ret
     )
 
-    ;; Store a reference on the rv stack
-    (func $__rv_stack_push (result i32)
-        ;; return *(--__rv_sp) = ref_stack_pop()
+    ;; Instead functions allocate chunks of known sizes based on needs
+    ;; ;; Store a reference on the rv stack
+    ;; (func $__rv_stack_push (result i32)
+    ;;     ;; return *(--__rv_sp) = ref_stack_pop()
 
-        global.get $__rv_sp
-        i32.const 4
-        i32.sub
-        global.set $__rv_sp
+    ;;     global.get $__rv_sp
+    ;;     i32.const 4
+    ;;     i32.sub
+    ;;     global.set $__rv_sp
 
-        global.get $__rv_sp
-        call $__ref_stack_pop
-        i32.store
+    ;;     global.get $__rv_sp
+    ;;     call $__ref_stack_pop
+    ;;     i32.store
 
-        global.get $__ref_sp
-    )
+    ;;     global.get $__ref_sp
+    ;; )
 
-    ;; Pop N references from the rv stack
-    (func $__rv_stack_pop (param $n i32)
-        ;; __rv_sp += 4*n
-        global.get $__rv_sp
-        local.get $n
-        i32.const 2
-        i32.shl
-        i32.add
-        global.set $__rv_sp
-    )
+    ;; ;; Pop N references from the rv stack
+    ;; (func $__rv_stack_pop (param $n i32)
+    ;;     ;; __rv_sp += 4*n
+    ;;     global.get $__rv_sp
+    ;;     local.get $n
+    ;;     i32.const 2
+    ;;     i32.shl
+    ;;     i32.add
+    ;;     global.set $__rv_sp
+    ;; )
 
     ;; Initialize static data
     (data (i32.const {{STACK_SIZE}}) "{{STATIC_DATA_STR}}")
@@ -289,9 +290,7 @@
             local.tee $bit_ind
             local.get $m_mark_size
             i32.lt_u
-            if
-                br $for_each_bit
-            end
+            br_if $for_each_bit
         end
     )
 
@@ -410,9 +409,7 @@
             local.tee $bit_ind
             local.get $m_mark_size
             i32.le_u
-            if
-                br $for_each_bit
-            end
+            br_if $for_each_bit
         end
     )
 
@@ -702,9 +699,7 @@
                 ;; Do while dest < len
                 local.get $len
                 i32.lt_u
-                if
-                    br $cp_loop
-                end
+                br_if $cp_loop
             end $cp_loop
         end
     )
@@ -713,6 +708,9 @@
     (global $__gc_cycle (mut i32) (i32.const 0))
 
     ;; Collect Garbage
+    (; TODO lots of room for optimization for minor gc/nursery
+    - don't need next ptr
+    ;)
     (func $__do_gc
         (local $p i32)          ;; stack pointer
         (local $dest i32)       ;; pointer to where object is being moved
@@ -792,9 +790,7 @@
                 local.tee $p
                 i32.const {{STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop
-                end
+                br_if $mark_loop
             end $mark_loop
         else
             loop $mark_loop
@@ -810,9 +806,7 @@
                 local.tee $p
                 i32.const {{STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop
-                end
+                br_if $mark_loop
             end $mark_loop
         end
 
@@ -836,9 +830,7 @@
                 local.tee $p
                 i32.const {{RV_STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop2
-                end
+                br_if $mark_loop2
             end $mark_loop2
         else
             loop $mark_loop2
@@ -854,9 +846,7 @@
                 local.tee $p
                 i32.const {{RV_STACK_END}}
                 i32.lt_u
-                if
-                    br $mark_loop2
-                end
+                br_if $mark_loop2
             end $mark_loop2
         end
 
@@ -892,9 +882,7 @@
                     local.get $dest
                     i32.load offset=8
                     local.tee $p
-                    if
-                        br $sweep
-                    end
+                    br_if $sweep
                 else
                     ;; Remove mark
                     local.get $p
@@ -909,9 +897,7 @@
                 local.tee $dest
                 i32.load offset=8
                 local.tee $p
-                if
-                    br $sweep
-                end
+                br_if $sweep
             end $sweep
 
             ;; Coalese adjacent free spaces
@@ -975,9 +961,7 @@
             local.tee $p
             i32.const {{NURSERY_SP_INIT}}
             i32.lt_u
-            if
-                br $cp_loop
-            end
+            br_if $cp_loop
         end $cp_loop
 
         ;; Update references
@@ -1008,10 +992,8 @@
             local.tee $p
             i32.const {{STACK_SIZE}}
             i32.lt_u
-            if
-                br $rsu_loop
-            end
-        end
+            br_if $rsu_loop
+        end $rsu_loop
 
         ;; Update references to objs previously stored in nursery
         call $__update_nursery_refs
@@ -1075,7 +1057,7 @@
         ;; For each pointer p in nursery
         global.get $__nursery_sp
         local.set $p
-        (loop $cp_loop
+        loop $cp_loop
             ;; Load header
             local.get $p
             i32.load
@@ -1171,9 +1153,7 @@
                         local.tee $i
                         local.get $size
                         i32.lt_u
-                        if
-                            br $rbf_loop
-                        end
+                        br_if $rbf_loop
                     end
                 end
             end
@@ -1193,11 +1173,8 @@
             local.tee $p
             i32.const {{NURSERY_SP_INIT}}
             i32.lt_u
-            if
-                br $cp_loop
-
-            end
-        )
+            br_if $cp_loop
+        end $cp_loop
     )
 
     ;; Free an object from the heap
@@ -1279,13 +1256,11 @@
             ;; Repeat while ((p = p->next))
             local.get $next
             local.tee $p
-            if
-                br $walk
-            end
-        end
+            br_if $walk
+        end $walk
     )
 
-    ;; Sort freelist such that elements are in order by memory address
+    ;; Merge-sort freelist such that elements are in order by memory address
     (func $___sort_freelist
         (local $list i32) ;; list head (always = $global.__free_head)
         (local $p i32) ;; merge list p
@@ -1344,9 +1319,7 @@
                         local.tee $i
                         local.get $insize
                         i32.lt_u
-                        if
-                            br $step
-                        end
+                        br_if $step
                     end
                 end
 
@@ -1432,9 +1405,7 @@
                         local.get $psize
                         local.get $q
                         select
-                        if
-                            br $merge_loop
-                        end
+                        br_if $merge_loop
                     end
                 end
 
@@ -1470,7 +1441,7 @@
 
             ;; infinite loop
             br $pass
-        end
+        end $pass
     )
 
     ;; Debugging

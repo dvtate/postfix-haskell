@@ -3,13 +3,15 @@ import { Value, ValueType } from './value.js';
 import WasmNumber from './numbers.js';
 import * as error from './error.js';
 
+/**
+ * Some methods available on types representable on hardware
+ */
 interface DataTypeInterface {
     // See documentation in DataType
+    flatPrimitiveList(): Array<PrimitiveType | RefType<DataType>>;
     getWasmTypeName(name?: string): string;
-    flatPrimitiveList(): Array<PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>>;
     isUnit(): boolean;
 }
-
 
 /**
  * Abstract base for datatypes
@@ -44,7 +46,7 @@ export class AnyType extends Type implements DataTypeInterface {
     /**
      * @override
      */
-    check(type: Type): boolean {
+    check(): boolean {
         return true;
     }
     flatPrimitiveList(): PrimitiveType[] {
@@ -96,7 +98,7 @@ export class NeverType extends Type implements DataTypeInterface {
     /**
      * @override
      */
-    check(type: Type): boolean {
+    check(): boolean {
         return false;
     }
     flatPrimitiveList(): PrimitiveType[] {
@@ -152,9 +154,6 @@ export class NeverType extends Type implements DataTypeInterface {
         return this.types.includes(type);
     }
 
-    /**
-     * @override
-     */
     flatPrimitiveList(): PrimitiveType[] {
         throw new error.SyntaxError('UnionType can only exist at compile-time', [this.token]);
     }
@@ -194,6 +193,8 @@ export class SyntaxType extends Type {
         [ValueType.Fxn]: new SyntaxType(new IdToken('Syntax:Fxn', 0, undefined), ValueType.Fxn),
         [ValueType.Str]: new SyntaxType(new IdToken('Syntax:Str', 0, undefined), ValueType.Str),
         [ValueType.Ns]: new SyntaxType(new IdToken('Syntax:Ns', 0, undefined), ValueType.Ns),
+        [ValueType.EnumNs]: new SyntaxType(new IdToken('Syntax:EnumNs', 0, undefined), ValueType.EnumNs),
+        [ValueType.EnumK]:  new SyntaxType(new IdToken('Syntax:EnumK', 0, undefined), ValueType.EnumK),
     };
 
     /**
@@ -228,13 +229,6 @@ export abstract class DataType extends SyntaxType implements DataTypeInterface {
         super(token, ValueType.Data);
     }
 
-    /**
-     * Gives the wasm typename for given type
-     * @returns - typename
-     * @virtual
-     */
-    abstract getWasmTypeName(name?: string): string;
-
     // TODO this only really makes sense for tuples and classes of them...
     /**
      * Get a flat list of primitive types that constitute this type
@@ -242,14 +236,25 @@ export abstract class DataType extends SyntaxType implements DataTypeInterface {
      * @throws if union encountered throws string "union"
      * @virtual
      */
-    abstract flatPrimitiveList(): Array<PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>>;
+    abstract flatPrimitiveList(): Array<PrimitiveType | RefType<DataType>>;
 
     /**
-     * Does this type hold a value in wasm?
-     * @returns false if the value doesn't carry a value
+     * Gives the wasm typename for given type
+     * @returns - typename
      * @virtual
      */
-    abstract isUnit(): boolean;
+    getWasmTypeName(name?: string): string {
+        return this.flatPrimitiveList().map(t => t instanceof PrimitiveType ? t.name : 'i32').join(' ');
+    }
+
+    /**
+     * Can input/output values of this type be ignored by compiler (no value held)
+     * @returns true if the value doesn't carry a value
+     * @virtual
+     */
+    isUnit(): boolean {
+        return this.flatPrimitiveList().length === 0;
+    }
 }
 
 /**
@@ -262,17 +267,18 @@ export class ClassType<T extends DataType> extends DataType {
     declare type: T;
 
     /**
-     * Unique identifier for the class
+     * Unique identifier for each class
      */
     id: number;
     static _tokenIdMap: Map<LexerToken, number> = new Map();
 
     /**
-     * @param token - code where
+     * @param token - Code where
      * @param type - Underlying Data type
      * @param [id] - Clone a class
+     * @param recursive - Does this class need to be stored on the heap?
      */
-    constructor(token: LexerToken, type: T, id?: number) {
+    constructor(token: LexerToken, type: T, id?: number, public recursive: boolean = false) {
         super(token);
         this.type = type;
         this.id = id === undefined ? genId() : id;
@@ -362,7 +368,20 @@ export class ClassType<T extends DataType> extends DataType {
     toString(): string {
        return `${this.type.toString()} ${this.id} #class`;
     }
+
+    /**
+     * Does an object of this type need to be stored on the heap?
+     */
+    isRecursive(): boolean {
+        return this.recursive
+        || (this.type instanceof ClassType && this.type.isRecursive());
+    }
 }
+
+/**
+ * Type T or class of type T
+ */
+export type ClassOrType<T extends DataType> = T | ClassType<ClassOrType<T>>;
 
 /**
  * When need to store more than one piece of data in a single value
@@ -386,16 +405,16 @@ export class TupleType extends DataType {
             return new error.SyntaxError('Unexpected compile-only type', [t.token, this.token]);
     }
 
-    /**
-     * @override
-     */
-    getWasmTypeName(name?: string) {
-        const err = this.assertIsDataType();
-        if (err)
-            throw err;
+    // /**
+    //  * @override
+    //  */
+    // getWasmTypeName(name?: string) {
+    //     const err = this.assertIsDataType();
+    //     if (err)
+    //         throw err;
 
-        return (this.types as DataType[]).map(t => t.getWasmTypeName(name)).join(' ');
-    }
+    //     return (this.types as DataType[]).map(t => t.getWasmTypeName(name)).join(' ');
+    // }
 
     /**
      * @override
@@ -455,6 +474,8 @@ export class TupleType extends DataType {
     }
 
     toString(): string {
+        if (this.types.length === 0)
+            return 'Unit';
         return `( ${this.types.map(t => t.toString()).join(' ')} )`;
     }
 }
@@ -543,10 +564,11 @@ export class PrimitiveType extends DataType {
  * Datatype to describe function/macros
  */
 export class ArrowType extends DataType {
-    constructor(token: LexerToken,
+    constructor(
+        token: LexerToken,
         public inputTypes: Type[],
-        public outputTypes?: Type[])
-    {
+        public outputTypes?: Type[]
+    ) {
         super(token);
     }
 
@@ -609,7 +631,7 @@ export class ArrowType extends DataType {
     /**
      * @override
      */
-    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         throw new Error('Invalid call: ArrowType.flatPrimitiveList()');
     }
     isUnit(): boolean {
@@ -624,13 +646,18 @@ export class ArrowType extends DataType {
 
 /**
  * Reference for a value of a given type T
+ *
+ * Pointer stored on gc value stack, points to value in heap
+ *
+ * see: planning/brainstorm/ref_stack_vars.md
  */
 export class RefType<T extends DataType> extends DataType {
     /**
      * @param token location in source code
      * @param type type of value being referenced
+     * @param offsetBytes When accessing a member of an object need to use reference
      */
-    constructor(token: LexerToken, public type: T) {
+    constructor(token: LexerToken, public type: T, public offsetBytes = 0) {
         super(token);
     }
 
@@ -647,17 +674,45 @@ export class RefType<T extends DataType> extends DataType {
     /**
      * @override
      */
-    getWasmTypeName(name?: string): string {
-        // TODO think
-        // NOTE the object is on ref_stack and only used only indirectly there
-        // i32 = pointer type
-        return '';
+    getWasmTypeName(): string {
+        return 'i32';
     }
 
-    flatPrimitiveList(): RefType<TupleType>[] {
-        return [new RefType(this.token,
-            new TupleType(this.token,
-                this.type.flatPrimitiveList()))];
+    /**
+     * Prevent recursive calls to RefType.flatPrimitiveList()
+     *
+     * @remarks Correct solution would be to pass an argument but that's ugly
+     */
+    private static noRecFlatPrimitiveList = false;
+
+    /**
+     * @override
+     */
+    flatPrimitiveList(): RefType<DataType>[] {
+        // TODO this is bad, should just be [I32]
+        // This should just give i32. For caller to get this functionality they should have to call this.type.flatPrimitiveList()
+        let offset = 0;
+        if (!RefType.noRecFlatPrimitiveList) {
+            RefType.noRecFlatPrimitiveList = true;
+            this.type.flatPrimitiveList().map(t => {
+                const oldOffset = offset;
+                if (t instanceof PrimitiveType)
+                    switch ((t as PrimitiveType).name) {
+                        case 'i32': case 'f32': offset += 4; break;
+                        case 'i64': case 'f64': offset += 8; break;
+                        default: throw new Error('wtf?');
+                    }
+                else {
+                    // Otherwise it's a reference
+                    offset += 4;
+                    console.log('RefType.fpl(): other type: ', t);
+                }
+                return new RefType(this.token, t, oldOffset);
+            });
+            RefType.noRecFlatPrimitiveList = false;
+        }
+
+        return [this];
     }
 
     /**
@@ -684,13 +739,20 @@ export class RefType<T extends DataType> extends DataType {
 
 /**
  * Reference to a pointer which is stored on rv_stack to an object managed by gc
+ *
+ * Stored in wasm locals, point to location on, gc rv stack, where lie pointers to objects on the heap
+ *
+ * see: planning/brainstorm/ref_stack_vars.md
+ *
+ * @depricated - I feel like conversion should be implicit
  */
-export class RefRefType<T extends RefType<DataType>> extends DataType {
+export class RefRefType<T extends DataType> extends DataType {
     /**
      * @param token location in source code
      * @param type type of value being referenced
+     * @param offsetBytes When accessing a member of an object need to use reference
      */
-    constructor(token: LexerToken, public type: T) {
+    constructor(token: LexerToken, public type: T, public offsetBytes = 0) {
         super(token);
     }
 
@@ -707,21 +769,29 @@ export class RefRefType<T extends RefType<DataType>> extends DataType {
     /**
      * @override
      */
-    getWasmTypeName(name?: string): string {
-        // TODO think
-        // NOTE the object is on ref_stack and only used only indirectly there
-        // i32 = pointer type
-        return '';
+    getWasmTypeName(): string {
+        return 'i32';
     }
 
-    flatPrimitiveList() {
-        // Note that we return empty arr here because the value is stored on the ref/rv stack
-        return [
-            new RefRefType(this.token,
-                new RefType(this.token,
-                    new TupleType(this.token,
-                        this.type.flatPrimitiveList())))];
+    flatPrimitiveList(): RefType<DataType>[] {
+        // TODO this is bad, should just be [I32]
+        let offset = 0;
+        return this.type.flatPrimitiveList().map(t => {
+            const oldOffset = offset;
+            if (t instanceof PrimitiveType)
+                switch (t.name) {
+                    case 'i32': case 'f32': offset += 4; break;
+                    case 'i64': case 'f64': offset += 8; break;
+                    default: throw new Error('wtf?');
+                }
+            else
+                // Otherwise it's a pointer
+                offset += 4;
+
+            return new RefType(this.token, t, oldOffset);
+        });
     }
+
     isUnit(): boolean {
         return false;
     }
@@ -733,9 +803,9 @@ export class RefRefType<T extends RefType<DataType>> extends DataType {
 /**
  * Matches anything within same enum type
  */
-export class EnumBaseType extends Type {
+export class EnumBaseType extends DataType {
     /**
-     * Enum members defined by this class
+     * @param subtypes Enum members defined by this class
      */
     constructor(
         token: LexerToken,
@@ -753,18 +823,33 @@ export class EnumBaseType extends Type {
      * @override
      */
     check(type: Type): boolean {
+        // Any type
         if (type instanceof AnyType)
             return true;
-        return type && this.token === type.token;
+
+        // Drop classes
+        if (type instanceof ClassType)
+            type = type.getBaseType();
+        if (!type)
+            return false;
+
+        // Yikes
+        const isChild = () => Object.values(this.subtypes).some(t => t.check(type));
+        const isCompat = () => type instanceof EnumBaseType
+            && this.token === type.token
+            && Object.keys(this.subtypes).length === Object.keys(type.subtypes).length
+            && Object.values(this.subtypes).every(t => t.check(type));
+        return type && (this === type || isChild() || isCompat());
     }
     isUnit(): boolean {
-        return Object.values(this.subtypes).every(t => t.isUnit());
+        // return Object.values(this.subtypes).every(t => t.isUnit());
+        return false;
     }
-    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
-    getWasmTypeName(name?: string): string {
+    getWasmTypeName(): string {
         // type index + ref address
         return 'i32 i32';
     }
@@ -776,43 +861,74 @@ export class EnumBaseType extends Type {
             Object.entries(this.subtypes).map(([sym, t]) => `${t.toString()} $${sym} =`).join('\n')
         }\n) enum`
     }
+
+    sortedSubtypes() {
+        return Object.values(this.subtypes).sort((a, b) => a.index - b.index);
+    }
 }
 
 /**
  * Matches class defined within an enum
  */
-export class EnumClassType<T extends DataType> extends ClassType<T> {
+// TODO maybe shouldn't extend ClassType?
+export class EnumClassType<T extends DataType> extends DataType {
     /**
      * Metadata associating this class with the parent
      */
-    name: string;
     parent: EnumBaseType;
     index: number;
 
-    constructor(token: LexerToken, type: T) {
-        super(token, type);
+    /**
+     * @param token - Code where
+     * @param type - Underlying data type stored
+     * @param name - Name assigned to type
+     * @param recursive - Does this class need to be stored on the heap?
+     */
+    constructor(token: LexerToken, public type: T, public name: string, public recursive = false) {
+        super(token);
     }
 
     /**
      * @override
      */
     check(type: Type): boolean {
+        // Wildcard type
         if (type instanceof AnyType)
             return true;
+
+        // Drop classes
+        if (type instanceof ClassType)
+            type = type.getBaseType();
+        if (!type)
+            return false;
+
+
+        if (type === this.parent)
+            return true;
         return type instanceof EnumClassType
-            && this.token === type.token    // also implies same parent
+            && this.token === type.token    // corrolaries: same parent, same class id
+            && this.index === type.index
             && this.type.check(type.type);
     }
     isUnit(): boolean {
-        return this.type.isUnit();
+        return false;
     }
-    flatPrimitiveList(): (PrimitiveType | RefType<DataType> | RefRefType<RefType<DataType>>)[] {
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         // Is this right?
         return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
     }
-    getWasmTypeName(name?: string): string {
+    getWasmTypeName(): string {
         // Is this right?
         // type index + ref address
         return 'i32 i32';
+    }
+    toString(): string {
+        return `${super.toString()} ${this.name}#${this.index}_enum`;
+    }
+    getBaseType() {
+        let ret = this.type;
+        while (ret instanceof EnumClassType || ret instanceof ClassType)
+            ret = ret.getBaseType();
+        return ret;
     }
 }

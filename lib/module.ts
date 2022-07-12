@@ -3,7 +3,6 @@ import * as types from "./datatypes.js";
 import * as expr from './expr/index.js';
 import * as error from './error.js';
 
-
 // Import WAST template as a string
 import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
 
@@ -68,6 +67,11 @@ export default class ModuleManager {
      * Static data section of linear memory
      */
     private staticData: number[] = [];
+
+    /**
+     * Indicates if data is const or user modifiyable
+     */
+    private staticDataConst: boolean[] = [];
 
     /**
      * Primarily function exports. Compiled functions and stuff that go in main body of module
@@ -157,6 +161,34 @@ export default class ModuleManager {
             typeName: type.getWasmTypeName(importId),
         });
         return importId;
+    }
+
+    /**
+     * Track helper necessary functions generated
+     */
+    definedHelpers: Set<string>;
+
+    /**
+     * Define a helper/utility function that we don't really care about
+     * If it's already been defined return early
+     * @param helperId identifier for the helper function
+     * @depricated
+     */
+    addHelper(helperId: string): void {
+        if (this.definedHelpers.has(helperId))
+            return;
+
+        // Helper to swap 2 values on the stack
+        if (helperId.startsWith('__swap_')) {
+            const [t1, t2] = helperId.slice(7).split('_');
+            this.definitions.push(`(func $${helperId
+                } (param ${t1} ${t2}) (result ${t2} ${t1
+                }) (local.get 1) (local.get 0))`);
+            this.definedHelpers.add(helperId);
+            return;
+        }
+
+        throw new Error('invalid helper: ' + helperId);
     }
 
     /**
@@ -269,17 +301,17 @@ export default class ModuleManager {
      * @returns - memory address for start of region
      */
     addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string, isConst = false): number {
-        // TODO OPTIMIZATION we should segregate strings vs non-string static data
+        // TODO OPTIMIZATION we should segregate strings vs non-string static data (also const vs non-const)
 
         // Convert data to byte array
         const bytes = ModuleManager.toByteArray(data);
 
         // Check to see if same value already exists
-        if (isConst && this.optLevel >= 1)
+        if (isConst && this.optLevel >= 2)
             for (let i = 0; i < this.staticData.length; i++) {
                 let j = 0;
                 for (; j < bytes.length; j++)
-                    if (this.staticData[i + j] !== bytes[j])
+                    if (this.staticData[i + j] !== bytes[j] || !this.staticDataConst[i + j])
                         break;
 
                 // The data already exists
@@ -290,6 +322,7 @@ export default class ModuleManager {
         // Append to static data
         const ret = this.staticData.length + (this.noRuntime ? 0 : this.stackSize);
         this.staticData.push(...bytes);
+        this.staticDataConst.push(...new Array(bytes.length).fill(isConst));
         return ret;
     }
 
@@ -388,7 +421,7 @@ export default class ModuleManager {
         const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
         // const STACK_START = 0;
         const STACK_END = STACK_SIZE;
-        const RV_STACK_END = STACK_END / 2;
+        const RV_STACK_END = STACK_END / 2; // TODO see planning/brainstorm/ref_stack_vars.md about removing this stack
         const NURSERY_START = STACK_SIZE + STATIC_DATA_LEN;
         const NURSERY_END = STACK_SIZE + NURSERY_SIZE;
         const NURSERY_SP_INIT = NURSERY_END - OBJ_HEAD_SIZE;

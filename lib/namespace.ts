@@ -5,7 +5,7 @@ import type Context from "./context.js";
 /**
  * Macro Value that when given an id returns corresponding id in namespace
  */
- export class Namespace {
+export default class Namespace {
     constructor(
         public scope: { [k: string]: value.Value },
         public token?: LexerToken,

@@ -139,8 +139,7 @@ export default class Fun {
         // Check for errors
         // TODO should prob ignore errors if one of conditions is truthy
         //      so that user can overload operators with diff # inputs
-        const errs: error.SyntaxError[] = conds.filter(e => e instanceof error.SyntaxError) as error.SyntaxError[];
-
+        const errs = conds.filter(e => e instanceof error.SyntaxError) as error.SyntaxError[];
         if (errs.length) {
             // console.warn(`[warning] ${this.name}: fn errs: `, ...errs.map(e => {
             //     const ret: any = { msg: e.message || e };
@@ -148,7 +147,6 @@ export default class Fun {
             //         ret.tokens = e.tokens.map((t: LexerToken) => ({t: t.token, f: t.file, p: t.position }));
             //     return ret;
             // }));
-            // TODO we need to make an error datatype that combines these into a single error
             errs.forEach(e => ctx.warn(e.tokens[0], `[warn] ${this.name}: fn err: ${e.message || e}`));
             // console.warn(`[warn] ${this.name}: fn errs: ${errs.map(e => e.message || e).join('\n')} `);
             // return errs.reverse()[0];
@@ -162,11 +160,10 @@ export default class Fun {
                 !(ret instanceof Array || ret instanceof error.SyntaxError)
                 && (ret instanceof expr.Expr
                     || (ret instanceof value.DataValue && ret.value.value != BigInt(0)))
-                && [ret, this.actions[i]])
+                && [ret, this.actions[i], this.conditions[i]])
             .filter(b => !!b)) as Array<[value.DataValue | expr.DataExpr, Macro]>;
 
         // No truthy condition found
-        // TODO non-const-expr
         if (branches.length === 0) {
             console.error("stack", ctx.stack);
             return new error.SyntaxError(`${this.name}: no matching function case`, [token], ctx);
@@ -196,10 +193,18 @@ export default class Fun {
         // Runtime checks... fmllll
         // Unfortunately we have to trace in order to construct the branch expression
 
+        // TODO need to make inputs match patterns in conditions
+
         // Trace ios, filter recursive branches
         const traceResults = branches
             .slice(i)
-            .map(b => ctx.traceIO(b[1], b[1].token || token))
+            .map(b => {
+                // Change stack types
+                // const stackCp = ctx.stack.slice();
+                const ret = ctx.traceIO(b[1], b[1].token || token)
+                // Revert stack types
+                return ret;
+            })
             .filter(io => io !== null);
 
         // Look for an error
@@ -219,7 +224,7 @@ export default class Fun {
         const maxTakes = ios.map(t => t.takes).reduce((acc, v) => v.length > acc.length ? v : acc, []);
         const maxGives = Math.max(...ios.map(t => t.gives.length));
 
-        // Allgin all branch ios
+        // Align all branch ios
         ios.forEach(t => {
             if (t.gives.length < maxGives) {
                 // Pull from stack
@@ -230,14 +235,11 @@ export default class Fun {
             }
         });
 
-        // Verify all have same return types
-        const first = ios[0].gives as expr.DataExpr[];
-        const givesInconsistent = ios.some(t => t.gives.some((v, i) => {
-            if (!(v instanceof value.DataValue || v instanceof expr.DataExpr))
-                return false;
-            const t = v.datatype instanceof types.ClassType ? v.datatype.getBaseType() : v.datatype;
-            return !t.check(first[i].datatype);
-        }));
+        // Verify all branches give values of same types
+        const first = ios[0].gives;
+        const givesInconsistent = ios.some(e =>
+            e.gives.some((v, i) =>
+                !wideCompat(first[i], v.datatype)));
         if (givesInconsistent) {
             console.error("ios", ios);
             return ['possible function branches give inconsistent results'];
@@ -257,32 +259,59 @@ export default class Fun {
             inputs.filter(e => e instanceof expr.BranchInputExpr) as expr.BranchInputExpr[],
             this.name,
         );
-        const results = first.map(o => new expr.DependentLocalExpr(token, o.datatype, branch));
+        const results = first.map(o => new expr.DependentLocalExpr(token, o.datatype as types.DataType, branch));
         branch.results = results;
         branch.args = inputs;
         ctx.push(...results);
-
-        /*
-        // Push branch expr
-        // TODO remove `as` here
-        const branch = new expr.BranchExpr(this.tokens, branches.map(b => b[0]), ios.map(t => expr.fromDataValue(t.gives)));
-        const results: DependentLocalExpr[] = [];
-        const ret: value.Value[] = [];
-        first.forEach(o => {
-            if (o instanceof value.TupleValue) {
-                const dles = o.value.map((v: value.Value) =>
-                    new DependentLocalExpr(token, v.datatype, branch));
-                results.push(...dles);
-                ret.push(new value.TupleValue(token, dles, o.datatype));
-            } else {
-                const v = new expr.DependentLocalExpr(token, o.datatype, branch);
-                results.push(v);
-                ret.push(v);
-            }
-        });
-        branch.results = results;
-        branch.args = inputs;
-        ctx.push(...ret);
-        */
     }
+}
+
+/**
+ * Checks that types are compatible, with some widening allowed
+ * @param wide reference to object with datatype that can be widened
+ * @param t fixed data type
+ * @returns true if compatible
+ */
+// TODO different approach which better takes into account all branches
+function wideCompat(wide: { datatype: types.Type }, t: types.Type): boolean {
+    const check = wide.datatype.check(t);
+    if (check)
+        return true;
+
+    if (t instanceof types.EnumClassType
+        && wide.datatype instanceof types.EnumClassType
+        && wide.datatype.parent.check(t.parent))
+    {
+        // Need to widen to unknown enum type
+        wide.datatype = wide.datatype.parent;
+        return true;
+    }
+
+    if (wide.datatype instanceof types.ClassType && t instanceof types.ClassType) {
+        // If it's a subclass widen return type
+        if (t.check(wide.datatype)) {
+            wide.datatype = t;
+            return true;
+        }
+
+        // Widening to base type
+        t = t.getBaseType();
+        const fbc = wide.datatype.getBaseType();
+        if (fbc.check(t)) {
+            wide.datatype = fbc;
+            return true;
+        }
+        return false;
+    }
+
+    if (wide.datatype instanceof types.ClassType) {
+        // Widening to base type
+        const fbc = wide.datatype.getBaseType();
+        if (fbc.check(t)) {
+            wide.datatype = fbc;
+            return true;
+        }
+    }
+
+    return false;
 }

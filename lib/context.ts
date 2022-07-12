@@ -13,37 +13,46 @@ import globalOps from './globals.js';
 import ModuleManager, { CompilerOptions } from './module.js';
 import { LiteralMacro, Macro } from './macro.js';
 import { formatErrorPos } from '../tools/util.js';
-import { Namespace } from './namespace.js';
+import Namespace from './namespace.js';
 import Fun from './function.js';
+import { EnumNs } from './enum.js';
 
 // Load wabt on next tick
 const wabtProm = wabtMod();
 
 // TODO this class is fucking massive and should be split into different components
 //  so that the amount of state it manages is better organized
+// - Context.stack: StackCtx: manages state associated with stack
+// - Context.scopes: ScopesCtx: manages state associated with scopes and identifiers
+// - Context.tracer: TraceCtx: manages state associated with tracing
 
 // Return Types for Context.traceIO() method
 export class TraceResults {
     /**
-     * Consumed by operation
+     * @param takes Consumed by operation
+     * @param gives Results of operation
+     * @param delta Change in stack size
      */
-    takes: value.Value[];
+    constructor(
+        public takes: value.Value[],
+        public gives: value.Value[],
+        public delta: number,
+    ) {}
 
     /**
-     * Results of operation
+     * Generate arrow type representative of this
+     * @param token
+     * @returns
      */
-    gives: value.Value[];
-
-    /**
-     * Difference in lengths
-     */
-    delta: number;
-
-    constructor(takes: value.Value[], gives: value.Value[], delta: number) {
-        this.takes = takes;
-        this.gives = gives;
-        this.delta = delta;
+    toArrowType(token: LexerToken) {
+        return new types.ArrowType(
+            token,
+            this.takes.map(v => v.datatype),
+            this.gives.map(v => v.datatype),
+        );
     }
+
+    // TODO much of the logic in Fun.action() should be moved to methods here
 }
 
 /**
@@ -62,39 +71,40 @@ interface TraceResultTracker {
  * TODO reduce public API's
  */
 export default class Context {
-    // Place to push/pop arugments & exprs
+    /// Place to push/pop arugments & exprs
     stack: value.Value[] = [];
 
-    // Identifier map
+    /// Local Identifier map
     scopes: Array<{ [k: string] : value.Value }> = [{}];
 
-    // Invoke stack
-    trace: value.Value[] = [];
-
-    // Tracking for traceIO and recursion stuff
-    traceResults: Map<value.Value, TraceResultTracker> = new Map();
+    /// Global Identifier map
     globals: { [k: string] : value.Value };
 
-    // Stack tracing cunters
+    /// Invoke stack
+    trace: value.Value[] = [];
+
+    /// Tracking for traceIO and recursion stuff
+    private traceResults: Map<value.Value, TraceResultTracker> = new Map();
+
+    /// Stack tracing counters
     initialStackSize = 0;
     minStackSize = 0;
 
-    // Warnings
+    /// Warnings
     warnings: Array<{ token: LexerToken, msg: string }> = [];
 
-    // WebAssembly Module imports and exports
+    /// WebAssembly Module imports and exports
     module: ModuleManager;
 
-    // Some optimizations can be slow with larger projects
+    /// Some optimizations can be slow with larger projects
     optLevel: number;
 
-    // Link external class
+    /// Link external class
     static TraceResults = TraceResults;
 
-    // Recycled `include` namespaces
+    /// Recycled `include` namespaces
     includedFiles: { [k: string]: Namespace } = {};
 
-    // Default constructor
     constructor(private entryPoint?: string, opts: CompilerOptions = {}) {
         // Initialize Module Manager
         this.optLevel = opts.optLevel || 2;
@@ -195,6 +205,8 @@ export default class Context {
         for (let i = 1; i < id.length; i++)
             if (ret instanceof value.NamespaceValue)
                 ret = ret.value.getId(id[i]);
+            else if (ret instanceof EnumNs)
+                ret = ret.getId(id[i]);
             else
                 return undefined;
         return ret;
@@ -202,11 +214,12 @@ export default class Context {
 
     /**
      * Store value into identifier
-     *
-     * @param id - identifier
-     * @param value - value to set identifier to
+     * @param id identifier
+     * @param v value to set identifier to
+     * @param token location in code
+     * @returns void or error
      */
-    setId(id: string[], v: value.Value, token: LexerToken) {
+    setId(id: string[], v: value.Value, token: LexerToken): void | error.SyntaxError {
         // Handle fast case first
         if (id.length == 1) {
             this.scopes[this.scopes.length - 1][id[0]] = v;
@@ -285,10 +298,10 @@ export default class Context {
         }
 
         // Determine state change
-        const ntakes = initialState.stack.length - this.minStackSize;
+        // const ntakes = initialState.stack.length - this.minStackSize;
         const ngives = this.stack.length - this.minStackSize;
-        const takes = initialState.stack.slice(0, ntakes); // TODO this is probably wrong
-        const gives = this.stack.slice(-ngives);
+        const takes = initialState.stack.slice(this.minStackSize);
+        const gives = ngives ? this.stack.slice(-ngives) : [];
         const delta = this.stack.length - initialState.stack.length;
         // const delta = gives.length - takes.length;
         // console.log({
@@ -318,6 +331,10 @@ export default class Context {
                 new WasmNumber(WasmNumber.Type.I32, this.module.addStaticData(v.value, true))));
             return this;
         }
+
+        // Try to invoke dummy exprs
+        if (v instanceof expr.DummyDataExpr)
+            return v.invoke(token, this) || this;
 
         // If not invokable just put it on the stack
         if (![value.ValueType.Fxn, value.ValueType.Macro].includes(v.type)) {
@@ -505,7 +522,10 @@ export default class Context {
         // Create tuple from values pushed onto stack
         if (sl > this.stack.length)
             return new error.SyntaxError('invalid tuple, takes more values than gives', t, this);
-        const vs = this.stack.splice(sl);
+        const vs = this.stack.splice(sl).map(v =>
+            isType && v instanceof EnumNs
+                ? new value.Value(v.token, value.ValueType.Type, v.value)
+                : v);
 
         // Get return value
         const val = (isType && !vs.length)

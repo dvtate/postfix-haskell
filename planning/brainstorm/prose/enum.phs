@@ -1,0 +1,49 @@
+# WIP syntax for recursive enum type definition for an LL
+I32 I64 | F32 F64 | | $Num =
+(rec:
+    (: ( Num NumList ) ) class $Node =
+    () class $Nil =
+) enum $NumList =
+
+# When tracing fill stack with dummy values
+(rec:
+    $T =
+    (: ( T T List ) ) class $Node =
+    () class $Nil =
+) enum $List =
+
+# Let's define a function to find the minimum value in a list
+
+# Using functions
+# Note redundant else case
+(: 1 ) (: Infinity ) $min' fun
+((Any List.Node): 1 ) (:
+    unpack ( $v $n ) = $pv =
+    (: 1 ) (: v n min' ) $branch fun
+    (: v pv < ) (: pv n min' ) $branch fun
+    branch
+) $min' fun
+((Any List.Nil): 1 ) (: pop ) $min' fun
+
+# With pattern matching
+(:
+    (
+        ((List.Nil): pop Infinity )
+        ((List.Node): unpack min' )
+    ) match
+    (
+        List.Nil (: pop Infinity )
+        List.Node (: unpack min' )
+    ) match
+) $min =
+
+# Make LL
+( 3 ( 4 ( 0 ()
+    List.Nil make )
+    List.Node make )
+    List.Node make )
+    List.Node make
+$ll =
+
+# find min value
+ll min :data # 0

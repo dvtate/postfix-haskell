@@ -1,0 +1,42 @@
+"./stdlib/prelude.phs" require use
+
+# Define an enum type
+(:  I32 class $Number =
+    (I32 I32) class $PointRel =
+    (I32 I32 I32) class $SemVer3 =
+) enum $Version =
+
+# Make some enums
+251 Version.Number make $systemd_version =
+( 8 1 ) Version.PointRel make $windows_version =
+( 18 3 0 ) Version.SemVer3 make $nodejs_version =
+
+((Version):  (   Version.Number (:
+            $n =
+            ( 0 0 n ) Version.SemVer3 make
+        )
+        Version.PointRel (:
+            unpack ( $maj $min ) =
+            ( maj min 0 ) Version.SemVer3 make
+        )
+        Version.SemVer3 (: Version.SemVer3 make )
+    ) match
+) $to_semver =
+
+((Version)(I32):  (   Version.Number   (: $v = v )
+        Version.PointRel (: unpack pop )
+        Version.SemVer3  (: unpack pop pop )
+    ) match
+) $get_major_version =
+
+$to_semver ~ :type
+windows_version to_semver :type
+systemd_version get_major_version :data
+windows_version get_major_version :data
+windows_version to_semver get_major_version :data
+nodejs_version get_major_version :data
+
+#(rec:
+#    ( List I32 ) class $Node =
+#    ( ) class $Nil =
+#) enum $List =

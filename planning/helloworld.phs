@@ -1,22 +1,23 @@
 # Import stuff from modules
-"stdlib/monad.phs" require use # ">>"       ""  use_some
-"stdlib/io.phs"    require use #"IO|print" ""  use_some
-"stdlib/str.phs"   require use #"Str|to_Str"      ""  use_some
+"stdlib/prelude.phs" require use
+"stdlib/io.phs"      require $io =
+"stdlib/str.phs"     require use
 
 (: ( $a $b ) = (: a b ) ) $>> =
 
 # Lazy evaluated IO action
-(: "Testing" Str_new print )
-(: 888.5 print ) >> $action =
+(: "Testing" Str cast io.print )
+(: 888.5 io.print ) >> $action =
 
 # Export that performs IO
-( Unit IO ) (:
+( Unit io.IO ) (:
     # Invoke IO action
     action
 
     # Print string
-    "Hello, world!" Str_new print
+    "Hello, world!" Str cast io.print
 
     # Print an i32
-    123456 print
+    123456 io.print
 ) $main export
+
