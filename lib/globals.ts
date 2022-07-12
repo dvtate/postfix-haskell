@@ -813,7 +813,7 @@ const operators : MacroOperatorsSpec = {
 
                     // Missing case + no else => error
                     if (!elseCase)
-                        return [`Missing \`match\` case for subtype ${subtypes[i].name}, For else case, use enum base type or an untyped macro.`];
+                        return [`Missing \`match\` case for subtype ${subtypes[i].name}, For else case, use enum base type`];
 
                     if (elseOutputsInd < 0) {
                         // Else case hasn't been traced yet

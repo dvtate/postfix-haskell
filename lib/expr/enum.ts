@@ -4,7 +4,7 @@ import * as error from '../error.js';
 import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
-import type { FunExpr, FunLocalTracker } from './fun.js';
+import type { FunExpr } from './fun.js';
 import { constructGc, loadRef } from './gc_util.js';
 import { SyntaxError } from '../error.js';
 import { DependentLocalExpr, fromDataValue } from './util.js';
@@ -18,7 +18,6 @@ export class EnumContainsCheckExpr extends DataExpr {
     constructor(token: LexerToken, public enumExpr: DataExpr, public checkType: types.EnumClassType<any>) {
         super(token, types.PrimitiveType.Types.I32);
         // TODO typecheck
-        const l = new Array(333);
     }
 
     get datatype(): typeof this._datatype  { return this._datatype; }

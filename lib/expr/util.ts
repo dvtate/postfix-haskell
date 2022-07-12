@@ -144,7 +144,7 @@ export class TupleExpr extends DataExpr {
         return ret;
     }
 
-    children() {
+    children(): Expr[] {
         return this.source.children();
     }
 }
@@ -194,7 +194,7 @@ export class TupleExpr extends DataExpr {
  * After that it just does local.get
  */
 export class TeeExpr extends DataExpr {
-    locals: FunLocalTracker[] = null;
+    inds: FunLocalTracker[] = null;
 
     /**
      * @param token - origin in source code
@@ -213,17 +213,17 @@ export class TeeExpr extends DataExpr {
         // if (!this.value.expensive)
         //     return this.value.out(ctx, fun);
 
-        if (this.locals === null) {
-            this.locals = fun.addLocal(this._datatype);
-            if (this.locals.length === 1
-                && this.locals[0].datatype instanceof types.PrimitiveType
-                && this.locals[0] instanceof FunLocalTrackerStored)
-                return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0].index})`;
+        if (this.inds === null) {
+            this.inds = fun.addLocal(this._datatype);
+            if (this.inds.length === 1
+                && this.inds[0].datatype instanceof types.PrimitiveType
+                && this.inds[0] instanceof FunLocalTrackerStored)
+                return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.inds[0].index})`;
             else
-                return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)
-                    }\n\t${fun.getLocalWat(this.locals)}`;
+                return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.inds)
+                    }\n\t${fun.getLocalWat(this.inds)}`;
         }
-        return fun.getLocalWat(this.locals);
+        return fun.getLocalWat(this.inds);
     }
 
     // Prevent this from getting re-tee'd
@@ -441,13 +441,13 @@ export class DummyDataExpr extends DataExpr {
 /**
  * Wrapper around another expr with possibly different datatype
  */
-export class ProxyExpr extends DataExpr {
-    constructor(token: LexerToken, public expr: DataExpr, dt: types.DataType = expr.datatype) {
-        super(token, dt);
-    }
-    children() { return this.expr.children(); }
-    out(ctx: ModuleManager, fun: FunExpr) {
-        this._isCompiled = true;
-        return this.expr.out(ctx, fun);
-    }
-}
+// export class ProxyExpr extends DataExpr {
+//     constructor(token: LexerToken, public expr: DataExpr, dt: types.DataType = expr.datatype) {
+//         super(token, dt);
+//     }
+//     children() { return this.expr.children(); }
+//     out(ctx: ModuleManager, fun: FunExpr) {
+//         this._isCompiled = true;
+//         return this.expr.out(ctx, fun);
+//     }
+// }

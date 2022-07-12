@@ -1,30 +1,31 @@
+"./stdlib/prelude.phs" require use
 
-(: # Intentionally non-tail-recursive factorial
+(rec: # Intentionally non-tail-recursive factorial
     $n =
     (: 1 ) (: n 1 - fac n * ) $branch fun
     (: n 2 < ) (: 1 ) $branch fun
     branch
-) rec $fac =
+) $fac =
 
 ( I32 I32 I32 ) (:
     $v2 = $v =
-    (: # Intentionally non-tail-recursive factorial
+    (rec: # Intentionally non-tail-recursive factorial
         $n =
         (: 1 ) (: n 1 - fac n * ) $branch fun
         (: n 2 < ) (: v v2 - ) $branch fun
         branch
-    ) rec $fac =
+    ) $fac =
     fac
 ) "nfac" export
 
-(:
+(rec:
     $n =
     (: 1 ) (: n 1 - fib n 2 - fib + ) $branch fun
     (: n 2 < ) (: 1 ) $branch fun
     branch
-) rec $fib =
+) $fib =
 
-6 fib :data
+#6 fib :data
 
 ( I32 ) (: fac ) "fac" export
 ( I32 ) (: fib ) "fib" export

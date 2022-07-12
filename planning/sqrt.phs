@@ -23,6 +23,11 @@
         (: true ) (: improve ) $cond fun
         (: good_enough ) (: guess ) $cond fun
         cond
+        dup
+        "(() => {
+            const v = ctx.pop();
+            return v.source.actions;
+        })()" :eval
 	) $iter =
 
     # Start calculating with first guess being 1

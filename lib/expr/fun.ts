@@ -317,18 +317,18 @@ export class ParamExpr extends DataExpr {
     /**
      * Indicies for access
      */
-    localInds: FunLocalTracker[];
+    inds: FunLocalTracker[];
 
     /**
      * @param token - Locaation in code
      * @param datatype - Datatype for expr
      * @param source - Origin expression
-     * @param localInds - Stack index (0 == left)
+     * @param inds - Stack index (0 == left)
      */
-    constructor(token: LexerToken, datatype: types.DataType, source: FunExpr, localInds: FunLocalTracker[]) {
+    constructor(token: LexerToken, datatype: types.DataType, source: FunExpr, inds: FunLocalTracker[]) {
         super(token, datatype);
         this.source = source;
-        this.localInds = localInds;
+        this.inds = inds;
     }
 
     /**
@@ -342,6 +342,6 @@ export class ParamExpr extends DataExpr {
      * @override
      */
     out() {
-        return this.source.getLocalWat(this.localInds);
+        return this.source.getLocalWat(this.inds);
     }
 }
