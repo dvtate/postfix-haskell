@@ -29,6 +29,7 @@ export function fileLocate(file: string, pos: number): FileSnapshot {
 interface CompileError extends Error {
     message: string;
     tokens: Array<lex.LexerToken>;
+    dedupTokens?(): lex.LexerToken[];
 }
 
 /**
@@ -46,13 +47,15 @@ export function formatErrorPos(errors: CompileError[]): string {
         return `\tat \x1B[1m${t.file}:${loc.lineNumber}:${loc.lineOffset}\x1B[0m\n\t\t${loc.line}\n`
             + `\t\t${wss}\x1B[1m\x1b[31m^${'~'.repeat(Math.max(t.token.length -1, 0))}\x1B[0m`;
     }
-    return errors.map(e =>
-        `\x1B[1m${e instanceof Error ? 'Error: ' : ' '}${e.message}:\x1b[0m\n${
-            e.tokens.length > 35
-                ? `${e.tokens.slice(0, 15).map(ppToken).join('\n')
-                    }\n\n...\n\n${e.tokens.slice(-15).map(ppToken).join('\n')}`
-                : e.tokens.map(ppToken).join('\n')
-        }\n${e.stack}`).join('\n\n');
+    return errors.map(e => {
+        const toks = e.dedupTokens ? e.dedupTokens() : e.tokens;
+        return `\x1B[1m${e instanceof Error ? 'Error: ' : ' '}${e.message}:\x1b[0m\n${
+            toks.length > 35
+                ? `${toks.slice(0, 15).map(ppToken).join('\n')
+                    }\n\n...\n\n${toks.slice(-15).map(ppToken).join('\n')}`
+                : toks.map(ppToken).join('\n')
+        }\n${e.stack}`
+    }).join('\n\n');
 }
 
 // Used by function uid

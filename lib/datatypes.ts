@@ -847,11 +847,11 @@ export class EnumBaseType extends DataType {
     }
     flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         // Is this right?
-        return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
+        return [PrimitiveType.Types.I32, new RefType(this.token, null)];
     }
     getWasmTypeName(): string {
         // type index + ref address
-        return 'i32 i32';
+        return 'i32';
     }
     getBaseType(): Type {
         return this;
@@ -915,12 +915,12 @@ export class EnumClassType<T extends DataType> extends DataType {
     }
     flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
         // Is this right?
-        return [PrimitiveType.Types.I32, PrimitiveType.Types.I32];
+        return [PrimitiveType.Types.I32, new RefType(this.token, this.type)];
     }
     getWasmTypeName(): string {
         // Is this right?
         // type index + ref address
-        return 'i32 i32';
+        return 'i32';
     }
     toString(): string {
         return `${super.toString()} ${this.name}#${this.index}_enum`;

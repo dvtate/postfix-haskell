@@ -127,12 +127,14 @@ export class EnumTypeIndexExpr extends DataExpr {
 export class EnumConstructor extends DataExpr {
     // outExprs: [value.NumberValue, DependentLocalExpr];
     declare _datatype: types.EnumClassType<types.DataType>;
+    private readonly enumClassType;
     constructor(
         token: LexerToken,
         public knownValue: value.Value | DataExpr[],
         datatype: types.EnumClassType<types.DataType>
     ) {
         super(token, datatype);
+        this.enumClassType = datatype;
     }
 
     out(ctx: ModuleManager, fun?: FunExpr): string {
@@ -140,7 +142,7 @@ export class EnumConstructor extends DataExpr {
             ? fromDataValue([this.knownValue])
             : this.knownValue;
         return `\n\t${v.map(v => v.out(ctx, fun)).join(' ')
-            }\n\t${constructGc(this.datatype, ctx, fun)
+            }\n\t${constructGc(this.enumClassType.type, ctx, fun)
             }(i32.const ${this._datatype.index})`;
     }
 
@@ -157,52 +159,20 @@ export class EnumMatchExpr extends Expr {
      */
     results: DependentLocalExpr[];
 
+    inputs: BranchInputExpr[];
+    typeIndexExpr: EnumTypeIndexExpr;
+
     constructor(
         token: LexerToken,
-        public inputs: BranchInputExpr[],
+        inputs: (BranchInputExpr | value.Value)[],
         public branches: value.Value[][],
-        public outputTypes: types.DataType[],
         public branchBindings: number[],
-        private typeIndexExpr: EnumTypeIndexExpr,
+        public outputTypes: types.DataType[],
     ) {
         super(token);
-        this.results = outputTypes.map(t => new DependentLocalExpr(token, t, this));
-    }
-
-    static create(
-        token: LexerToken,
-        inputs: BranchInputExpr[],
-        branches: value.Value[][],
-        branchBindings: number[],
-        ctx?: Context,
-    ): EnumMatchExpr | error.SyntaxError {
-        // Verify types
-        const outputTypes = branches[0].map(v => v.datatype);
-        for (let i = 0; i < outputTypes.length; i++)
-            if (!(outputTypes[i] instanceof types.DataType))
-                return new error.SyntaxError(
-                    'all given values must be of data types',
-                    [branches[0][i].token, token],
-                    ctx,
-                );
-        for (let b = 0; b < branches.length; b++)
-            for (let i = 0; i < outputTypes.length; i++)
-                if (!outputTypes[i].check(branches[b][i].datatype))
-                    return new error.SyntaxError(
-                        'branches must all give same types',
-                        [branches[b][i].token, branches[0][i].token, token],
-                        ctx,
-                    );
-
-        // Make instance
-        return new EnumMatchExpr(
-            token,
-            inputs,
-            branches,
-            outputTypes as types.DataType[],
-            branchBindings,
-            new EnumTypeIndexExpr(token, inputs[inputs.length - 1]),
-        );
+        this.inputs = inputs.filter(v => v instanceof BranchInputExpr) as BranchInputExpr[];
+        this.typeIndexExpr = new EnumTypeIndexExpr(token, inputs[inputs.length - 1]);
+        this.results = this.outputTypes.map(t => new DependentLocalExpr(token, t, this));
     }
 
     children() {
@@ -222,7 +192,7 @@ export class EnumMatchExpr extends Expr {
         const retType = this.outputTypes.map(t => t.getWasmTypeName()).join(' ');
         const branchId = `$branch_${uid()}`;
         ret += `(block ${branchId} (result ${retType}) ${
-            this.branches.map(() => '(block ').join('')
+            this.branches.slice(1).map(() => '(block ').join('')
         } (block (block ${
             this.typeIndexExpr.out(ctx, fun)
         }\n\t (br_table ${
@@ -231,7 +201,7 @@ export class EnumMatchExpr extends Expr {
             this.branches
                 .map(vs => vs.map(v => v.out(ctx, fun)).join(' '))
                 .join(`(br ${branchId}) )`)
-        } ))`;
+        } )`;
         ret += this.results.map(dl => fun.setLocalWat(dl.inds));
 
         return ret;

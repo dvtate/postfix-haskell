@@ -7,7 +7,7 @@ import * as expr from './expr/index.js';
 import * as error from './error.js';
 import Context from './context.js';
 import WasmNumber from './numbers.js';
-import Fun from './function.js';
+import Fun, { wideCompat } from './function.js';
 import scan, { LexerToken, MacroToken } from './scan.js';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
 import { invokeAsm } from './asm.js';
@@ -819,17 +819,16 @@ const operators : MacroOperatorsSpec = {
                         // Else case hasn't been traced yet
 
                         // Trace
-                        const trs =  ctx.traceIO(elseCase, token);
+                        const trs = ctx.traceIO(elseCase, token);
                         if (trs instanceof error.SyntaxError)
                             return trs;
 
                         // Validate
                         const t = trs.toArrowType(elseCase.token);
                         if (outputDt) {
-                            if (t.inputTypes.length !== outputDt.inputTypes.length
-                                || t.outputTypes.length !== outputDt.outputTypes.length
-                                || !outputDt.outputTypes.every((ot, i) => ot.check(t.outputTypes[i]))
-                            )
+                            // Note that outputDt may be altered
+                            const v = { datatype: outputDt };
+                            if (!wideCompat(v, t))
                                 return new error.SyntaxError(
                                     'Incompatible macro types in tuple passed to match',
                                     [elseCase.token, outputDt.token, token],
@@ -860,12 +859,10 @@ const operators : MacroOperatorsSpec = {
 
                     // Validate
                     const t = trs.toArrowType(indiciesFound[i].token);
-                    t.inputTypes = [];
                     if (outputDt) {
-                        if (t.inputTypes.length !== outputDt.inputTypes.length
-                            || t.outputTypes.length !== outputDt.outputTypes.length
-                            || !outputDt.outputTypes.every((ot, i) => ot.check(t.outputTypes[i]))
-                        )
+                        // Note that outputDt may be altered
+                        const v = { datatype: outputDt };
+                        if (!wideCompat(v, t))
                             return new error.SyntaxError(
                                 'Incompatible macro types in tuple passed to match',
                                 [t.token, outputDt.token, token],
@@ -881,12 +878,13 @@ const operators : MacroOperatorsSpec = {
             }
 
             // Construct expression
-            const matchExpr = expr.EnumMatchExpr.create(
+            const matchExpr = new EnumMatchExpr(
                 token,
-                ctx.stack.slice(-outputDt.inputTypes.length) as BranchInputExpr[],
+                ctx.stack.slice(-outputDt.inputTypes.length),
                 outputs,
                 subtypeBranchBindings,
-            );
+                outputDt.outputTypes as types.DataType[], // TODO warning
+            )
             if (!(matchExpr instanceof EnumMatchExpr))
                 return matchExpr;
             ctx.stack = oldStack;

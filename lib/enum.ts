@@ -63,6 +63,7 @@ export class EnumValue extends value.Value {
     declare value: value.Value;
     declare type: value.ValueType.EnumK;
     declare _datatype: types.ClassOrType<types.EnumClassType<types.DataType>>;
+    enumClass: types.EnumClassType<types.DataType>;
 
     /**
      * @param token location in code
@@ -73,6 +74,7 @@ export class EnumValue extends value.Value {
         super(token, value.ValueType.EnumK, v, t);
         if (!t.type.check(v.datatype))
             throw new error.SyntaxError('Enum instance incompatible types', [v.token, t.token, token]);
+        this.enumClass = t;
     }
 
     // Fix set and get methods
@@ -83,20 +85,8 @@ export class EnumValue extends value.Value {
         this._datatype = t;
     }
 
-    /**
-     * Drop classes but keep enum classtype
-     */
-    getEnumClassType() {
-        let t = this._datatype;
-        while (t instanceof types.ClassType)
-            t = t.type;
-        if (!(t as any instanceof types.EnumClassType))
-            throw new Error('wtf');
-        return t;
-    }
-
     toExpr() {
-        return new expr.EnumConstructor(this.token, this.value, this.getEnumClassType());
+        return new expr.EnumConstructor(this.token, this.value, this.enumClass);
     }
 
     out(ctx: ModuleManager, fun: expr.FunExpr) {

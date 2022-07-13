@@ -133,7 +133,15 @@ export default class Fun {
                 || !types.PrimitiveType.Types.I32.check(rv.datatype) && rv));
         if (typeErr) {
             console.error("typerror: ", typeErr);
-            return ['function conditions must put an I32 on top of stack'];
+            if (typeErr instanceof error.SyntaxError) {
+                typeErr.tokens.push(token);
+                return typeErr;
+            }
+            return new error.SyntaxError(
+                'function conditions must put an I32 on top of stack',
+                [typeErr.token, token],
+                ctx,
+            );
         }
 
         // Check for errors
@@ -268,12 +276,13 @@ export default class Fun {
 
 /**
  * Checks that types are compatible, with some widening allowed
- * @param wide reference to object with datatype that can be widened
+ * @param wide (mutable) reference to object with datatype that can be widened
  * @param t fixed data type
  * @returns true if compatible
  */
 // TODO different approach which better takes into account all branches
-function wideCompat(wide: { datatype: types.Type }, t: types.Type): boolean {
+export function wideCompat(wide: { datatype: types.Type }, t: types.Type): boolean {
+    // console.log('wideCompat: ', [wide.datatype.toString(), t.toString()]);
     const check = wide.datatype.check(t);
     if (check)
         return true;
@@ -305,12 +314,44 @@ function wideCompat(wide: { datatype: types.Type }, t: types.Type): boolean {
     }
 
     if (wide.datatype instanceof types.ClassType) {
-        // Widening to base type
+        // Widening to more basal type
         const fbc = wide.datatype.getBaseType();
         if (fbc.check(t)) {
             wide.datatype = fbc;
             return true;
         }
+    }
+
+    if (wide.datatype instanceof types.ArrowType && t instanceof types.ArrowType) {
+        if (wide.datatype.inputTypes.length !== t.inputTypes.length)
+            return false;
+        if (wide.datatype.outputTypes && t.outputTypes && wide.datatype.outputTypes.length !== t.outputTypes.length )
+            return false;
+        let incompat = false;
+        wide.datatype.inputTypes = wide.datatype.inputTypes.map((datatype, i) => {
+            if (!incompat) {
+                const v = { datatype };
+                if (!wideCompat(v, (t as types.ArrowType).inputTypes[i]))
+                    incompat = true;
+                else
+                    return v.datatype;
+            }
+            return datatype;
+        });
+        if (incompat)
+            return false;
+        if (wide.datatype.outputTypes && t.outputTypes)
+            wide.datatype.outputTypes = wide.datatype.outputTypes.map((datatype, i) => {
+                if (!incompat) {
+                    const v = { datatype };
+                    if (!wideCompat(v, (t as types.ArrowType).outputTypes[i]))
+                        incompat = true;
+                    else
+                        return v.datatype;
+                }
+                return datatype;
+            });
+        return !incompat;
     }
 
     return false;

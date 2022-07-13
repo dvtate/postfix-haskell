@@ -31,28 +31,31 @@ export class ParseError extends CompilerError {
 // Reference specific section(s) of code
 export class SyntaxError extends ParseError {
     tokens: LexerToken[];
-    ctx?: Context;
 
     /**
      * @param message - Reason
-     * @param tokens - Location
+     * @param tokens - Location in code
      * @param ctx - parser context
      */
-    constructor(message: string, tokens: LexerToken | LexerToken[], ctx?: Context) {
+    constructor(message: string, tokens: LexerToken | LexerToken[], public ctx?: Context) {
         super(message);
         this.ctx = ctx;
 
-        // Dedup tokens into this.tokens
         if (!(tokens instanceof Array))
             tokens = [tokens];
-        let p = tokens[0];
-        this.tokens = [p];
-        tokens.forEach(t => {
-            if (p !== t) {
-                this.tokens.push(t);
-                p = t;
-            }
-        });
+        this.tokens = tokens;
+    }
+
+    /**
+     * Remove adjacent duplicate tokens
+     * @returns modified this.tokens
+     */
+    dedupTokens(): LexerToken[] {
+        if (this.tokens.length === 0)
+            return [];
+        let p: LexerToken;
+        this.tokens = this.tokens.filter(t => t && t !== p ? (p = t) : false);
+        return this.tokens;
     }
 }
 

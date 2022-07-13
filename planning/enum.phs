@@ -11,7 +11,7 @@
 ( 8 1 ) Version.PointRel make $windows_version =
 ( 18 3 0 ) Version.SemVer3 make $nodejs_version =
 
-((Version):  (   Version.Number (:
+(:  (   Version.Number (:
             $n =
             ( 0 0 n ) Version.SemVer3 make
         )
@@ -23,20 +23,50 @@
     ) match
 ) $to_semver =
 
-((Version)(I32):  (   Version.Number   (: $v = v )
+(:  (   Version.Number   (: $v = v )
         Version.PointRel (: unpack pop )
         Version.SemVer3  (: unpack pop pop )
     ) match
 ) $get_major_version =
 
-$to_semver ~ :type
+#$to_semver ~ :type
 windows_version to_semver :type
 systemd_version get_major_version :data
 windows_version get_major_version :data
 windows_version to_semver get_major_version :data
 nodejs_version get_major_version :data
 
-#(rec:
-#    ( List I32 ) class $Node =
-#    ( ) class $Nil =
-#) enum $List =
+# Boolean type
+(:  Unit class $True =
+    Unit class $False =
+) enum $Bool =
+
+# Overload prelude.cast to cast ints to Bool enums
+((I32 Syntax:EnumNs): Bool __typecheck ) (: pop pop () Bool.True make ) $to fun
+((I32 Syntax:EnumNs): ( $v $Enum ) =
+    Enum Bool __typecheck v 0 == &&
+) (: pop pop () Bool.False make ) $to fun
+
+((Bool Syntax:Type): I32 == ) (:
+    pop
+    (   Bool.False (: pop 0 )
+        Bool.True (: pop 1 )
+    ) match
+) $cast fun
+
+((Bool Bool): 1 ) (:
+    swap
+    (   Bool.True (: pop
+            (   Bool.True (: pop () Bool.True make )
+                Bool.False (: pop () Bool.False make )
+            ) match
+        )
+        Bool.False (: pop pop () Bool.False make )
+    ) match
+) $and fun
+
+( I32 I32 ) (:
+    ( $v1 $v2 ) =
+    v1 Bool to
+    v2 Bool to and I32 cast
+) "anddemo" export

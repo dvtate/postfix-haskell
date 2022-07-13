@@ -30,7 +30,7 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx?: Context):
 
         // Convert enum values to enum exprs
         if (v instanceof EnumValue)
-            return new EnumConstructor(v.token, v.value, v.getEnumClassType());
+            return v.toExpr();
 
         // If a macro gets here it's because it should be a rt closure
 

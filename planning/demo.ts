@@ -50,6 +50,13 @@ import * as util from '../tools/util.js';
     else if (fname.includes('fizzbuzz.phs'))
         w.main(100);
 
+    else if (fname.includes('enum.phs')) {
+        console.log('0 & 0 => ', w.anddemo(0, 0));
+        console.log('0 & 1 => ', w.anddemo(0, 1));
+        console.log('1 & 0 => ', w.anddemo(1, 0));
+        console.log('1 & 1 => ', w.anddemo(1, 1));
+    }
+
     // const { get, set, incr }
     //     = mod.instance.exports as any;
     // console.log(get());
