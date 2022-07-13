@@ -1,4 +1,5 @@
 "./prelude.phs" require use
+"./bits.phs" require $bits =
 
 I32 I64 | $Int =
 F32 F64 | $Float =
@@ -55,3 +56,38 @@ Int Float | $Num =
     ) $iter =
     1 iter
 ) $fac fun
+
+(: 1 ) (:
+
+) $fac fun
+
+# Some useful constants
+2.7182818284590452354   $E =	    # e
+1.4426950408889634074   $LOG2E =	# log_2 e
+0.43429448190325182765  $LOG10E =   # log_10 e
+0.69314718055994530942  $LN2 =	   	# log_e 2
+2.30258509299404568402  $LN10 =	    # log_e 10
+3.14159265358979323846  $PI =	   	# pi
+0.31830988618379067154  $1_PI =	    # 1/pi
+1.41421356237309504880  $SQRT2 =	# sqrt(2)
+
+# Log base 2
+((I32): 1 ) (: $n = 32 n bits.clz - ) $log2 fun
+((I64): 1 ) (: $n = 64 n bits.clz - ) $log2 fun
+((F32): 1 ) (: ln LN2 / ) $log2 fun # log_2 x = log_e x / log_e 2
+((F64): 1 ) (: ln LN2 / ) $log2 fun
+
+# Natural Log
+((F32 F64 |): 1 ) (:
+    # https://stackoverflow.com/a/44232045/4475863
+    # TODO this algorithm isn't very accurate
+    # maybe try this instead? https://github.com/bradfa/musl/blob/master/src/math/log.c
+
+    $n =
+
+    64L n I64 cast bits.clz - $log_2 =  # log_2 = Max set bit
+    n 1L log_2 << F32 cast / $x =       # Normalized \in [1.0, 2.0]
+
+    -1.7417939f 2.8212026f -1.4699568f 0.44717955f 0.056570851f x * - x * + x * + x * +
+    log_2 F32 cast 0.69314718f * + # ln(2) = 0.69314718
+) $ln fun

@@ -691,4 +691,56 @@ export default class WasmNumber {
 
         return this;
     }
+
+    /**
+     * Count the leading zeros
+     */
+    clz() {
+        if ([NumberType.F32, NumberType.F64].includes(this._type))
+            throw new Error('Integer-only operation used on float type');
+
+        function clz32(v: bigint) {
+            let x = BigInt(0n != (v >> 16n)) * 16n;
+            x += BigInt(0n != (v >> (x + 8n))) * 8n;
+            x += BigInt(0n != (v >> (x + 4n))) * 4n;
+            x += BigInt(0n != (v >> (x + 2n))) * 2n;
+            x += BigInt(0n != (v >> (x + 1n)));
+            x += BigInt(0n != (v >> x));
+            return 32n - x;
+        }
+
+        if ([NumberType.I32, NumberType.U32].includes(this._type))
+            this.value = clz32(this._repr as bigint);
+        else if ([NumberType.I64, NumberType.U64].includes(this._type)) {
+            const v = this._repr as bigint;
+            const upper = v >> 32n;
+            const lower = v & 0xFF_FF_FF_FFn;
+            this.value = upper ? clz32(upper) : 32n + clz32(lower);
+        }
+        return this;
+    }
+
+    /**
+     * Count trailing zeros
+     */
+    ctz() {
+        // Should never get called when invalid
+        if ([NumberType.F32, NumberType.F64].includes(this._type))
+            throw new Error('Integer-only operation used on float type');
+
+        // Edge case
+        if (this._repr === 0n) {
+            this.value = [NumberType.I32, NumberType.U32].includes(this._type) ? 32n : 64n;
+            return this;
+        }
+
+        let ret = 0;
+        let v = this._repr as bigint;
+        while ((v & 1n) === 0n) {
+            v >>= 1n;
+            ret++;
+        }
+        this.value = BigInt(ret);
+        return this;
+    }
 }

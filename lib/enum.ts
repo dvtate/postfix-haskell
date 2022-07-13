@@ -59,6 +59,7 @@ export class EnumNs extends value.Value {
 /**
  * When enum value is known at compile time thus we can freely use and convert it
  */
+// TODO this should extend DataValue... no reason to have separate ValueType
 export class EnumValue extends value.Value {
     declare value: value.Value;
     declare type: value.ValueType.EnumK;
@@ -92,6 +93,4 @@ export class EnumValue extends value.Value {
     out(ctx: ModuleManager, fun: expr.FunExpr) {
         return this.toExpr().out(ctx, fun);
     }
-
-    // ; // TOOD should have same interface as the Exprs
 }

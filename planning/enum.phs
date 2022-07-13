@@ -42,10 +42,6 @@ nodejs_version get_major_version :data
 ) enum $Bool =
 
 # Overload prelude.cast to cast ints to Bool enums
-((I32 Syntax:EnumNs): Bool __typecheck ) (: pop pop () Bool.True make ) $to fun
-((I32 Syntax:EnumNs): ( $v $Enum ) =
-    Enum Bool __typecheck v 0 == &&
-) (: pop pop () Bool.False make ) $to fun
 
 ((Bool Syntax:Type): I32 == ) (:
     pop
@@ -53,6 +49,11 @@ nodejs_version get_major_version :data
         Bool.True (: pop 1 )
     ) match
 ) $cast fun
+((I32 Syntax:EnumNs): Bool == ) (: pop pop () Bool.True make ) $cast fun
+((I32 Syntax:EnumNs): ( $v $Enum ) =
+    Enum Bool == v 0 == &&
+) (: pop pop () Bool.False make ) $cast fun
+
 
 ((Bool Bool): 1 ) (:
     swap
@@ -67,6 +68,6 @@ nodejs_version get_major_version :data
 
 ( I32 I32 ) (:
     ( $v1 $v2 ) =
-    v1 Bool to
-    v2 Bool to and I32 cast
+    v1 Bool cast
+    v2 Bool cast and I32 cast
 ) "anddemo" export

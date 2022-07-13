@@ -946,9 +946,11 @@ const funs = {
             const a = ctx.pop();
 
             // Check syntax types
-            const isData = ![a, b].some(v =>
-                !(v instanceof value.DataValue || v instanceof expr.DataExpr));
-            if (a.type !== b.type && !isData) {
+            const isData = [a, b].every(v =>
+                v instanceof value.DataValue || v instanceof expr.DataExpr);
+            const isType = [a, b].every(v =>
+                [value.ValueType.Type, value.ValueType.EnumNs].includes(v.type))
+            if (a.type !== b.type && !isData && !isType) {
                 console.log('==: syntax err', {a, b});
                 return ['invalid syntax'];
             }
@@ -968,14 +970,15 @@ const funs = {
                 return ['expected two expressions to compare'];
             const b = ctx.pop();
             const a = ctx.pop();
-            const isData = ![a, b].some(v => ![value.ValueType.Expr, value.ValueType.Data].includes(v.type));
-            if (!isData && a.type !== b.type)
-                return [`disparate types ${a.type} ${b.type} ==`];
+            // const isData = ![a, b].some(v => ![value.ValueType.Expr, value.ValueType.Data].includes(v.type));
+            // if (!isData && a.type !== b.type)
+            //     return [`disparate types ${a.type} ${b.type} ==`];
 
             // Handle
             switch (a.type) {
                 // Typechecking
                 case value.ValueType.Type:
+                case value.ValueType.EnumNs:
                     ctx.push(toBool(b.value.check(a.value), token));
                     break;
 

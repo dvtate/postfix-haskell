@@ -67,7 +67,7 @@ export class AnyType extends Type implements DataTypeInterface {
  * Type variables - idk might not even implement this
  * ie: (($A $A $B): ( $v1 $v2 $obj ) = "field" v1 v2 + obj JSON.withMember )
  */
-export class TypeVarType extends AnyType {
+export class TypeVarType extends Type implements DataTypeInterface {
     type?: Type;
 
     constructor(token: LexerToken, public identifier: string, public scope: object) {
@@ -88,6 +88,16 @@ export class TypeVarType extends AnyType {
 
     toString(): string {
         return '$' + this.identifier;
+    }
+
+    flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
+        throw new error.SyntaxError('TypeVarType can only exist at compile-time', [this.token]);
+    }
+    isUnit(): boolean {
+        throw new error.SyntaxError('TypeVarType can only exist at compile-time', [this.token]);
+    }
+    getWasmTypeName(name?: string): string {
+        throw new error.SyntaxError('TypeVarType can only exist at compile-time', [this.token]);
     }
 }
 

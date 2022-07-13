@@ -141,6 +141,9 @@ const instructions: AssemblyDBEntry[] = [
     // Floating point unary operators
     ...genFloatUnaries(),
 
+    // Integer unary operators
+    ...genIntUnaries(),
+
     // Conversions
     ...genConversions(),
 
@@ -297,6 +300,23 @@ function genFloatUnaries(): AssemblyDBEntry[] {
     }]).reduce((a, b) => a.concat(b));
 }
 
+/**
+ * Generate entries for integer unary instructions avoiding boilerplate
+ */
+function genIntUnaries(): AssemblyDBEntry[] {
+    const ops: Array<keyof WasmNumberKeys> = ['clz', 'ctz'];
+    return [].concat(...ops.map((sym): AssemblyDBEntry[] => [{
+        symbol: `i32.${sym}`,
+        param: [types.PrimitiveType.Types.I32],
+        result: [types.PrimitiveType.Types.I32],
+        handler: (ctx: Context, [v]) => [(v.clone()[sym] as CallableFunction)()],
+    }, {
+        symbol: `i64.${sym}`,
+        param: [types.PrimitiveType.Types.I64],
+        result: [types.PrimitiveType.Types.I64],
+        handler: (ctx: Context, [v]) => [(v.clone()[sym] as CallableFunction)()],
+    }]));
+}
 /**
  * Memory instructions
  */
