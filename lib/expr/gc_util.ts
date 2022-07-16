@@ -112,12 +112,13 @@ export function loadRef(
 ): string {
     const fpl = dt.flatPrimitiveList();
 
+    // TODO when fpl.length <= 1 local not needed
     const ptrLocal = fun.addLocal(types.PrimitiveType.Types.I32);
-    let ret = fun.setLocalWat(ptrLocal);
-
-    ret += fpl.map(t =>
-        `(${t.getWasmTypeName()}.load offset=${t.offsetBytes} ${fun.getLocalWat(ptrLocal)})`
-    ).join(' ');
-
-    return ret;
+    return `(call $__ref_stack_pop)${
+        fun.setLocalWat(ptrLocal)
+    }${
+        fpl.map(t =>
+            `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} ${fun.getLocalWat(ptrLocal)})`
+        ).join(' ')
+    }`;
 }

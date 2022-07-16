@@ -669,6 +669,8 @@ export class RefType<T extends DataType> extends DataType {
      */
     constructor(token: LexerToken, public type: T, public offsetBytes = 0) {
         super(token);
+        if (!type)
+            console.log(this, new Error('wwww').stack);
     }
 
     /**

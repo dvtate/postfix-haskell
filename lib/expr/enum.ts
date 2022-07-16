@@ -61,13 +61,13 @@ export class EnumGetExpr extends DataExpr {
         if (!this.results)
             return this.enumExpr.out(ctx, fun)
                 + '(drop)'
-                + loadRef(new types.RefType(this.token, this._datatype.type), fun);
+                + loadRef(new types.RefType(this.token, this._datatype), fun);
 
         this.results.forEach(r => r.inds = fun.addLocal(r.datatype));
         return `${
             this.enumExpr.out(ctx, fun)
         } (drop) ${
-            loadRef(new types.RefType(this.token, this._datatype.type), fun)
+            loadRef(new types.RefType(this.token, this._datatype), fun)
         } ${
             this.results.map(r => fun.setLocalWat(r.inds)).join(' ')
         }`;
@@ -91,7 +91,7 @@ export class EnumGetExpr extends DataExpr {
             // Shouldn't have to check this
             const badT = retDt.types.find(t => !(t instanceof types.DataType));
             if (badT)
-            return new error.SyntaxError('Compile-time only type cannot be used in an enum', [badT.token, token], ctx);
+                return new error.SyntaxError('Compile-time only type cannot be used in an enum', [badT.token, token], ctx);
 
             // Pack Components of loaded value into a tuple
             const ret = new EnumGetExpr(token, enumExpr, dt);
@@ -141,9 +141,9 @@ export class EnumConstructor extends DataExpr {
         const v = this.knownValue instanceof value.Value
             ? fromDataValue([this.knownValue])
             : this.knownValue;
-        return `\n\t${v.map(v => v.out(ctx, fun)).join(' ')
-            }\n\t${constructGc(this.enumClassType.type, ctx, fun)
-            }(i32.const ${this._datatype.index})`;
+        return `(i32.const ${this._datatype.index})\n\t${
+                v.map(v => v.out(ctx, fun)).join(' ')
+            }\n\t${constructGc(this.enumClassType.type, ctx, fun)}`;
     }
 
     children(): Expr[] {

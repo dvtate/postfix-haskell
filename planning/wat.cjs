@@ -5,7 +5,7 @@
 // Load WAT source
 const fs = require('fs');
 
-const fname = 'swap_benchmark.wasm';
+const fname = 'wat.wasm';
 const bin = fs.readFileSync(fname);
 console.log('bin:', bin);
 const valid = WebAssembly.validate(bin);

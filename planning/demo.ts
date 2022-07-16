@@ -57,6 +57,16 @@ import * as util from '../tools/util.js';
         console.log('1 & 1 => ', w.anddemo(1, 1));
     }
 
+    else if (fname.includes('maybe.phs')) {
+        console.log('sqrt . log $ 0 => ', w.test(0));
+        console.log('sqrt . log $ 1 => ', w.test(1));
+        console.log('sqrt . log $ 2 => ', w.test(2));
+        console.log('sqrt . log $ 4 => ', w.test(4));
+        console.log('sqrt . log $ 10 => ', w.test(10));
+        console.log('sqrt . log $ 20 => ', w.test(20));
+        console.log('sqrt . log $ 52 => ', w.test(52));
+    }
+
     // const { get, set, incr }
     //     = mod.instance.exports as any;
     // console.log(get());

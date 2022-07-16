@@ -30,6 +30,13 @@ export abstract class FunLocalTracker {
     abstract setLocalWat(): string;
 }
 
+
+// TODO need to add a concept of duration so that we can maybe recycle slots
+//      Thus we should add a method to the FunExpr class called `freeLocal()`
+//      - For primitives: allows slot to be reused
+//      - For references: overwrites with zero; allows slot to be reused
+//      Probably can't apply this to TeeExpr, DependentLocalExpr, etc.
+
 export class FunLocalTrackerStored extends FunLocalTracker {
     constructor(
         fun: FunExpr,
@@ -75,7 +82,7 @@ export class FunLocalTrackerStored extends FunLocalTracker {
                     : ''
             }`;
 
-        if (this.index !== 0)
+        if (this.datatype.offsetBytes !== 0)
             return '';
 
         return `\n\t(call $__ref_stack_push (i32.load offset=${this.index

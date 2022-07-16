@@ -1,0 +1,46 @@
+"./stdlib/prelude.phs" require use
+"./stdlib/monad.phs" require use
+"./stdlib/math.phs" require $math =
+
+# Identity
+(: $a = $a ~ ) $id =
+
+# Maybe monad
+(:  $T =
+    (:  T class $Just =
+        () type class $Nothing =
+    ) enum
+) $Maybe =
+F64 Maybe $DblMaybe =
+
+(:  (   DblMaybe.Just (:
+            (: 1 ) (: math.sqrt DblMaybe.Just make ) $chk0 fun
+            (: 0.0 <= ) (: pop () DblMaybe.Nothing make ) $chk0 fun
+            chk0
+        )
+        DblMaybe.Nothing (: DblMaybe.Nothing make )
+    ) match
+) $safeSqrt =
+
+#
+(:  (   DblMaybe.Just (:
+            (: 1 ) (: math.ln DblMaybe.Just make ) $chk0 fun
+            (: 0.0 <= ) (: pop () DblMaybe.Nothing make ) $chk0 fun
+            chk0
+        )
+        DblMaybe.Nothing (: DblMaybe.Nothing make )
+    ) match
+) $safeLog =
+
+(F64) (:
+    # Convert raw input to maybe monad
+    DblMaybe.Just make
+
+    # Apply safeLog then safeSqrt to maybe monad
+    safeLog safeSqrt
+
+    # Pattern match on maybe monad
+    (   DblMaybe.Just (: id )
+        DblMaybe.Nothing (: pop 0.0 )
+    ) match
+) "test" export

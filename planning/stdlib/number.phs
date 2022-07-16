@@ -1,0 +1,25 @@
+"./prelude.phs" require use
+
+{
+    ((Syntax:Type): F64 == ) (: pop 2.220446049250313e-16 ) $epsilon fun
+    ((Syntax:Type): F64 == ) (: pop 5e-324 ) $min_value fun
+    ((Syntax:Type): F64 == ) (: pop 1.7976931348623157e+308 ) $max_value fun
+    ((Syntax:Type): F64 == ) (: pop -9007199254740991L ) $min_safe_int fun
+    ((Syntax:Type): F64 == ) (: pop 9007199254740991 ) $min_safe_int fun
+    ((Syntax:Type): F64 == ) (: pop NaN ) $nan fun
+    ((Syntax:Type): F64 == ) (: pop Infinity ) $positive_infinity fun
+    ((Syntax:Type): F64 == ) (: pop -Infinity ) $negative_infinity fun
+
+    #((Syntax:Type): F32 == ) (: pop 2.220446049250313e-16 ) $epsilon fun
+    #((Syntax:Type): F32 == ) (: pop 5e-324 ) $min fun
+    #((Syntax:Type): F32 == ) (: pop 1.7976931348623157e+308 ) $max fun
+    #((Syntax:Type): F32 == ) (: pop -9007199254740991L ) $min_safe_int fun
+    #((Syntax:Type): F32 == ) (: pop 9007199254740991 ) $min_safe_int fun
+    ((Syntax:Type): F32 == ) (: pop NaN F32 cast ) $nan fun
+    ((Syntax:Type): F32 == ) (: pop Infinity F32 cast ) $positive_infinity fun
+    ((Syntax:Type): F32 == ) (: pop -Infinity F32 cast ) $negative_infinity fun
+
+
+
+
+} namespace $limits =

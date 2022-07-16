@@ -154,9 +154,16 @@ const operators : MacroOperatorsSpec = {
                 const retlen = ctx.stack.length - ctx.cmpStack(oldStack);
                 if (retlen > 1)
                     return ['type macro should only return one value']; // TODO need to find a way to improve error tracing
-                let t: any = ctx.pop();
-                if (t.type !== value.ValueType.Type)
+                let t = ctx.pop();
+                if (![value.ValueType.Type, value.ValueType.EnumNs].includes(t.type))
                     return ['expected a type to append class to'];
+
+                // TODO add classes field to types.EnumBaseType
+                // if (t instanceof EnumNs) {
+                //     const type = t.datatype as types.EnumBaseType;
+                //     return;
+                // }
+
                 t = t.value;
                 // if (v.recursive)
                 //     t = new types.RefType(tok, t);
@@ -164,7 +171,7 @@ const operators : MacroOperatorsSpec = {
                 // Use class wrapper
                 ctx.push(
                     new value.Value(tok, value.ValueType.Type,
-                        new types.ClassType(tok, t, id, v.recursive)));
+                        new types.ClassType(tok, t as any, id, v.recursive)));
             };
 
             // Push
@@ -830,12 +837,14 @@ const operators : MacroOperatorsSpec = {
                             const v = { datatype: outputDt };
                             if (!wideCompat(v, t))
                                 return new error.SyntaxError(
-                                    'Incompatible macro types in tuple passed to match',
+                                    `Incompatible macro types in tuple passed to match: ${
+                                        outputDt.toString()}\nand\n${t.toString()}`,
                                     [elseCase.token, outputDt.token, token],
                                     ctx,
                                 );
                         } else {
                             outputDt = t;
+                            outputDt.inputTypes = outputDt.inputTypes.map(t => new types.AnyType(token));
                         }
 
                         // Add binding
@@ -864,12 +873,14 @@ const operators : MacroOperatorsSpec = {
                         const v = { datatype: outputDt };
                         if (!wideCompat(v, t))
                             return new error.SyntaxError(
-                                'Incompatible macro types in tuple passed to match',
+                                `Incompatible macro types in tuple passed to match: ${
+                                    outputDt.toString()}\nand\n${t.toString()}`,
                                 [t.token, outputDt.token, token],
                                 ctx,
                             );
                     } else {
                         outputDt = t;
+                        outputDt.inputTypes = outputDt.inputTypes.map(t => new types.AnyType(token));
                     }
 
                     // Add binding

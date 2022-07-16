@@ -18,7 +18,7 @@ interface AssemblyDBEntry {
     result: types.PrimitiveType[];
 
     // Compile-time reduction of constant expressions
-    handler?: (ctx: Context, args: WasmNumber[], instr: string) => WasmNumber[] | Error;
+    handler?: (ctx: Context, args: WasmNumber[], instr: string) => WasmNumber[] | Error | Error[];
 }
 
 // Types
@@ -182,6 +182,13 @@ const instructions: AssemblyDBEntry[] = [
         result: [],
         handler: () => [],
     },
+
+    {
+        symbol: 'unreachable',
+        param: [],
+        result: [],
+        handler: (ctx, _) => new error.SyntaxError('trap: unreachable', [], ctx),
+    }
 ];
 
 /**
@@ -433,6 +440,11 @@ export function invokeAsm(ctx: Context, token: LexerToken, cmd: string) {
         const ret = instr.handler(ctx, args.map(a => a.value).reverse(), cmd);
         if (ret instanceof Error)
             return ret;
-        ctx.push(...ret.map(e => new value.NumberValue(token, e)));
+        const err = (ret as (Error| WasmNumber)[])
+            .find((v: Error | WasmNumber): boolean =>
+                v instanceof Error) as Error;
+        if (err)
+            return err;
+        ctx.push(...ret.map(e => new value.NumberValue(token, e as WasmNumber)));
     }
 }
