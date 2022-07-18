@@ -1,0 +1,30 @@
+
+# Current syntax using classes
+(:  $T =
+    (:  T class $Just =
+        () type class $Nothing =
+    ) enum Monad
+) class $Maybe =
+
+# TypeScript inspired
+class Maybe<T> extends Monad<T> = enum {
+	class Just = T
+	class Nothing = typeof ()
+};
+
+# Haskell inspired
+class Maybe T = Just T | Nothing (extends Monad)
+
+
+# Current syntax no classes
+(:  $T =
+    (:  T class $Just =
+        () type class $Nothing =
+    ) enum
+) $Maybe =
+
+enum Maybe<T> {
+	Just(T),
+	Nothing,
+};
+

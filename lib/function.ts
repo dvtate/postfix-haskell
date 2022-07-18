@@ -250,6 +250,7 @@ export default class Fun {
                 !wideCompat(first[i], v.datatype)));
         if (givesInconsistent) {
             console.error("ios", ios);
+            console.log(ios.map(e => e.gives.map(v => v.datatype.toString())));
             return ['possible function branches give inconsistent results'];
         }
 

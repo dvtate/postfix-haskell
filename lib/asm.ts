@@ -182,13 +182,12 @@ const instructions: AssemblyDBEntry[] = [
         result: [],
         handler: () => [],
     },
-
     {
         symbol: 'unreachable',
         param: [],
         result: [],
-        handler: (ctx, _) => new error.SyntaxError('trap: unreachable', [], ctx),
-    }
+        handler: ctx => new error.SyntaxError('trap: unreachable', [], ctx),
+    },
 ];
 
 /**

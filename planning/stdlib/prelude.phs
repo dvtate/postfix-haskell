@@ -34,7 +34,7 @@ Never $Void =
 (: swap type == ) (: pop ) $cast fun
 
 # Cast to I32
-((I64 Syntax:Type): I32 == ) (: pop "i32.wrap_i64_s" asm ) $cast fun
+((I64 Syntax:Type): I32 == ) (: pop "i32.wrap_i64" asm ) $cast fun
 ((F32 Syntax:Type): I32 == ) (: pop "i32.trunc_f32_s" asm ) $cast fun
 ((F64 Syntax:Type): I32 == ) (: pop "i32.trunc_f64_s" asm ) $cast fun
 

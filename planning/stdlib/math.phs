@@ -71,7 +71,7 @@ Int Float | $Num =
         (: guess guess * x - abs x / 1.0e-15 < ) $good_enough =
 
         # We can improve the value by averaging with quotient
-        (: x x guess / guess avg iter ) $improve =
+        (: x x guess / guess + 2 / iter ) $improve =
 
         # Improve value until it's good enough
         (: true ) (: improve ) $cond fun
@@ -90,7 +90,7 @@ Int Float | $Num =
         (: guess guess * x - abs x / 1.0e-6 < ) $good_enough =
 
         # We can improve the value by averaging with quotient
-        (: x x guess / guess avg iter ) $improve =
+        (: x x guess / guess + 2 / iter ) $improve =
 
         # Improve value until it's good enough
         (: true ) (: improve ) $cond fun
@@ -185,6 +185,9 @@ Int Float | $Num =
  */
 " pop
 ((F64): 1 ) (:
+    # TODO this doesn't work lol
+
+
     # Some constants
     6.93147180369123816490e-01  $ln2_hi =   # 3fe62e42 fee00000
     1.90821492927058770002e-10  $ln2_lo =   # 3dea39ef 35793c76
@@ -198,11 +201,48 @@ Int Float | $Num =
     1.479819860511658591e-01    $Lg7 =      # 3FC2F112 DF3E5244
 
     $x =
-    x I64 cast dup
-        32 >> I32 cast $hx =
-        I32 cast $lx =
+    x I64 cast $u =
+    u 32L >> I32 cast $hx =
 
+    ((I32 F64 I64 I32):
+        ( $k $x $u $hx ) =
 
+        hx 0x3FF00000 0x3FE6A09E - + $hx2 =
+        k hx2 20 >> 0x3FF - + $k2 =
+        hx2 0x000FFFFF bits.and 0x3FE6A09E + $hx3 =
+        hx3 I64 cast 32L << u 0xFFFFFFFFL bits.and bits.or $u2 =
 
+        u2 F64 cast $x =
+        x 1.0 - $f =
+        0.5 f f * * $hfsq =
+        f 2.0 f + / $s =
+        s s * $z =
+        z z * $w =
+        w  Lg2  w  Lg4  w  Lg6 * + * + * $t1 =
+        z  Lg1  w  Lg3  w  Lg5  w  Lg7 * + * + * + * $t2 =
+        t1 t2 + $r =
+        k2 F64 cast $dk =
+
+        s hfsq r + * dk ln2_lo * + hfsq - f + dk ln2_hi * +
+    ) $calculate =
+
+    (: 1 ) (:
+        0 x u hx
+        calculate
+    ) $edge_cases fun
+    (: hx 0x7FF00000 >= ) (: x ) $edge_cases fun
+    (: hx 0x3FF00000 == u 32L << 0L == && ) (: 0.0 ) $edge_cases fun
+    (: hx 0x00100000 < hx 31 >> || ) (:
+        (: 1 ) (:
+            -54                 # k
+            x two54 * dup       # x
+            I64 cast            # u
+            dup 32L >> I32 cast # hx
+            calculate
+        ) $branch fun
+        (: u 1L << 0L == ) (: -1 x x * / ) $branch fun
+        (: hx 31 >> ) (: x x - 0.0 / ) $branch fun
+        branch
+    ) $edge_cases fun
+    edge_cases
 ) $log fun
-

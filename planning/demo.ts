@@ -58,13 +58,14 @@ import * as util from '../tools/util.js';
     }
 
     else if (fname.includes('maybe.phs')) {
-        console.log('sqrt . log $ 0 => ', w.test(0));
-        console.log('sqrt . log $ 1 => ', w.test(1));
-        console.log('sqrt . log $ 2 => ', w.test(2));
-        console.log('sqrt . log $ 4 => ', w.test(4));
-        console.log('sqrt . log $ 10 => ', w.test(10));
-        console.log('sqrt . log $ 20 => ', w.test(20));
-        console.log('sqrt . log $ 52 => ', w.test(52));
+        console.log('log 0 => ', w.test(0));
+        console.log('log 0.1 => ', w.test(0.1));
+        console.log('log 1 => ', w.test(1));
+        console.log('log 2 => ', w.test(2));
+        console.log('log 4 => ', w.test(4));
+        console.log('log 10 => ', w.test(10));
+        console.log('log 20 => ', w.test(20));
+        console.log('log 54 => ', w.test(54));
     }
 
     // const { get, set, incr }

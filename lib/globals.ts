@@ -739,7 +739,7 @@ const operators : MacroOperatorsSpec = {
             for (let i = 0; i < arg.value.length;) {
                 const k = arg.value[i++];
                 const m = arg.value[i++];
-                if (k.type !== value.ValueType.Type)
+                if (![value.ValueType.Type, value.ValueType.EnumNs].includes(k.type))
                     return new error.SyntaxError('Expected an enum type here', [k.token, token], ctx);
                 if (!(m instanceof Macro))
                     return new error.SyntaxError('Expected a macro here', [m.token, token], ctx);
