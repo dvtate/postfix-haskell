@@ -13,7 +13,7 @@
 ) $Maybe =
 F64 Maybe $DblMaybe =
 
-# Wrappers for square route and natural log functions which give Maybe.Nothing on invalid input
+# Wrappers for square route and natural log which give Maybe.Nothing on invalid input
 (:  (   DblMaybe.Just (:
             (: 1 ) (: math.sqrt DblMaybe.Just make ) $chk0 fun
             (: 0 <= ) (: pop () DblMaybe.Nothing make ) $chk0 fun
@@ -32,16 +32,26 @@ F64 Maybe $DblMaybe =
 ) $safeLog =
 
 (F64) (:
-    ## Convert raw input to maybe monad
-    #DblMaybe.Just make
-#
-    ## Apply safeLog then safeSqrt to maybe monad
-    #safeLog safeSqrt
-#
-    ## Pattern match on maybe monad
-    #(   DblMaybe.Just (: id )
-    #    DblMaybe.Nothing (: pop 0.0 )
-    #) match
+    # Wrap raw input with maybe monad
+    DblMaybe.Just make
 
-    math.log
+    # Apply safeLog then apply safeSqrt
+    safeLog safeSqrt
+
+    # Pattern match on maybe monad
+    (   DblMaybe.Just (: id )
+        DblMaybe.Nothing (: pop 0.0 )
+    ) match
 ) "test" export
+
+
+
+
+# 0.0 dup :data math.log :data
+# 0.1 dup :data math.log :data
+# 1.0 dup :data math.log :data
+# 2.0 dup :data math.log :data
+# 4.0 dup :data math.log :data
+# 10.0 dup :data math.log :data
+# 20.0 dup :data math.log :data
+# 54.0 dup :data math.log :data

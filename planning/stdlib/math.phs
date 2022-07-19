@@ -1,32 +1,24 @@
 "./prelude.phs" require use
 "./bits.phs" require $bits =
-
-I32 I64 | $Int =
-F32 F64 | $Float =
-Int Float | $Num =
+"./number.phs" require $number =
 
 # Absolute value
-(: true ) (: touch ) $abs fun
+(: 1 ) (: $v = $v ~ ) $abs fun
 (: 0.0 < ) (: 0 swap - ) $abs fun
 ((F32): 1 ) (: "f32.abs" asm ) $abs fun
 ((F64): 1 ) (: "f64.abs" asm ) $abs fun
 
 # Use bigger of two values
-(: true ) (: pop ) $max fun
+(: 1 ) (: pop ) $max fun
 (: < ) (: ( $a $b ) = b ) $max fun
 ((F32): 1 ) (: "f32.max" asm ) $max fun
 ((F64): 1 ) (: "f64.max" asm ) $max fun
 
 # Use smaller of two values
-(: true ) (: pop ) $min fun
+(: 1 ) (: pop ) $min fun
 (: > ) (: ( $a $b ) = b ) $min fun
 ((F32): 1 ) (: "f32.min" asm ) $min fun
 ((F64): 1 ) (: "f64.min" asm ) $min fun
-
-# Clamp a value between a given min and max
-(: 1 ) (: pop pop ) $clamp fun
-(: ( $n $min $max ) = n max > ) (: $max = pop pop max ) $clamp fun
-(: ( $n $min $max ) = n min < ) (: pop $min = pop min ) $clamp fun
 
 # Square route
 ((F32): 1 ) (: "f32.sqrt" asm ) $sqrt fun
@@ -48,8 +40,10 @@ Int Float | $Num =
 ((F32): 1 ) (: "f32.nearest" asm ) $nearest fun
 ((F64): 1 ) (: "f64.nearest" asm ) $nearest fun
 
-# PI constant
-3.141592653589793 $PI =
+# Clamp a value between a given min and max
+(: 1 ) (: pop pop ) $clamp fun
+(: ( $n $min $max ) = n max > ) (: $max = pop pop max ) $clamp fun
+(: ( $n $min $max ) = n min < ) (: pop $min = pop min ) $clamp fun
 
 # Factorial
 (: 1 ) (:
@@ -60,11 +54,12 @@ Int Float | $Num =
         branch
     ) $iter =
     1 iter
-) $fac fun
+) $factorial fun
 
-
-((F64): 1 ) (: # Square route via newton-rhapson method
-	((F64 F64) (F64) rec: # Tail-recursive helper
+# Square route
+((number.Float): 1 ) (: # Square route via newton-rhapson method
+    dup type $T =
+	((T T) (T) rec: # Tail-recursive helper
         ( $x $guess ) =
 
         # Do we have an acceptable margin of error?
@@ -74,33 +69,33 @@ Int Float | $Num =
         (: x x guess / guess + 2 / iter ) $improve =
 
         # Improve value until it's good enough
-        (: true ) (: improve ) $cond fun
+        (: 1 ) (: improve ) $cond fun
         (: good_enough ) (: guess ) $cond fun
         cond
 	) $iter =
 
     # Start calculating with first guess being 1
-    1.0 iter
+    1.0 T cast iter
 ) $sqrt fun
-((F32): 1 ) (: # Square route via newton-rhapson method
-	((F32 F32) (F32) rec: # Tail-recursive helper
-        ( $x $guess ) =
 
-        # Do we have an acceptable margin of error?
-        (: guess guess * x - abs x / 1.0e-6 < ) $good_enough =
+# Raise given number to given power
+((number.Float number.Int): 1) (:
+    ( $x $n ) =
+    x type $Tf =
 
-        # We can improve the value by averaging with quotient
-        (: x x guess / guess + 2 / iter ) $improve =
-
-        # Improve value until it's good enough
-        (: true ) (: improve ) $cond fun
-        (: good_enough ) (: guess ) $cond fun
-        cond
-	) $iter =
-
-    # Start calculating with first guess being 1
-    1.0 iter
-) $sqrt fun
+    (: 1 ) (:
+        ((n type Tf Tf) rec: ( $n $r $l ) =
+            (: 1 ) (:       n 2 /   r       l l *   iter ) $branch fun
+            (: n 2 % ) (:   n 2 /   r l *   l l *   iter ) $branch fun
+            (: n 1 <= ) (: r l * ) $branch fun
+            branch
+        ) $iter =
+        n x 1.0 Tf cast iter
+    ) $edges fun
+    (: n 0 < ) (: 1 x -1 n - pow ) $edges
+    (: n 0 == ) (: 1.0 Tf cast ) $edges
+    edges
+) $pow fun
 
 # Some useful constants
 2.7182818284590452354   $kE =	    # e
@@ -113,26 +108,10 @@ Int Float | $Num =
 # Log base 2
 ((I32): 1 ) (: $n = 32 n bits.clz - ) $log2 fun
 ((I64): 1 ) (: $n = 64 n bits.clz - ) $log2 fun
-((F32): 1 ) (: ln LN2 / ) $log2 fun # log_2 x = log_e x / log_e 2
-((F64): 1 ) (: ln LN2 / ) $log2 fun
+((F32): 1 ) (: log kLN2 / ) $log2 fun # log_2 x = log_e x / log_e 2
+((F64): 1 ) (: log kLN2 / ) $log2 fun
 
-# Natural Log
-((F32 F64 |): 1 ) (:
-    # https://stackoverflow.com/a/44232045/4475863
-    # TODO this algorithm isn't very accurate
-    # maybe try this instead? https://github.com/bradfa/musl/blob/master/src/math/log.c
-
-    $n =
-
-    64L n I64 cast bits.clz - $log_2 =  # log_2 = Max set bit
-    n 1L log_2 << F32 cast / $x =       # Normalized \in [1.0, 2.0]
-
-    -1.7417939f 2.8212026f -1.4699568f 0.44717955f 0.056570851f x * - x * + x * + x * +
-    log_2 F32 cast 0.69314718f * + # ln(2) = 0.69314718
-) $ln fun
-
-
-" Source musl/src/math/log.c COPYRIGHT SUN
+" Algorithm: musl/src/math/log.c from FreeBSD
 /* log(x)
  * Return the logrithm of x
  *
@@ -185,41 +164,38 @@ Int Float | $Num =
  */
 " pop
 ((F64): 1 ) (:
-    # TODO this doesn't work lol
-
-
     # Some constants
     6.93147180369123816490e-01  $ln2_hi =   # 3fe62e42 fee00000
     1.90821492927058770002e-10  $ln2_lo =   # 3dea39ef 35793c76
     1.80143985094819840000e+16  $two54  =   # 43500000 00000000
-    6.666666666666735130e-01    $Lg1 =      # 3FE55555 55555593
-    3.999999999940941908e-01    $Lg2 =      # 3FD99999 9997FA04
-    2.857142874366239149e-01    $Lg3 =      # 3FD24924 94229359
-    2.222219843214978396e-01    $Lg4 =      # 3FCC71C5 1D8E78AF
-    1.818357216161805012e-01    $Lg5 =      # 3FC74664 96CB03DE
-    1.531383769920937332e-01    $Lg6 =      # 3FC39A09 D078C69F
-    1.479819860511658591e-01    $Lg7 =      # 3FC2F112 DF3E5244
+    6.666666666666735130e-01    $lg1 =      # 3FE55555 55555593
+    3.999999999940941908e-01    $lg2 =      # 3FD99999 9997FA04
+    2.857142874366239149e-01    $lg3 =      # 3FD24924 94229359
+    2.222219843214978396e-01    $lg4 =      # 3FCC71C5 1D8E78AF
+    1.818357216161805012e-01    $lg5 =      # 3FC74664 96CB03DE
+    1.531383769920937332e-01    $lg6 =      # 3FC39A09 D078C69F
+    1.479819860511658591e-01    $lg7 =      # 3FC2F112 DF3E5244
 
     $x =
-    x I64 cast $u =
+    x bits.reinterpret $u =
     u 32L >> I32 cast $hx =
 
     ((I32 F64 I64 I32):
         ( $k $x $u $hx ) =
 
         hx 0x3FF00000 0x3FE6A09E - + $hx2 =
-        k hx2 20 >> 0x3FF - + $k2 =
+        k 0x3FF - hx2 20 >> + $k2 =
         hx2 0x000FFFFF bits.and 0x3FE6A09E + $hx3 =
-        hx3 I64 cast 32L << u 0xFFFFFFFFL bits.and bits.or $u2 =
+        hx3 "i64.extend_i32_u" asm 32L << u 0xFFFFFFFFL bits.and bits.or $u2 =
+        u2 bits.reinterpret $x =
 
-        u2 F64 cast $x =
         x 1.0 - $f =
         0.5 f f * * $hfsq =
         f 2.0 f + / $s =
         s s * $z =
         z z * $w =
-        w  Lg2  w  Lg4  w  Lg6 * + * + * $t1 =
-        z  Lg1  w  Lg3  w  Lg5  w  Lg7 * + * + * + * $t2 =
+        w  lg2  w  lg4  w  lg6 * + * + * $t1 =
+        z  lg1  w  lg3  w  lg5  w  lg7 * + * + * + * $t2 =
         t1 t2 + $r =
         k2 F64 cast $dk =
 
@@ -236,13 +212,40 @@ Int Float | $Num =
         (: 1 ) (:
             -54                 # k
             x two54 * dup       # x
-            I64 cast            # u
+            bits.reinterpret    # u
             dup 32L >> I32 cast # hx
             calculate
         ) $branch fun
-        (: u 1L << 0L == ) (: -1 x x * / ) $branch fun
+        (: u 1L << 0L == ) (: -1.0 x x * / ) $branch fun
         (: hx 31 >> ) (: x x - 0.0 / ) $branch fun
         branch
     ) $edge_cases fun
     edge_cases
 ) $log fun
+((F32): 1 ) (: F64 cast log ) $log fun
+
+# Trig Utils
+(:  ((number.Float dup): type swap type == ) (:
+        - dup type number.limits.epsilon <=
+    ) $feq fun
+    ((number.Float dup dup number.Int dup number.Float) rec:
+        ( $x $sum $n $i $s $t ) =
+        (: 1 ) (: x    sum t s * n /    n i * i 1 + *    i 2 +    s neg    t x x * *    trig_series ) $branch fun
+        (: sum sum t s * n / + feq ) (: sum ) $branch fun
+        branch
+    ) $trig_series =
+) namespace $detail =
+
+# Basic Trig functions
+((number.Float): 1 ) (:
+    dup $x = type $T =
+    x  x  6.0 T cast  4  -1  x x * x *  detail.trig_series
+) $sin fun
+((number.Float): 1 ) (:
+    dup $x = type $T =
+    x  1.0 T cast  2.0 T cast  3  -1  x x *  detail.trig_series
+) $sin fun
+((Any): 1 ) (: $x = x sin  x cos / ) $tan fun
+((Any): 1 ) (: $x = x cos  x sin / ) $cot fun
+((Any): 1 ) (: $x = 1 x cos / ) $sec fun
+((Any): 1 ) (: $x = 1 x sin / ) $csc fun

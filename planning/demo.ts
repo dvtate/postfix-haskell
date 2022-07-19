@@ -42,30 +42,27 @@ import * as util from '../tools/util.js';
     const w = mod.instance.exports as any;
 
     // Print sqrts of 1-10
-    if (fname.includes('sqrt.phs'))
+    if (fname.includes('sqrt.phs')) {
         for (let i = 1; i < 10; i++)
             console.log(w.sqrt(i));
 
     // Do fizzbuzz for n=1..100
-    else if (fname.includes('fizzbuzz.phs'))
+    } else if (fname.includes('fizzbuzz.phs')) {
         w.main(100);
-
-    else if (fname.includes('enum.phs')) {
+    } else if (fname.includes('enum.phs')) {
         console.log('0 & 0 => ', w.anddemo(0, 0));
         console.log('0 & 1 => ', w.anddemo(0, 1));
         console.log('1 & 0 => ', w.anddemo(1, 0));
         console.log('1 & 1 => ', w.anddemo(1, 1));
-    }
-
-    else if (fname.includes('maybe.phs')) {
-        console.log('log 0 => ', w.test(0));
-        console.log('log 0.1 => ', w.test(0.1));
-        console.log('log 1 => ', w.test(1));
-        console.log('log 2 => ', w.test(2));
-        console.log('log 4 => ', w.test(4));
-        console.log('log 10 => ', w.test(10));
-        console.log('log 20 => ', w.test(20));
-        console.log('log 54 => ', w.test(54));
+    } else if (fname.includes('maybe.phs')) {
+        console.log('sqrt( log( -Infinity ) ) \t=> ', w.test(-Infinity));
+        console.log('sqrt( log( -1 ) ) \t\t=> ', w.test(-1));
+        console.log('sqrt( log( 0 ) ) \t\t=> ', w.test(0));
+        console.log('sqrt( log( 0.1 ) ) \t\t=> ', w.test(0.1));
+        console.log('sqrt( log( 1 ) ) \t\t=> ', w.test(1));
+        console.log('sqrt( log( 2 ) ) \t\t=> ', w.test(2));
+        console.log('sqrt( log( 20 ) ) \t\t=> ', w.test(20));
+        console.log('sqrt( log( 54 ) ) \t\t=> ', w.test(54));
     }
 
     // const { get, set, incr }

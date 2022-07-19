@@ -129,7 +129,8 @@ export class NeverType extends Type implements DataTypeInterface {
  * When need to be able to handle more than one type
  *  aka sum type (`|`)
  */
- export class UnionType extends Type {
+// TODO when tracing this need to trace all possible types
+export class UnionType extends Type {
     types: Type[];
 
     constructor(token: LexerToken = undefined, types: Type[] = []) {

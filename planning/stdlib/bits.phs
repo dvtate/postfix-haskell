@@ -41,3 +41,9 @@
 # Population count (number of 1 bits in binary repr.)
 ((I32): 1 ) (: "i32.popcnt" asm ) $popcnt fun
 ((I64): 1 ) (: "i64.popcnt" asm ) $popcnt fun
+
+# Reinterpret bits into different type
+((I32): 1 ) (: "f32.reinterpret_i32" asm ) $reinterpret fun
+((I64): 1 ) (: "f64.reinterpret_i64" asm ) $reinterpret fun
+((F32): 1 ) (: "i32.reinterpret_f32" asm ) $reinterpret fun
+((F64): 1 ) (: "i64.reinterpret_f64" asm ) $reinterpret fun

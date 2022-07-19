@@ -229,12 +229,12 @@ function genConversions(): AssemblyDBEntry[] {
             symbol: 'i64.extend_i32_u',
             param: [types.PrimitiveType.Types.I32],
             result: [types.PrimitiveType.Types.I64],
-            handler: (ctx, [v]) => [new WasmNumber(WasmNumber.Type.F64, v.value)],
+            handler: (ctx, [v]) => [new WasmNumber(WasmNumber.Type.I64, v.value)],
         }, {
             symbol: 'i64.extend_i32_s',
             param: [types.PrimitiveType.Types.I32],
             result: [types.PrimitiveType.Types.I64],
-            handler: (ctx, [v]) => [new WasmNumber(WasmNumber.Type.F64, v.value)],
+            handler: (ctx, [v]) => [new WasmNumber(WasmNumber.Type.I64, v.value)],
         },
     ];
 
@@ -246,7 +246,12 @@ function genConversions(): AssemblyDBEntry[] {
             symbol: `${iType}.trunc_${fType}${sign}`,
             param: [tm[fType]],
             result: [tm[iType]],
-            handler: (ctx, [v]) => [new WasmNumber(ntMap[iType], v.value)],
+            handler: (ctx, [v]) => {
+                const vv = v.value;
+                return typeof vv === 'bigint'
+                    ? [new WasmNumber(ntMap[iType], vv)]
+                    : [new WasmNumber(ntMap[iType], Math.floor(vv))];
+            },
         }))));
 
     // Integer to float conversions
