@@ -1,5 +1,4 @@
 "./stdlib/prelude.phs" require use
-"./stdlib/monad.phs" require use
 "./stdlib/math.phs" require $math =
 
 # Identity
@@ -42,16 +41,6 @@ F64 Maybe $DblMaybe =
     (   DblMaybe.Just (: id )
         DblMaybe.Nothing (: pop 0.0 )
     ) match
+
+    # TODO add infinite loop to test gc
 ) "test" export
-
-
-
-
-# 0.0 dup :data math.log :data
-# 0.1 dup :data math.log :data
-# 1.0 dup :data math.log :data
-# 2.0 dup :data math.log :data
-# 4.0 dup :data math.log :data
-# 10.0 dup :data math.log :data
-# 20.0 dup :data math.log :data
-# 54.0 dup :data math.log :data

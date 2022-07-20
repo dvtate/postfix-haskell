@@ -1,4 +1,5 @@
 "stdlib/prelude.phs" require use
+"stdlib/number.phs" require $number =
 
 # Average
 (: + 2 / ) $avg =
@@ -7,29 +8,28 @@
 (: true ) (: ) $abs fun
 (: 0 < ) (: -1 * ) $abs fun
 
-(Unit F64) (Unit) Arrow ( "js" "console.log" ) import $log =
-
-( F64 ) (: # Square route via newton-rhapson method
-	((F64 F64) (F64) rec: # Tail-recursive helper
+# Square route via newton-rhapson method
+((number.Float): 1 ) (:
+    dup type $T =
+	((T T) (T) rec: # Tail-recursive helper
         ( $x $guess ) =
 
         # Do we have an acceptable margin of error?
-        (: guess guess * x - abs x / 1.0e-15 < ) $good_enough =
+        (: guess guess * x - abs x / T number.limits.epsilon <= ) $good_enough =
 
         # We can improve the value by averaging with quotient
         (: x x guess / guess avg iter ) $improve =
 
         # Improve value until it's good enough
-        (: true ) (: improve ) $cond fun
+        (: 1 ) (: improve ) $cond fun
         (: good_enough ) (: guess ) $cond fun
         cond
-        dup
-        "(() => {
-            const v = ctx.pop();
-            return v.source.actions;
-        })()" :eval
 	) $iter =
 
     # Start calculating with first guess being 1
-    1.0 iter
-) "sqrt" export
+    1.0 T cast iter
+) $sqrt fun
+
+
+# Export square route function
+( F64 ) (: sqrt ) "sqrt" export
