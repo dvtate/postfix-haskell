@@ -17,15 +17,15 @@ export class EnumNs extends value.Value {
 
     /**
      * @param token location in code
-     * @param ns namespace where values are stored
-     * @param v
+     * @param ns namespace where subtypes are stored
+     * @param v enum datatype
      */
     constructor(token: LexerToken, public ns: Namespace, v: types.EnumBaseType) {
         super(token, value.ValueType.EnumNs, v);
     }
 
     getId(identifier: string) {
-        // TODO maybe we schould remove the ns property and instead construct the values on the fly so that token is accurate
+        // TODO maybe should remove the ns property and instead construct the values on the fly so that token is accurate
         return this.ns.getId(identifier);
     }
 
@@ -60,9 +60,9 @@ export class EnumNs extends value.Value {
  * When enum value is known at compile time thus we can freely use and convert it
  */
 // TODO this should extend DataValue... no reason to have separate ValueType
-export class EnumValue extends value.Value {
+export class EnumValue extends value.DataValue {
     declare value: value.Value;
-    declare type: value.ValueType.EnumK;
+    declare type: value.ValueType.Data;
     declare _datatype: types.ClassOrType<types.EnumClassType<types.DataType>>;
     enumClass: types.EnumClassType<types.DataType>;
 
@@ -72,7 +72,7 @@ export class EnumValue extends value.Value {
      * @param t subtype of the enum
      */
     constructor(token: LexerToken, v: value.Value, t: types.EnumClassType<types.DataType>) {
-        super(token, value.ValueType.EnumK, v, t);
+        super(token, t, v);
         if (!t.type.check(v.datatype))
             throw new error.SyntaxError('Enum instance incompatible types', [v.token, t.token, token]);
         this.enumClass = t;

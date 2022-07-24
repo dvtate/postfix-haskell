@@ -205,7 +205,6 @@ export class SyntaxType extends Type {
         [ValueType.Str]: new SyntaxType(new IdToken('Syntax:Str', 0, undefined), ValueType.Str),
         [ValueType.Ns]: new SyntaxType(new IdToken('Syntax:Ns', 0, undefined), ValueType.Ns),
         [ValueType.EnumNs]: new SyntaxType(new IdToken('Syntax:EnumNs', 0, undefined), ValueType.EnumNs),
-        [ValueType.EnumK]:  new SyntaxType(new IdToken('Syntax:EnumK', 0, undefined), ValueType.EnumK),
     };
 
     /**

@@ -26,7 +26,6 @@ export enum ValueType {
     Str     = 6, // String literal, (note not directly usable)
     Ns      = 7, // Namespace
     EnumNs  = 8, // Enum base type / namespace value
-    EnumK   = 9, // Enum value known at compile-time
 }
 
 // TODO should be abstract

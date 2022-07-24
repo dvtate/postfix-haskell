@@ -16,10 +16,8 @@ Unit class $World =
 ) $set =
 
 # Get value from position zero in linear memory
-(:
-    (: ( I32 ) ( I32 ) Arrow "i32.load" __asm ) $i32_load =
-    (
-        0 i32_load
+(:  (: ( I32 ) ( I32 ) Arrow "i32.load" __asm ) $i32_load =
+    (   0 i32_load
         4 i32_load
     )
 ) $get =
@@ -27,8 +25,7 @@ Unit class $World =
 5 $width =
 3 $speed =
 
-(:
-    unpack ( $x $v ) =
+(:  unpack ( $x $v ) =
     (: true ) (: ( x v ) ) $branch fun
     (: x 0 > x v + 100 width - < && ) (: ( x v + v ) ) $branch fun
     branch
@@ -37,7 +34,4 @@ Unit class $World =
 # Export to JS
 ( World I32 ) (: set ) "set" export
 ( World ) (: get ) "get" export
-( World ) (:
-    # () Unit Arrow "call $get" __asm
-    get 1 + set
-) "incr" export
+( World ) (: get move set ) "update" export

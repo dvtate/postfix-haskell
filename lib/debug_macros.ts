@@ -3,7 +3,8 @@ import * as value from "./value.js";
 import * as error from "./error.js";
 import Context from "./context.js";
 import { LexerToken } from "./scan.js";
-import { formatErrorPos } from "../tools/util.js";
+import { fileLocate, formatErrorPos } from "../tools/util.js";
+import path from "path";
 
 /*
  * These are useful for interactive shell and maybe for compile-time debugging
@@ -20,6 +21,18 @@ import { formatErrorPos } from "../tools/util.js";
  * @param fn
  */
 function logWithToken(name: string, ctx: Context, token: LexerToken, fn: (ctx: Context, token: LexerToken) => any) {
+    // Generate file name prefix if token has a file location
+    const absPath = token.file || ctx.entryPoint;
+    let prefix: string;
+    if (absPath) {
+        const loc = fileLocate(absPath, token.position);
+        const relPath = path.relative(process.cwd(), absPath);
+        const file = relPath.length < absPath.length ? relPath : absPath;
+        prefix = `${file}:${loc.lineNumber}:${loc.lineOffset} - ${name} `;
+    } else {
+        prefix = `${name} `;
+    }
+
     // This can be improved
     try {
         // Get something to represent
@@ -27,9 +40,9 @@ function logWithToken(name: string, ctx: Context, token: LexerToken, fn: (ctx: C
 
         // Notice that promises are only used for :compile so this is acceptable
         if (repr instanceof Promise)
-            repr.then(v => console.log(name, '-', v)).catch(console.error);
+            repr.then(v => console.log(prefix, v)).catch(console.error);
         else
-            console.log(name, '-', repr);
+            console.log(prefix, repr);
     } catch (e) {
         // Internal vs external error
         if (e instanceof error.CompilerError)

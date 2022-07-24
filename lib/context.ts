@@ -105,7 +105,7 @@ export default class Context {
     /// Recycled `include` namespaces
     includedFiles: { [k: string]: Namespace } = {};
 
-    constructor(private entryPoint?: string, opts: CompilerOptions = {}) {
+    constructor(public entryPoint?: string, opts: CompilerOptions = {}) {
         // Initialize Module Manager
         this.optLevel = opts.optLevel || 2;
         this.module = new ModuleManager(this, opts);
