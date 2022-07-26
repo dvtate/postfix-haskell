@@ -12,6 +12,7 @@ import ModuleManager from './module.js';
  *
  * operates as both a type and a namespace
  */
+// TODO should be able to just use value.ValueType.Type
 export class EnumNs extends value.Value {
     declare value: types.EnumBaseType;
 

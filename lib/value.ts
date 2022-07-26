@@ -6,7 +6,7 @@ import type * as expr from './expr/index.js';
 import type Namespace from './namespace.js';
 import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
 
-// TODO should move this to /expr/value.ts so that cyclic imports are less anal
+// TODO should move these to /expr/value.ts so that cyclic imports are less anal
 
 /**
  * In this context, Values are like nodes on an AST, but also used to simplify constexprs/partial evaluation
@@ -111,18 +111,6 @@ export class DataValue extends Value {
     }
     set datatype(t: typeof this._datatype) {
         this._datatype = t;
-    }
-}
-
-/**
- * Set of identifiers
- */
-export class NamespaceValue extends Value {
-    declare value: Namespace;
-    type: ValueType.Ns = ValueType.Ns;
-
-    constructor(token: LexerToken, value: Namespace) {
-        super(token, ValueType.Ns, value);
     }
 }
 

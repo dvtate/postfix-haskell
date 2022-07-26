@@ -1,5 +1,5 @@
 import type { LexerToken } from "./scan.js";
-import type * as value from './value.js';
+import * as value from './value.js';
 import type Context from "./context.js";
 
 /**
@@ -52,5 +52,17 @@ export default class Namespace {
 
     getId(id: string) {
         return this.scope[id];
+    }
+}
+
+/**
+ * Set of identifiers
+ */
+export class NamespaceValue extends value.Value {
+    declare value: Namespace;
+    type: value.ValueType.Ns = value.ValueType.Ns;
+
+    constructor(token: LexerToken, ns: Namespace) {
+        super(token, value.ValueType.Ns, ns);
     }
 }

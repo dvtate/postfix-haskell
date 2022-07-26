@@ -12,7 +12,8 @@ import scan, { LexerToken, MacroToken } from './scan.js';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
 import { invokeAsm } from './asm.js';
 import { EnumNs, EnumValue } from './enum.js';
-import { BranchInputExpr, EnumMatchExpr } from './expr/index.js';
+import { EnumMatchExpr } from './expr/index.js';
+import { NamespaceValue } from './namespace.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -485,7 +486,7 @@ const operators : MacroOperatorsSpec = {
 
             // Create ns
             const ns = arg.getNamespace(ctx, token);
-            if (ns instanceof value.NamespaceValue)
+            if (ns instanceof NamespaceValue)
                 ctx.push(ns);
             else
                 return ns;
@@ -499,7 +500,7 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['missing namespace'];
             const ns = ctx.pop();
-            if (!(ns instanceof value.NamespaceValue))
+            if (!(ns instanceof NamespaceValue))
                 return ['expected a namespace'];
 
             // Promote members
@@ -522,7 +523,7 @@ const operators : MacroOperatorsSpec = {
             if (!(include instanceof value.StrValue))
                 return ['expected a string containing regex for symbols to include'];
             const ns = ctx.pop();
-            if (!(ns instanceof value.NamespaceValue))
+            if (!(ns instanceof NamespaceValue))
                 return ['expected a namespace'];
 
             // Promote members
@@ -554,7 +555,7 @@ const operators : MacroOperatorsSpec = {
             // Check if already included
             // If so give user the cached namespace
             if (ctx.includedFiles[realpath]) {
-                ctx.push(new value.NamespaceValue(
+                ctx.push(new NamespaceValue(
                     token,
                     ctx.includedFiles[realpath]));
                 return;
@@ -568,7 +569,7 @@ const operators : MacroOperatorsSpec = {
 
             // Convert file into namespace and push it
             const ns = new LiteralMacro(ctx, block).getNamespace(ctx, token);
-            if (!(ns instanceof value.NamespaceValue))
+            if (!(ns instanceof NamespaceValue))
                 return ns;
             ctx.push(ns);
             ctx.includedFiles[realpath] = ns.value;
@@ -708,7 +709,7 @@ const operators : MacroOperatorsSpec = {
 
             // Create ns
             const ns = arg.getNamespace(ctx, token);
-            if (!(ns instanceof value.NamespaceValue))
+            if (!(ns instanceof NamespaceValue))
                 return ns;
 
             // Create enum type value
@@ -844,7 +845,7 @@ const operators : MacroOperatorsSpec = {
                                 );
                         } else {
                             outputDt = t;
-                            outputDt.inputTypes = outputDt.inputTypes.map(t => new types.AnyType(token));
+                            outputDt.inputTypes = outputDt.inputTypes.map(() => new types.AnyType(token));
                         }
 
                         // Add binding
@@ -880,7 +881,7 @@ const operators : MacroOperatorsSpec = {
                             );
                     } else {
                         outputDt = t;
-                        outputDt.inputTypes = outputDt.inputTypes.map(t => new types.AnyType(token));
+                        outputDt.inputTypes = outputDt.inputTypes.map(() => new types.AnyType(token));
                     }
 
                     // Add binding

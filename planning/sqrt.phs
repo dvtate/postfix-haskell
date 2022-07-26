@@ -9,7 +9,8 @@
 (: 0 < ) (: -1 * ) $abs fun
 
 # Square route via newton-rhapson method
-((number.Float): 1 ) (:
+#   Please instead use sqrt function defined in stdlib/math.phs
+((number.Float):
     dup type $T =
 	((T T) (T) rec: # Tail-recursive helper
         ( $x $guess ) =
@@ -28,8 +29,7 @@
 
     # Start calculating with first guess being 1
     1.0 T cast iter
-) $sqrt fun
-
+) $sqrt =
 
 # Export square route function
 ( F64 ) (: sqrt ) "sqrt" export

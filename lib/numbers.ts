@@ -10,14 +10,15 @@
  * - More reliable and intuitive
  */
 
-// TODO: DON'T USE GET/SET METHODS!
-// TODO: Use Int32Array instead of bigint for better backwards compatibility
+// TODO don't use get/set methods?
+// TODO Use Int32Array instead of bigint for better backwards compatibility?
 
 // NOTE the names of methods are important and shouldn't be changed
 //      they are used in asm.ts and correspond to wat mnemonics
 
-
-// WASM Data Types
+/**
+ * Numeric data types
+ */
 export enum NumberType {
     I32 = 1,
     I64 = 2,
@@ -30,7 +31,9 @@ export enum NumberType {
     F64 = 6,
 }
 
-// Emulate WASM number types
+/**
+ * Emulate WASM number values and operations on them
+ */
 export default class WasmNumber {
     // type : NumberType,
     // _repr : Float*Array | Bigint
@@ -677,11 +680,18 @@ export default class WasmNumber {
     }
 
     /**
-     * Sign extend the number
+     * Extend an i32 into an i64
      * @note reference: https://en.wikipedia.org/wiki/Sign_extension
      * @param nbits number of bits to sign extend to
+     * @param signed should we emulate the _s version of this instruction (true) or _u version (false)?
      */
-    extend(nbits: number) {
+    extend(nbits: number, signed = this._type === NumberType.I32) {
+        // For unsigned int the only difference is leading zeros
+        if (!signed) {
+            this.type = nbits > 32 ? NumberType.I64 : NumberType.I32;
+            return this;
+        }
+
         // The value of the sign bit
         const mask: bigint = 1n << BigInt(nbits - 1);
 

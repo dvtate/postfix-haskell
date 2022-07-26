@@ -164,7 +164,7 @@
         hx 0x3FF00000 0x3FE6A09E - + $hx2 =
         k 0x3FF - hx2 20 >> + $k2 =
         hx2 0x000FFFFF bits.and 0x3FE6A09E + $hx3 =
-        hx3 "i64.extend_i32_u" asm 32L << u 0xFFFFFFFFL bits.and bits.or $u2 =
+        hx3 bits.zero_extend 32L << u 0xFFFFFFFFL bits.and bits.or $u2 =
         u2 bits.reinterpret $x =
 
         x 1.0 - $f =

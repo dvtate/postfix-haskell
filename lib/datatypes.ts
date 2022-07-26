@@ -185,7 +185,6 @@ export class UnionType extends Type {
 /**
  * Syntactic types
  */
-// TODO probably could use singletons for each valuetype
 export class SyntaxType extends Type {
     /**
      * @param token location in code
@@ -195,6 +194,9 @@ export class SyntaxType extends Type {
         super(token);
     }
 
+    /**
+     * Singletons for each valuetype
+     */
     static ValueTypes = {
         [ValueType.Macro]: new SyntaxType(new IdToken('Syntax:Macro', 0, undefined), ValueType.Macro),
         [ValueType.Data]: new SyntaxType(new IdToken('Syntax:Data', 0, undefined), ValueType.Data),
@@ -214,6 +216,12 @@ export class SyntaxType extends Type {
         // Drop classes
         if (type instanceof ClassType)
             type = type.getBaseType();
+
+        // Match any
+        if (type instanceof AnyType)
+            return true;
+
+        // Compare singletons
         if (type instanceof SyntaxType)
             return type.valueType === this.valueType;
 

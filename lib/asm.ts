@@ -225,9 +225,9 @@ function genConversions(): AssemblyDBEntry[] {
             param: [types.PrimitiveType.Types.I64],
             result: [types.PrimitiveType.Types.I32],
             handler: (ctx, [v]) => [new WasmNumber(WasmNumber.Type.I32, v.value)],
-        }, {   // TODO unsigned
+        }, {
             symbol: 'i64.extend_i32_u',
-            param: [types.PrimitiveType.Types.I32],
+            param: [types.PrimitiveType.Types.I32], // TODO unsigned
             result: [types.PrimitiveType.Types.I64],
             handler: (ctx, [v]) => [new WasmNumber(WasmNumber.Type.I64, v.value)],
         }, {

@@ -6,7 +6,6 @@ import { Expr, DataExpr } from './expr.js';
 import ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
-import { EnumConstructor } from './enum.js';
 import { FunExpr, FunLocalTracker, FunLocalTrackerStored } from './fun.js';
 
 /**
