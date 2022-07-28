@@ -25,7 +25,6 @@ export enum ValueType {
     Fxn     = 5, // Function/Branch
     Str     = 6, // String literal, (note not directly usable)
     Ns      = 7, // Namespace
-    EnumNs  = 8, // Enum base type / namespace value
 }
 
 // TODO should be abstract
@@ -204,5 +203,17 @@ export class StrValue extends Value {
     declare value: string;
     constructor(token: LexerToken) {
         super(token, ValueType.Str, token.token);
+    }
+}
+
+/**
+ * Set of identifiers
+ */
+export class NamespaceValue extends Value {
+    declare value: Namespace;
+    type: ValueType.Ns = ValueType.Ns;
+
+    constructor(token: LexerToken, ns: Namespace) {
+        super(token, ValueType.Ns, ns);
     }
 }

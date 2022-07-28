@@ -205,8 +205,10 @@ export default class Context {
         for (let i = 1; i < id.length; i++)
             if (ret instanceof value.NamespaceValue)
                 ret = ret.value.getId(id[i]);
-            else if (ret instanceof EnumNs)
-                ret = ret.getId(id[i]);
+            // else if (ret instanceof EnumNs)
+            //     ret = ret.getId(id[i]);
+            else if (ret.type === value.ValueType.Type && ret.value.getBaseType() instanceof types.EnumBaseType)
+                ret = ret.value.getBaseType().ns.getId(id[i])
             else
                 return undefined;
         return ret;
@@ -239,16 +241,28 @@ export default class Context {
             scope = this.globals[id[0]];
 
         // Resolve namespaces
-        for (let i = 1; i < id.length - 1; i++)
-            if (!(scope instanceof value.NamespaceValue))
+        for (let i = 1; i < id.length - 1; i++) {
+            if (scope.type === value.ValueType.Type) {
+                const bt = scope.value.getBaseType();
+                if (bt instanceof types.EnumBaseType)
+                    scope = bt.ns.getId(id[i]);
+            } else if (scope instanceof value.NamespaceValue) {
+                scope = scope.value.getId(id[i]);
+            } else {
                 return new error.SyntaxError(
                     `expected '${id.slice(0, i).join('.')}.' to be a namespace`,
                     token,
                     this);
-            else
-                scope = scope.value.getId(id[i]);
+            }
+        }
 
-        (scope as value.NamespaceValue).value.scope[id[id.length - 1]] = v;
+        if (scope instanceof value.NamespaceValue) {
+            scope.value.scope[id[id.length - 1]] = v;
+        } else if (scope.type === value.ValueType.Type) {
+            const bt = scope.value.getBaseType();
+            if (bt instanceof types.EnumBaseType)
+                bt.ns.scope[id[id.length - 1]] = v;
+        }
     }
 
     /**

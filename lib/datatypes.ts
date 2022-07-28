@@ -2,6 +2,7 @@ import { IdToken, LexerToken } from './scan.js';
 import { Value, ValueType } from './value.js';
 import WasmNumber from './numbers.js';
 import * as error from './error.js';
+import Namespace from './namespace.js';
 
 /**
  * Some methods available on types representable on hardware
@@ -206,7 +207,6 @@ export class SyntaxType extends Type {
         [ValueType.Fxn]: new SyntaxType(new IdToken('Syntax:Fxn', 0, undefined), ValueType.Fxn),
         [ValueType.Str]: new SyntaxType(new IdToken('Syntax:Str', 0, undefined), ValueType.Str),
         [ValueType.Ns]: new SyntaxType(new IdToken('Syntax:Ns', 0, undefined), ValueType.Ns),
-        [ValueType.EnumNs]: new SyntaxType(new IdToken('Syntax:EnumNs', 0, undefined), ValueType.EnumNs),
     };
 
     /**
@@ -392,7 +392,9 @@ export class ClassType<T extends DataType> extends DataType {
      */
     isRecursive(): boolean {
         return this.recursive
-        || (this.type instanceof ClassType && this.type.isRecursive());
+        || (this.type instanceof ClassType && this.type.isRecursive())
+        || (this.type instanceof EnumBaseType && this.type.isRecursive())
+        || (this.type instanceof EnumClassType && this.type.parent.isRecursive());
     }
 }
 
@@ -824,15 +826,31 @@ export class RefRefType<T extends DataType> extends DataType {
  * Matches anything within same enum type
  */
 export class EnumBaseType extends DataType {
+    name?: string;
+    ns!: Namespace;
+
     /**
      * @param subtypes Enum members defined by this class
      */
     constructor(
         token: LexerToken,
-        public subtypes: { [k: string]: EnumClassType<any> }
+        protected subtypes: { [k: string]: EnumClassType<any> },
+        public recursive = false,
     ) {
         super(token);
         Object.entries(this.subtypes).forEach(([sym, t], i) => {
+            t.parent = this;
+            t.index = i;
+            t.name = sym;
+        });
+    }
+
+    /**
+     * Update the subtype mappings
+     */
+    setSubtypes(subtypes: { [k: string]: EnumClassType<any> }) {
+        this.subtypes = subtypes;
+        Object.entries(subtypes).forEach(([sym, t], i) => {
             t.parent = this;
             t.index = i;
             t.name = sym;
@@ -877,13 +895,24 @@ export class EnumBaseType extends DataType {
         return this;
     }
     toString(): string {
-        return `(:\n${
-            Object.entries(this.subtypes).map(([sym, t]) => `${t.toString()} $${sym} =`).join('\n')
-        }\n) enum`
+        return `(: ${
+            this.isRecursive()
+                ?  Object.keys(this.subtypes).join(' ') + ' '
+                :  `\n${Object.entries(this.subtypes).map(([sym, t]) =>
+                    `${t.toString()} $${sym} =`).join('\n')}\n`
+        }) enum`;
     }
 
     sortedSubtypes() {
         return Object.values(this.subtypes).sort((a, b) => a.index - b.index);
+    }
+
+    isRecursive() {
+        return this.recursive;
+    }
+
+    getId(id: string) {
+        return this.ns.getId(id);
     }
 }
 
@@ -943,7 +972,7 @@ export class EnumClassType<T extends DataType> extends DataType {
         return 'i32';
     }
     toString(): string {
-        return `${super.toString()} ${this.name}#${this.index}_enum`;
+        return `${this.type.toString()} ${this.name}#${this.index}_enum`;
     }
     getBaseType() {
         let ret = this.type;

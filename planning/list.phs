@@ -1,0 +1,9 @@
+"stdlib/prelude.phs" require use
+
+( $List rec:
+    ( I32 List ) class $Node =
+    ( ) type class $Nil =
+) enum $List =
+
+List :data
+List.Node :data

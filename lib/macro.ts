@@ -1,6 +1,6 @@
 import * as types from './datatypes.js';
 import Context from "./context.js";
-import { BlockToken, LexerToken, MacroToken } from "./scan.js";
+import { BlockToken, IdToken, LexerToken, MacroToken } from "./scan.js";
 import parse from "./parse.js";
 import Namespace from "./namespace.js";
 import * as error from './error.js';
@@ -30,10 +30,12 @@ export abstract class Macro extends value.Value {
         if (t instanceof types.ArrowType)
             this._datatype = t;
     }
+
     /**
      * Did the user flag this macro as recursive?
      */
     recursive = false;
+    recursiveId: IdToken = null;
 
     constructor(token: LexerToken, type: types.ArrowType = null, recursive = false) {
         super(token, value.ValueType.Macro, undefined, type);
@@ -227,17 +229,20 @@ export class LiteralMacro extends Macro {
         this.body = token.body;
         this.scopes = ctx.scopes.slice();
         this.recursive = token instanceof MacroToken && token.recursive;
+        this.recursiveId = token instanceof MacroToken && token.recursiveId;
     }
 
     /**
      * @override
      */
-    action(ctx: Context): ActionRet {
+    action(ctx: Context, token: LexerToken, recValue: value.Value = this): ActionRet {
         // TODO simplify and/or use ctx.copyState()
         // Use proper lexical scope
         const oldScopes = ctx.scopes;
         ctx.scopes = this.scopes;
-        ctx.scopes.push({});
+        ctx.scopes.push(this.recursiveId
+            ? { [this.recursiveId.token.slice(1)] : recValue }
+            : {});
 
         // Invoke body
         let ret;
@@ -247,6 +252,8 @@ export class LiteralMacro extends Macro {
             // Always Restore ctx state
             ctx.scopes.pop();
             ctx.scopes = oldScopes;
+            if (e instanceof error.SyntaxError)
+                e.tokens.push(token);
             throw e;
         }
 
@@ -262,12 +269,14 @@ export class LiteralMacro extends Macro {
      * @param token - invokee token
      * @returns - on success return namespace accessor macro on otherwise returns error
      */
-    getNamespace(ctx: Context, token: LexerToken): value.NamespaceValue | error.SyntaxError {
+    getNamespace(ctx: Context, token: LexerToken, recValue: value.Value = this): value.NamespaceValue | error.SyntaxError {
         // TODO simplify and/or use ctx.copyState()
         // Use proper lexical scope
         const oldScopes = ctx.scopes;
         ctx.scopes = this.scopes;
-        ctx.scopes.push({});
+        ctx.scopes.push(this.recursiveId
+            ? { [this.recursiveId.token.slice(1)] : recValue }
+            : {});
 
         // Invoke body
         let ret;

@@ -54,15 +54,3 @@ export default class Namespace {
         return this.scope[id];
     }
 }
-
-/**
- * Set of identifiers
- */
-export class NamespaceValue extends value.Value {
-    declare value: Namespace;
-    type: value.ValueType.Ns = value.ValueType.Ns;
-
-    constructor(token: LexerToken, ns: Namespace) {
-        super(token, value.ValueType.Ns, ns);
-    }
-}

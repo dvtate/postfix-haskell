@@ -24,16 +24,21 @@ Ignoring the intricacies of wasm the equivalent in pseudo-C++ would be
 struct closure_t {
     // Action for the closure
     // Here we're pretending that the function acts on the stack
-    void (*body) (); // int fn_table_index;
+    int fn_table_index; // function pointer
 
-    ... captured local exprs
+    // ... captured local exprs
+
 };
 ```
 
 ## List A - Situations in which Runtime Closures are needed:
 - Reading + Writing closure to memory
+    - no direct syntax apart from inclusion in enum/recursive type
+    - for example: when storing in a local or as part of a gc'd object
 - Closure result of runtime branch expr
+    - storing in locals
 - Result of recursive macro
+    - storing in locals
 
 ## Difficulty
 - Macro literals need to be converted to closure exprs as soon as we know that they're closures
@@ -85,3 +90,5 @@ It calls the helper function created by (3), passing in the closure object refer
 
 ## Maybe in the future - Recursive closures
 Might actually be easier to refactor recursion to simply use the same closure object pointer for making recursive calls. Although performance would be worse beacuse fn-Table indirection.
+
+### Plan 4 - Add .convertToClosure() method to Macro class

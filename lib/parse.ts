@@ -89,6 +89,7 @@ export default function parse(tokens: LexerToken[], ctx = new Context(tokens[0].
                 // Push macro onto stack
                 const m = new LiteralMacro(ctx, t)
                 m.recursive = t.recursive;
+                m.recursiveId = t.recursiveId;
                 if (ts.length !== 0 && !m.recursive) {
                     const rv = m.applyType(ctx, ts[0], ts[1]);
                     if (rv instanceof types.ArrowType)

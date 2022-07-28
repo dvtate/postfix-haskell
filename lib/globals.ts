@@ -13,7 +13,6 @@ import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
 import { invokeAsm } from './asm.js';
 import { EnumNs, EnumValue } from './enum.js';
 import { EnumMatchExpr } from './expr/index.js';
-import { NamespaceValue } from './namespace.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -156,7 +155,7 @@ const operators : MacroOperatorsSpec = {
                 if (retlen > 1)
                     return ['type macro should only return one value']; // TODO need to find a way to improve error tracing
                 let t = ctx.pop();
-                if (![value.ValueType.Type, value.ValueType.EnumNs].includes(t.type))
+                if (t.type !== value.ValueType.Type)
                     return ['expected a type to append class to'];
 
                 // TODO add classes field to types.EnumBaseType
@@ -220,8 +219,7 @@ const operators : MacroOperatorsSpec = {
     },
 
     // Assign classes to value, instantate class
-    // TODO Exprs
-    // TODO Enums
+    // TODO Exprs, recursive types, etc.
     // TODO make this a function?
     'make' : {
         action: (ctx, token) => {
@@ -486,7 +484,7 @@ const operators : MacroOperatorsSpec = {
 
             // Create ns
             const ns = arg.getNamespace(ctx, token);
-            if (ns instanceof NamespaceValue)
+            if (ns instanceof value.NamespaceValue)
                 ctx.push(ns);
             else
                 return ns;
@@ -500,7 +498,7 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length === 0)
                 return ['missing namespace'];
             const ns = ctx.pop();
-            if (!(ns instanceof NamespaceValue))
+            if (!(ns instanceof value.NamespaceValue))
                 return ['expected a namespace'];
 
             // Promote members
@@ -523,7 +521,7 @@ const operators : MacroOperatorsSpec = {
             if (!(include instanceof value.StrValue))
                 return ['expected a string containing regex for symbols to include'];
             const ns = ctx.pop();
-            if (!(ns instanceof NamespaceValue))
+            if (!(ns instanceof value.NamespaceValue))
                 return ['expected a namespace'];
 
             // Promote members
@@ -555,7 +553,7 @@ const operators : MacroOperatorsSpec = {
             // Check if already included
             // If so give user the cached namespace
             if (ctx.includedFiles[realpath]) {
-                ctx.push(new NamespaceValue(
+                ctx.push(new value.NamespaceValue(
                     token,
                     ctx.includedFiles[realpath]));
                 return;
@@ -569,7 +567,7 @@ const operators : MacroOperatorsSpec = {
 
             // Convert file into namespace and push it
             const ns = new LiteralMacro(ctx, block).getNamespace(ctx, token);
-            if (!(ns instanceof NamespaceValue))
+            if (!(ns instanceof value.NamespaceValue))
                 return ns;
             ctx.push(ns);
             ctx.includedFiles[realpath] = ns.value;
@@ -708,12 +706,17 @@ const operators : MacroOperatorsSpec = {
                 return ['expected a macro literal'];
 
             // Create ns
-            const ns = arg.getNamespace(ctx, token);
-            if (!(ns instanceof NamespaceValue))
+            const enumBt = new types.EnumBaseType(token, {}, arg.recursive);
+            const ns = arg.getNamespace(
+                ctx,
+                token,
+                new value.Value(token, value.ValueType.Type, enumBt),
+            );
+            if (!(ns instanceof value.NamespaceValue))
                 return ns;
 
             // Create enum type value
-            const ret = EnumNs.fromNamespace(ns.value, token, ctx);
+            const ret = EnumNs.fromNamespace(ns.value, token, ctx, enumBt);
             if (ret instanceof EnumNs)
                 ctx.push(ret);
             else
@@ -740,7 +743,7 @@ const operators : MacroOperatorsSpec = {
             for (let i = 0; i < arg.value.length;) {
                 const k = arg.value[i++];
                 const m = arg.value[i++];
-                if (![value.ValueType.Type, value.ValueType.EnumNs].includes(k.type))
+                if (k.type !== value.ValueType.Type)
                     return new error.SyntaxError('Expected an enum type here', [k.token, token], ctx);
                 if (!(m instanceof Macro))
                     return new error.SyntaxError('Expected a macro here', [m.token, token], ctx);
@@ -960,8 +963,7 @@ const funs = {
             // Check syntax types
             const isData = [a, b].every(v =>
                 v instanceof value.DataValue || v instanceof expr.DataExpr);
-            const isType = [a, b].every(v =>
-                [value.ValueType.Type, value.ValueType.EnumNs].includes(v.type))
+            const isType = [a, b].every(v => v.type === value.ValueType.Type)
             if (a.type !== b.type && !isData && !isType) {
                 console.log('==: syntax err', {a, b});
                 return ['invalid syntax'];
@@ -990,7 +992,6 @@ const funs = {
             switch (a.type) {
                 // Typechecking
                 case value.ValueType.Type:
-                case value.ValueType.EnumNs:
                     ctx.push(toBool(b.value.check(a.value), token));
                     break;
 

@@ -91,6 +91,7 @@ export class BlockToken extends LexerToken {
 
         const types: BlockToken[] = [];
         let recursive = false;
+        let recursiveId: IdToken;
         let i : number;
         const l = Math.min(4, this.body.length)
         for (i = 0; i < l; i++) {
@@ -105,8 +106,15 @@ export class BlockToken extends LexerToken {
                 recursive = true;
             else if (t instanceof BlockToken)
                 types.push(t);
+            else if (t instanceof IdToken && t.isEscaped)
+                if (recursiveId) {
+                    throwParseError('Cannot have multiple fixed point identifiers', [this, recursiveId, t], this.file);
+                } else {
+                    recursive = true;
+                    recursiveId = t;
+                }
             else
-                throwParseError('invalid macro prefix', [this, t], this.file);
+                throwParseError('Invalid macro prefix', [this, t], this.file);
         }
 
         return new MacroToken(
@@ -115,7 +123,8 @@ export class BlockToken extends LexerToken {
             this.file,
             this.body.slice(i + 1),
             types,
-            recursive
+            recursive,
+            recursiveId,
         );
     }
 
@@ -143,6 +152,7 @@ export class MacroToken extends LexerToken {
         public body: LexerToken[],
         public types: BlockToken[],
         public recursive = false,
+        public recursiveId: IdToken = null,
     ) {
         super(token, TokenType.Block, position, file);
     }

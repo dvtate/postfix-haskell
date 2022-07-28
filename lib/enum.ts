@@ -15,19 +15,15 @@ import ModuleManager from './module.js';
 // TODO should be able to just use value.ValueType.Type
 export class EnumNs extends value.Value {
     declare value: types.EnumBaseType;
+    type: value.ValueType.Type = value.ValueType.Type;
 
     /**
      * @param token location in code
      * @param ns namespace where subtypes are stored
      * @param v enum datatype
      */
-    constructor(token: LexerToken, public ns: Namespace, v: types.EnumBaseType) {
-        super(token, value.ValueType.EnumNs, v);
-    }
-
-    getId(identifier: string) {
-        // TODO maybe should remove the ns property and instead construct the values on the fly so that token is accurate
-        return this.ns.getId(identifier);
+    constructor(token: LexerToken, v: types.EnumBaseType) {
+        super(token, value.ValueType.Type, v);
     }
 
     /**
@@ -37,7 +33,7 @@ export class EnumNs extends value.Value {
      * @param ctx parser context
      * @returns enum namespace or error
      */
-    static fromNamespace(ns: Namespace, token: LexerToken, ctx: Context) {
+    static fromNamespace(ns: Namespace, token: LexerToken, ctx: Context, bt?: types.EnumBaseType) {
         const memberTypes: { [k: string]: types.EnumClassType<types.DataType> } = {};
         for (const [id, v] of Object.entries(ns.scope))
             // TODO support class macro types
@@ -47,13 +43,21 @@ export class EnumNs extends value.Value {
                 ns.scope[id] = new value.Value(v.token, value.ValueType.Type, memberTypes[id]);
             } else {
                 // We force user to pass classes so that they remember to use `make`
-                return new error.SyntaxError(
-                    'All members of the enum type namespace should be classes',
-                    [v.token, token],
-                    ctx,
-                );
+                ctx.warn(v.token, 'All members of en enum type namespace should be classes');
+                // return new error.SyntaxError(
+                //     'All members of the enum type namespace should be classes',
+                //     [v.token, token],
+                //     ctx,
+                // );
             }
-        return new EnumNs(token, ns, new types.EnumBaseType(token, memberTypes));
+
+        // Update base type
+        if (bt) {
+            bt.setSubtypes(memberTypes);
+            bt.ns = ns;
+        }
+
+        return new EnumNs(token, bt || new types.EnumBaseType(token, memberTypes));
     }
 }
 
