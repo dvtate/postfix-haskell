@@ -225,6 +225,8 @@ export default class Context {
         // Handle fast case first
         if (id.length == 1) {
             this.scopes[this.scopes.length - 1][id[0]] = v;
+            if (v instanceof EnumNs)
+                v.value.name = id[0];
             return;
         }
 
@@ -250,7 +252,7 @@ export default class Context {
                 scope = scope.value.getId(id[i]);
             } else {
                 return new error.SyntaxError(
-                    `expected '${id.slice(0, i).join('.')}.' to be a namespace`,
+                    `Expected '${id.slice(0, i).join('.')}.' to be a namespace`,
                     token,
                     this);
             }
@@ -262,6 +264,11 @@ export default class Context {
             const bt = scope.value.getBaseType();
             if (bt instanceof types.EnumBaseType)
                 bt.ns.scope[id[id.length - 1]] = v;
+        } else {
+            return new error.SyntaxError(
+                `Expected '${id.slice(0,  -1).join('.')}.' to be a namespace or enum type`,
+                token,
+                this);
         }
     }
 
@@ -428,7 +435,7 @@ export default class Context {
                     // && !(v.datatype && v.datatype.isUnit())
                     );
             if (isConstExpr) {
-                this.warn(token, 'expanding constexpr');
+                // this.warn(token, 'expanding constexpr');
                 this.trace.push(v);
                 try {
                     this.stack = stack;

@@ -12,40 +12,40 @@ import { BranchInputExpr } from './branch.js';
 import { uid } from '../../tools/util.js';
 import Context from '../context.js';
 
-export class EnumContainsCheckExpr extends DataExpr {
-    _datatype: types.ClassOrType<types.PrimitiveType> = types.PrimitiveType.Types.I32;
+// export class EnumContainsCheckExpr extends DataExpr {
+//     _datatype: types.ClassOrType<types.PrimitiveType> = types.PrimitiveType.Types.I32;
 
-    constructor(token: LexerToken, public enumExpr: DataExpr, public checkType: types.EnumClassType<any>) {
-        super(token, types.PrimitiveType.Types.I32);
-        // TODO typecheck
-    }
+//     constructor(token: LexerToken, public enumExpr: DataExpr, public checkType: types.EnumClassType<any>) {
+//         super(token, types.PrimitiveType.Types.I32);
+//         // TODO typecheck
+//     }
 
-    get datatype(): typeof this._datatype  { return this._datatype; }
-    set datatype(t: typeof this._datatype) { this._datatype = t; }
-    children(): Expr[] { return this.enumExpr.children(); }
+//     get datatype(): typeof this._datatype  { return this._datatype; }
+//     set datatype(t: typeof this._datatype) { this._datatype = t; }
+//     children(): Expr[] { return this.enumExpr.children(); }
 
-    out(ctx: ModuleManager, fun?: FunExpr) {
-        // Extract type
-        let eedt = this.enumExpr.datatype;
-        if (eedt instanceof types.ClassType)
-            eedt = eedt.getBaseType();
+//     out(ctx: ModuleManager, fun?: FunExpr) {
+//         // Extract type
+//         let eedt = this.enumExpr.datatype;
+//         if (eedt instanceof types.ClassType)
+//             eedt = eedt.getBaseType();
 
-        // Known at compile-time
-        if (eedt instanceof types.EnumClassType)
-            return `(i32.const ${this.checkType.check(eedt) ? '1' : '0'})`;
+//         // Known at compile-time
+//         if (eedt instanceof types.EnumClassType)
+//             return `(i32.const ${this.checkType.check(eedt) ? '1' : '0'})`;
 
-        // Need to determine dynamically
-        if (eedt instanceof types.EnumBaseType)
-            return `${this.enumExpr.out(ctx, fun)
-                }\n\t(call $__ref_stack_pop)(i32.load)(i32.const ${
-                    this.checkType.index})(i32.eq)`;
+//         // Need to determine dynamically
+//         if (eedt instanceof types.EnumBaseType)
+//             return `${this.enumExpr.out(ctx, fun)
+//                 }\n\t(call $__ref_stack_pop)(i32.load)(i32.const ${
+//                     this.checkType.index})(i32.eq)`;
 
-        throw new SyntaxError('Not cannot check if non-enum contains type', [this.enumExpr.token, this.token]);
-    }
-}
+//         throw new SyntaxError('Not cannot check if non-enum contains type', [this.enumExpr.token, this.token]);
+//     }
+// }
 
 export class EnumGetExpr extends DataExpr {
-    declare _datatype: types.RefType<types.DataType>;
+    // declare _datatype: types.RefType<types.DataType>;
 
     public results?: DependentLocalExpr[];
 
@@ -114,7 +114,16 @@ export class EnumTypeIndexExpr extends DataExpr {
     }
 
     out(ctx: ModuleManager, fun?: FunExpr) {
+        // let eedt = this.enumExpr.datatype;
+        // if (eedt instanceof types.ClassType)
+        //     eedt = eedt.getBaseType();
+        // // TODO maybe it would make sense to still gen code for enum for side effects?
+        // if (eedt instanceof types.EnumClassType)
+        //     return `(i32.const ${eedt.index})`;
+
+
         // Simply discard the reference
+        // console.log('ee', this.enumExpr);
         return this.enumExpr.out(ctx, fun)
         // equiv (call $__ref_stack_pop) (drop)
         + '(global.set $__ref_sp (i32.add (global.get $__ref_sp) (i32.const 4)))'

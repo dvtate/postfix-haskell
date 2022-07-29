@@ -679,8 +679,8 @@ export class RefType<T extends DataType> extends DataType {
      */
     constructor(token: LexerToken, public type: T, public offsetBytes = 0) {
         super(token);
-        if (!type)
-            console.log(this, new Error('wwww').stack);
+        // if (!type)
+        //     console.log(this, new Error('wwww').stack);
     }
 
     /**
@@ -713,28 +713,28 @@ export class RefType<T extends DataType> extends DataType {
     flatPrimitiveList(): RefType<DataType>[] {
         // TODO this is bad, should just be [I32]
         // This should just give i32. For caller to get this functionality they should have to call this.type.flatPrimitiveList()
-        let offset = 0;
-        if (!RefType.noRecFlatPrimitiveList) {
-            RefType.noRecFlatPrimitiveList = true;
-            this.type.flatPrimitiveList().map(t => {
-                const oldOffset = offset;
-                if (t instanceof PrimitiveType)
-                    switch ((t as PrimitiveType).name) {
-                        case 'i32': case 'f32': offset += 4; break;
-                        case 'i64': case 'f64': offset += 8; break;
-                        default: throw new Error('wtf?');
-                    }
-                else {
-                    // Otherwise it's a reference
-                    offset += 4;
-                    console.log('RefType.fpl(): other type: ', t);
-                }
-                return new RefType(this.token, t, oldOffset);
-            });
-            RefType.noRecFlatPrimitiveList = false;
-        }
-
         return [this];
+    }
+
+    unpackRefs(): RefType<DataType>[] {
+        let offset = 0;
+        return this.type.flatPrimitiveList().map(t => {
+            const oldOffset = offset;
+            if (t instanceof PrimitiveType)
+                switch ((t as PrimitiveType).name) {
+                    case 'i32': case 'f32': offset += 4; break;
+                    case 'i64': case 'f64': offset += 8; break;
+                    default: throw new Error('wtf?');
+                }
+            else if (t instanceof EnumBaseType)
+                offset += 8;
+            else {
+                // Otherwise it's a reference
+                offset += 4;
+                // console.log('RefType.fpl(): other type: ', t);
+            }
+            return new RefType(this.token, t, oldOffset);
+        });
     }
 
     /**

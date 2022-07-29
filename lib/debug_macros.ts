@@ -5,6 +5,7 @@ import Context from "./context.js";
 import { LexerToken } from "./scan.js";
 import { fileLocate, formatErrorPos } from "../tools/util.js";
 import path from "path";
+import { EnumValue } from "./enum.js";
 
 /*
  * These are useful for interactive shell and maybe for compile-time debugging
@@ -23,15 +24,14 @@ import path from "path";
 function logWithToken(name: string, ctx: Context, token: LexerToken, fn: (ctx: Context, token: LexerToken) => any) {
     // Generate file name prefix if token has a file location
     const absPath = token.file || ctx.entryPoint;
-    let prefix: string;
+    let prefix = '';
     if (absPath) {
         const loc = fileLocate(absPath, token.position);
         const relPath = path.relative(process.cwd(), absPath);
         const file = relPath.length < absPath.length ? relPath : absPath;
-        prefix = `${file}:${loc.lineNumber}:${loc.lineOffset} - ${name} `;
-    } else {
-        prefix = `${name} `;
+        prefix = `${file}:${loc.lineNumber}:${loc.lineOffset} -`;
     }
+    prefix = `\x1B[1m${prefix} ${name} \x1B[0m`;
 
     // This can be improved
     try {
@@ -42,7 +42,7 @@ function logWithToken(name: string, ctx: Context, token: LexerToken, fn: (ctx: C
         if (repr instanceof Promise)
             repr.then(v => console.log(prefix, v)).catch(console.error);
         else
-            console.log(prefix, repr);
+            console.log(prefix, repr, '\n');
     } catch (e) {
         // Internal vs external error
         if (e instanceof error.CompilerError)
@@ -83,13 +83,17 @@ const debugOperators: { [k: string]: (ctx: Context, token: LexerToken) => any } 
         const depict = (v: value.Value): string =>
             v.type === value.ValueType.Data
                 ? v instanceof value.TupleValue
-                    ? v.value.map(depict)
+                    ? `( ${v.value.map(depict).join(' ')} )`
                     : v instanceof value.NumberValue
-                        ? v.value.value
-                        : 'unknown'
+                        ? `\x1b[33m${v.value.toString()}\x1b[0m`
+                        : v instanceof EnumValue
+                            ? `${depict(v.value)} ${v.enumClass.parent.name || '?'}.${v.enumClass.name} make`
+                            : 'unknown'
                 : v.type === value.ValueType.Type
                     ? v.value.toString()
-                    : v.value || v;
+                    : v.type === value.ValueType.Str
+                        ? `\x1b[33m"${v.value}"\x1b[0m`
+                        : v.value || v;
         return depict(ctx.pop());
     },
 

@@ -43,7 +43,7 @@ export class EnumNs extends value.Value {
                 ns.scope[id] = new value.Value(v.token, value.ValueType.Type, memberTypes[id]);
             } else {
                 // We force user to pass classes so that they remember to use `make`
-                ctx.warn(v.token, 'All members of en enum type namespace should be classes');
+                // ctx.warn(v.token, 'All members of en enum type namespace should be classes');
                 // return new error.SyntaxError(
                 //     'All members of the enum type namespace should be classes',
                 //     [v.token, token],

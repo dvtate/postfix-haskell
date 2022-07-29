@@ -49,8 +49,8 @@ nodejs_version get_major_version :data
         Bool.True (: pop 1 )
     ) match
 ) $cast fun
-((I32 Syntax:EnumNs): Bool == ) (: pop pop () Bool.True make ) $cast fun
-((I32 Syntax:EnumNs): ( $v $Enum ) =
+((I32 Syntax:Type): Bool == ) (: pop pop () Bool.True make ) $cast fun
+((I32 Syntax:Type): ( $v $Enum ) =
     Enum Bool == v 0 == &&
 ) (: pop pop () Bool.False make ) $cast fun
 

@@ -27,6 +27,7 @@ import * as util from '../tools/util.js';
     // Get WASM Module
     const mod: any = await WebAssembly.instantiate(wasm.buffer, {
         js: {
+            'Math.random': Math.random.bind(Math),
             'console.log': console.log.bind(console),
             logStr: (addr : number, len : number) => {
                 const str = new Uint8Array(

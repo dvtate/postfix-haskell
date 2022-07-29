@@ -1,9 +1,75 @@
 "stdlib/prelude.phs" require use
 
+# Generic vec2 type
+(: $T = ( T T ) ) class $Vec2 =
+
+# Contains vec2 or not
+(:  F64 Vec2 class $Just =
+    () type class $Nothing =
+) enum $MaybeVec =
+
+# Linked List of Maybe vectors
 ( $List rec:
-    ( I32 List ) class $Node =
     ( ) type class $Nil =
+    ( MaybeVec List ) class $Node =
 ) enum $List =
 
+# Describe types
 List :data
 List.Node :data
+
+# Length of linked list
+(:  (rec:
+        $n =
+        (   List.Nil (: pop n )
+            List.Node (: unpack swap pop n 1 + iter )
+        ) match
+    ) $iter =
+    0 iter
+) $List.len =
+
+# Make some coords
+( 0.0  0.0 ) F64 Vec2 make MaybeVec.Just make $v1 =
+( 1.0  1.0 ) F64 Vec2 make MaybeVec.Just make $v2 =
+( 1.0  0.0 ) F64 Vec2 make MaybeVec.Just make $v3 =
+( 0.0  1.0 ) F64 Vec2 make MaybeVec.Just make $v4 =
+( 0.0  0.0 ) F64 Vec2 make MaybeVec.Just make $v5 =
+
+# Eventually special [ ] syntax probably or a macro which converts tuple to List
+( v1 ( v2 ( v3 ( v4 ( v5
+    () List.Nil make
+    ) List.Node make
+    ) List.Node make
+    ) List.Node make
+    ) List.Node make
+    ) List.Node make
+$ll =
+
+ll :data
+ll List.len :data
+
+Unit (F64) Arrow ( "js" "Math.random" ) import $random =
+(:
+    (: 1 ) (: (  random random ) F64 Vec2 make MaybeVec.Just make ) $branch fun
+    (: random 0.1 < ) (: () MaybeVec.Nothing make ) $branch fun
+    branch
+) $randVec =
+
+
+(I32) (:
+    ((I32 List) (List) rec:
+        ( $n $ll ) =
+        (: 1 ) (: ll ) $branch fun
+        (: n 0 > ) (:
+            n 1 -
+            ( randVec ll ) List.Node make
+            mk_list
+        ) $branch fun
+        branch
+    ) $mk_list =
+
+    () List.Nil make mk_list
+    dup :type # TODO this is wrong! wtf?!
+
+    List.len
+) "test" export

@@ -212,6 +212,27 @@ export default class WasmNumber {
         };
     }
 
+    toString() {
+        switch (this.type) {
+            case NumberType.F32:
+                return JSON.stringify(this.value) + 'f';
+            case NumberType.F64: {
+                let ret = JSON.stringify(this.value);
+                if (!ret.includes('.'))
+                    ret += '.0';
+                return ret;
+            }
+            case NumberType.I32:
+                return this.value.toString();
+            case NumberType.U32:
+                return this.value.toString() + 'U';
+            case NumberType.I64:
+                return this.value.toString() + 'L';
+            case NumberType.U64:
+                return this.value.toString() + 'UL';
+        }
+    }
+
     /**
      * Clone self
      */

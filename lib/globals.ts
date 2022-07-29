@@ -303,8 +303,8 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Export a function as wasm
-    // (I32 I32) { + } "add" export
+    // Export a macro as wasm
+    // (I32 I32) (: + ) "add" export
     'export' : {
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
@@ -784,7 +784,7 @@ const operators : MacroOperatorsSpec = {
 
             // Constexpr
             const subtypes = enumType.sortedSubtypes();
-            if (edt instanceof types.EnumClassType && edt.parent.check(enumType)) {
+            if (edt instanceof types.EnumClassType && edt.parent.check(enumType) && !(enumv instanceof expr.Expr)) {
                 if (indiciesFound[edt.index]) {
                     // Branch found, remove enum wrapper
                     if (enumv instanceof expr.EnumConstructor && enumv.knownValue instanceof value.Value)
@@ -831,6 +831,8 @@ const operators : MacroOperatorsSpec = {
 
                         // Trace
                         const trs = ctx.traceIO(elseCase, token);
+                        if (trs === null)
+                            continue;
                         if (trs instanceof error.SyntaxError)
                             return trs;
 
@@ -866,6 +868,8 @@ const operators : MacroOperatorsSpec = {
                         return v;
                     ctx.stack[ctx.stack.length - 1] = v;
                     const trs = ctx.traceIO(indiciesFound[i], token);
+                    if (trs === null)
+                        continue;
                     if (trs instanceof error.SyntaxError)
                         return trs;
                     ctx.stack[ctx.stack.length - 1] = tmp;

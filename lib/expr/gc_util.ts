@@ -110,7 +110,8 @@ export function loadRef(
     dt: types.RefType<types.DataType>,
     fun: FunExpr,
 ): string {
-    const fpl = dt.flatPrimitiveList();
+    const fpl = dt.unpackRefs();
+    // console.log(dt, fpl);
 
     // TODO when fpl.length <= 1 local not needed
     const ptrLocal = fun.addLocal(types.PrimitiveType.Types.I32);

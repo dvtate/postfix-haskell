@@ -161,7 +161,7 @@ export class RecursiveBodyExpr extends Expr {
             this.token,
             this.label,
             this.takeExprs,
-            captureExprs
+            captureExprs,
         );
         this.helper.outputs = this.gives;
         ctx.addFunction(this.helper);
@@ -232,6 +232,8 @@ export class RecursiveBodyExpr extends Expr {
             return false;
         return  isTailRecursive(firstSrc);
 
+        // TODO also detect enum match exprs
+
         // If body not a branch result DependentLocalExpr, return false
         // Go through branch conditions, if any of them calls self say no
         // Go through branch actions, if any of them isn't tr, say no
@@ -240,7 +242,6 @@ export class RecursiveBodyExpr extends Expr {
         //  - if it doesn't call self it is tr
         //  - otherwise it's not tr
 
-        // TODO actually detect tail-recursion lol
         return false;
     }
 }
@@ -300,7 +301,13 @@ export class RecFunExpr extends FunExpr {
             resultTypes ? `(result ${resultTypes})` : ''
         } ${
             // Write body
-            this.wrapBody(outs.join('\n\n'))
+            this.wrapBody(`${
+                // Passed references are on the ref stack, store them in rv stack
+                this.setLocalWat(
+                    [...this.takeExprs, ...this.copiedParams]
+                        .map(e => e.inds || []).reduce((a, b) => a.concat(b), [])
+                        .filter(l => l.datatype instanceof types.RefType))
+            } ${outs.join('\n\n')}`)
         })`;
 
         // Revert modifications to the exprs so that other places they're referenced don't break

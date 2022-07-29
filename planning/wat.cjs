@@ -5,7 +5,7 @@
 // Load WAT source
 const fs = require('fs');
 
-const fname = 'wat.wasm';
+const fname = 'tmp.wasm';
 const bin = fs.readFileSync(fname);
 console.log('bin:', bin);
 const valid = WebAssembly.validate(bin);
@@ -24,6 +24,7 @@ const env = {
 			eval(str);
 		},
 		'console.log': console.log,
+		'Math.random': Math.random.bind(Math),
 	},
 };
 
