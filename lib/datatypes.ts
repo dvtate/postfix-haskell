@@ -797,21 +797,22 @@ export class RefRefType<T extends DataType> extends DataType {
 
     flatPrimitiveList(): RefType<DataType>[] {
         // TODO this is bad, should just be [I32]
-        let offset = 0;
-        return this.type.flatPrimitiveList().map(t => {
-            const oldOffset = offset;
-            if (t instanceof PrimitiveType)
-                switch (t.name) {
-                    case 'i32': case 'f32': offset += 4; break;
-                    case 'i64': case 'f64': offset += 8; break;
-                    default: throw new Error('wtf?');
-                }
-            else
-                // Otherwise it's a pointer
-                offset += 4;
+        // let offset = 0;
+        return [new RefType(this.token, this.type)];
+        // return this.type.flatPrimitiveList().map(t => {
+        //     const oldOffset = offset;
+        //     if (t instanceof PrimitiveType)
+        //         switch (t.name) {
+        //             case 'i32': case 'f32': offset += 4; break;
+        //             case 'i64': case 'f64': offset += 8; break;
+        //             default: throw new Error('wtf?');
+        //         }
+        //     else
+        //         // Otherwise it's a pointer
+        //         offset += 4;
 
-            return new RefType(this.token, t, oldOffset);
-        });
+        //     return new RefType(this.token, t, oldOffset);
+        // });
     }
 
     isUnit(): boolean {
@@ -884,7 +885,6 @@ export class EnumBaseType extends DataType {
         return false;
     }
     flatPrimitiveList(): (PrimitiveType | RefType<DataType>)[] {
-        // Is this right?
         return [PrimitiveType.Types.I32, new RefType(this.token, null)];
     }
     getWasmTypeName(): string {

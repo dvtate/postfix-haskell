@@ -15,14 +15,20 @@
 ) enum $List =
 
 # Describe types
-List :data
-List.Node :data
+#List :data
+#List.Node :data
 
 # Length of linked list
 (:  (rec:
-        $n =
-        (   List.Nil (: pop n )
-            List.Node (: unpack swap pop n 1 + iter )
+        $ret =
+        (   List.Nil (:
+                pop
+                ret
+            )
+            List.Node (:
+                unpack ( $v $next ) =
+                next  ret 1 + iter
+            )
         ) match
     ) $iter =
     0 iter
@@ -35,7 +41,7 @@ List.Node :data
 ( 0.0  1.0 ) F64 Vec2 make MaybeVec.Just make $v4 =
 ( 0.0  0.0 ) F64 Vec2 make MaybeVec.Just make $v5 =
 
-# Eventually special [ ] syntax probably or a macro which converts tuple to List
+# Make a linked list
 ( v1 ( v2 ( v3 ( v4 ( v5
     () List.Nil make
     ) List.Node make
@@ -48,15 +54,25 @@ $ll =
 ll :data
 ll List.len :data
 
+###
+## Runtime demo
+###
+
+# Import Math.random from javascript
 Unit (F64) Arrow ( "js" "Math.random" ) import $random =
-(:
-    (: 1 ) (: (  random random ) F64 Vec2 make MaybeVec.Just make ) $branch fun
-    (: random 0.1 < ) (: () MaybeVec.Nothing make ) $branch fun
+
+# Generate a random MaybeVec
+(:  (: 1 ) (:
+        ( random random ) F64 Vec2 make MaybeVec.Just make
+    ) $branch fun
+    (: random 0.1 < ) (:
+        () MaybeVec.Nothing make
+    ) $branch fun
     branch
 ) $randVec =
 
-
 (I32) (:
+    # Append n randomly generated nodes to a list
     ((I32 List) (List) rec:
         ( $n $ll ) =
         (: 1 ) (: ll ) $branch fun
@@ -68,8 +84,9 @@ Unit (F64) Arrow ( "js" "Math.random" ) import $random =
         branch
     ) $mk_list =
 
-    () List.Nil make mk_list
-    dup :type # TODO this is wrong! wtf?!
+    # Append n randomly generated nodes onto an empty list
+    () List.Nil make mk_list $list =
 
-    List.len
+    # Return the length of the list
+    list List.len
 ) "test" export

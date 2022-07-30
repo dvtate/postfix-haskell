@@ -64,6 +64,12 @@ import * as util from '../tools/util.js';
         console.log('sqrt( log( 2 ) ) \t\t=> ', w.test(2));
         console.log('sqrt( log( 20 ) ) \t\t=> ', w.test(20));
         console.log('sqrt( log( 54 ) ) \t\t=> ', w.test(54));
+    } else if (fname.includes('list.phs')) {
+        console.log('test ( 0 )\t=> ', w.test(0));
+        console.log('test ( 1 )\t=> ', w.test(1));
+        console.log('test ( 2 )\t=> ', w.test(2));
+        console.log('test ( 3 )\t=> ', w.test(3));
+        console.log('test ( 4 )\t=> ', w.test(4));
     }
 
     // const { get, set, incr }

@@ -245,9 +245,14 @@ export default class Fun {
 
         // Verify all branches give values of same types
         const first = ios[0].gives;
+        first.forEach(v => {
+            if (v.datatype instanceof types.EnumClassType)
+                v.datatype = v.datatype.parent;
+        });
         const givesInconsistent = ios.some(e =>
             e.gives.some((v, i) =>
                 !wideCompat(first[i], v.datatype)));
+        // console.log(ios.map(i => i.gives.map(v => v.datatype.toString())));
         if (givesInconsistent) {
             console.error("ios", ios);
             console.log(ios.map(e => e.gives.map(v => v.datatype.toString())));

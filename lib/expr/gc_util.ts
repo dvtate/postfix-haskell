@@ -106,20 +106,37 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
     return ret + `(call $__ref_stack_push ${local.getLocalWat()})`;
 }
 
+/**
+ * Load object pointed to by reference onto the stack
+ * @param dt type of value to load
+ * @param fun function it's being loaded into
+ * @returns wasm text source
+ */
 export function loadRef(
     dt: types.RefType<types.DataType>,
     fun: FunExpr,
 ): string {
     const fpl = dt.unpackRefs();
-    // console.log(dt, fpl);
 
-    // TODO when fpl.length <= 1 local not needed
+    // Single object
+    if (fpl.length <= 1)
+        return fpl.map(t => `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} (call $__ref_stack_pop))${
+            t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }`
+        ).join(' ');
+
+    // Store pointer into a local for multiple uses
     const ptrLocal = fun.addLocal(types.PrimitiveType.Types.I32);
     return `(call $__ref_stack_pop)${
         fun.setLocalWat(ptrLocal)
     }${
         fpl.map(t =>
-            `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} ${fun.getLocalWat(ptrLocal)})`
-        ).join(' ')
+            `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} ${fun.getLocalWat(ptrLocal)})${
+                t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }`
+        ).reverse().join(' ')
     }`;
+
+    // After this point `ptrLocal` is no longer needed so I could
+    // add a `fun.freeLocal()` method which allows it to get used to hold other values
+    // not a big deal for primitives since simple optimizers will catch but for
+    // references it would definitely pay off
 }
