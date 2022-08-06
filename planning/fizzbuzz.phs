@@ -7,9 +7,9 @@
     $n =
 
     # Some strings
-    "fizz" Str cast $fizz =
-    "buzz" Str cast $buzz =
-    "fizzbuzz" Str cast $fizzbuzz =
+    "fizz" StaticStr cast $fizz =
+    "buzz" StaticStr cast $buzz =
+    "fizzbuzz" StaticStr cast $fizzbuzz =
 
     # fizzbuzz logic
     (: true ) (: io.print ) $fb fun

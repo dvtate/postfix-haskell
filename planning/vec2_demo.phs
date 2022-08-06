@@ -17,25 +17,26 @@ I32 I64 | $Int =
 #  It will only accept instances of same class
 Pair class $Vector2 =
 
-# Access operators to emulate objects
-((Vector2): 1 ) (: unpack pop ) $Vector2_x fun
-((Vector2): 1 ) (: unpack swap pop ) $Vector2_y fun
+# Access properties
+((Vector2): 1 ) (: unpack pop ) $x fun
+((Vector2): 1 ) (: unpack ( $_ $y ) = y ) $y fun
 
-# These are equivalent to methods
+# Alternative to methods
+((Vector2  Float Int |): 1 ) (: swap scale ) $scale fun
 ((Float Int | Vector2): 1 ) (:
 	# Return a new vector with scaled coords
 	( $f $v ) =
-	(	v Vector2_x f *
-		v Vector2_y f *
+	(	v x f *
+		v y f *
 	) Vector2 make
-) $Vector2_scale fun
+) $scale fun
 
 # Operator overloading
 ((Vector2 Vector2): 1) (:
 	# Return new vector with sum
 	$b = $a =
-	(	a Vector2_x  b Vector2_x +
-		a Vector2_y  b Vector2_y +
+	(	a x  b x +
+		a y  b y +
 	) Vector2 make
 ) $global.+ fun
 
@@ -43,12 +44,12 @@ Pair class $Vector2 =
 ( 2 1 ) Vector2 make $v =
 
 # Access fields via access operators
-v Vector2_x :data	# 2
-v Vector2_y :data	# 1
+v x :data	# 2
+v y :data	# 1
 
 # Make a scaled version of v
 # Notice it's 2x as big
-2 v Vector2_scale $v2 =
+2 v scale $v2 =
 v2 :data # [ 4, 2 ]
 
 # Add the vectors

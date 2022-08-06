@@ -6,8 +6,17 @@ import type Context from "./context.js";
  * Macro Value that when given an id returns corresponding id in namespace
  */
 export default class Namespace {
+    /**
+     * Set of scopes to write identifiers to in order to emulate combined namespaces
+     */
+    proxiedScopes: {[k: string]: value.Value }[] = [];
+
+    /**
+     * @param scope identifiers defined within this scope
+     * @param token origin location in code
+     */
     constructor(
-        public scope: { [k: string]: value.Value },
+        protected scope: { [k: string]: value.Value },
         public token?: LexerToken,
     ) {
     }
@@ -48,9 +57,22 @@ export default class Namespace {
             // Write to current scope
             curScope[id] = v;
         });
+
+        this.proxiedScopes.push(curScope);
     }
 
     getId(id: string) {
         return this.scope[id];
     }
+    setId(id: string, value: value.Value) {
+        this.scope[id] = value;
+
+        // Also update all proxied scopes
+        this.proxiedScopes.forEach(s => s[id] = value);
+    }
+
+    fields(): [string, value.Value][] {
+        return Object.entries(this.scope);
+    }
+
 }

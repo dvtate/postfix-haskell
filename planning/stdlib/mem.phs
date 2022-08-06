@@ -63,3 +63,7 @@
 ((I64): 1 ) (: pop 8 ) $sizeof fun
 ((Syntax:Type): F64 == ) (: pop 8 ) $sizeof fun
 ((F64): 1 ) (: pop 8 ) $sizeof fun
+
+
+# TODO dynamic memory allocation and use
+# We have ability to allocate arbitrary blocks of memory via $__alloc but we have to initialize it in a functional way... how?

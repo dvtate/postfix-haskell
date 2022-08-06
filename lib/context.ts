@@ -203,14 +203,21 @@ export default class Context {
 
         // Resolve namespaces
         for (let i = 1; i < id.length; i++)
-            if (ret instanceof value.NamespaceValue)
+            if (ret instanceof value.NamespaceValue) {
                 ret = ret.value.getId(id[i]);
-            // else if (ret instanceof EnumNs)
-            //     ret = ret.getId(id[i]);
-            else if (ret.type === value.ValueType.Type && ret.value.getBaseType() instanceof types.EnumBaseType)
-                ret = ret.value.getBaseType().ns.getId(id[i])
-            else
+            } else if (ret.type === value.ValueType.Type) {
+                let bt = ret.value;
+                if (bt instanceof types.ClassType)
+                    bt = bt.getBaseType();
+                if (bt instanceof types.EnumClassType)
+                    bt = bt.parent;
+                if (bt instanceof types.EnumBaseType)
+                    ret = bt.ns.getId(id[i])
+                else
+                    return undefined;
+            } else {
                 return undefined;
+            }
         return ret;
     }
 
@@ -245,9 +252,18 @@ export default class Context {
         // Resolve namespaces
         for (let i = 1; i < id.length - 1; i++) {
             if (scope.type === value.ValueType.Type) {
-                const bt = scope.value.getBaseType();
+                let bt = scope.value;
+                if (bt instanceof types.ClassType)
+                    bt = bt.getBaseType();
+                if (bt instanceof types.EnumClassType)
+                    bt = bt.parent;
                 if (bt instanceof types.EnumBaseType)
                     scope = bt.ns.getId(id[i]);
+                else
+                    return new error.SyntaxError(
+                        `Expected '${id.slice(0,  -1).join('.')}.' to be a namespace or enum type`,
+                        token,
+                        this);
             } else if (scope instanceof value.NamespaceValue) {
                 scope = scope.value.getId(id[i]);
             } else {
@@ -259,11 +275,20 @@ export default class Context {
         }
 
         if (scope instanceof value.NamespaceValue) {
-            scope.value.scope[id[id.length - 1]] = v;
+            scope.value.setId(id[id.length - 1], v);
         } else if (scope.type === value.ValueType.Type) {
-            const bt = scope.value.getBaseType();
+            let bt = scope.value;
+            if (bt instanceof types.ClassType)
+                bt = bt.getBaseType();
+            if (bt instanceof types.EnumClassType)
+                bt = bt.parent;
             if (bt instanceof types.EnumBaseType)
-                bt.ns.scope[id[id.length - 1]] = v;
+                bt.ns.setId(id[id.length - 1], v);
+            else
+                return new error.SyntaxError(
+                    `Expected '${id.slice(0,  -1).join('.')}.' to be a namespace or enum type`,
+                    token,
+                    this);
         } else {
             return new error.SyntaxError(
                 `Expected '${id.slice(0,  -1).join('.')}.' to be a namespace or enum type`,
@@ -292,8 +317,7 @@ export default class Context {
      * @param knownResults - trace results to use for recursion
      */
     traceIO(v: value.Value, token: LexerToken, knownResults: null | error.SyntaxError | object = { result: null, body: null }) {
-        // console.log(v);
-        // console.log('trace', v);
+
         // Copy state
         const initialState = this.copyState();
         this.minStackSize = this.stack.length;

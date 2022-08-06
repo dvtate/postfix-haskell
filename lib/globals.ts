@@ -728,8 +728,8 @@ const operators : MacroOperatorsSpec = {
     'match' : {
         action: (ctx, token) => {
             // Get arg
-            if (ctx.stack.length === 0)
-                return ['no arg branches given to `match`'];
+            if (ctx.stack.length < 2)
+                return ['operator `match` expected branches and an enum to match on'];
             const arg = ctx.pop();
             if (!(arg instanceof value.TupleValue))
                 return ['expected a tuple of macro branches'];

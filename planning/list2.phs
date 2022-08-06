@@ -1,0 +1,17 @@
+"./stdlib/prelude.phs" require use
+"./stdlib/list.phs" require $list =
+
+# Alias for the type of lists of integers
+I32 list.List $IntList =
+
+# Make a linked list
+( 1 ( 2 ( 3 ( 4 ( 5
+    () IntList.Nil make
+    ) IntList.Node make
+    ) IntList.Node make
+    ) IntList.Node make
+    ) IntList.Node make
+    ) IntList.Node make
+$ll =
+
+ll ((I32)(I32): 2 * ) map :data

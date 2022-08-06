@@ -24,7 +24,7 @@ Note that for some of this we might be able to define [custom sections](https://
 - Size: variable at runtime
 
 ## Heap Object Headers
-Stores metadata for the relevant object pointer. Below examples are in C/C++ only for readability, planning on writing it directly in WASM.
+Stores metadata for the relevant object pointer. Below examples are in C/C++ only for readability, the actual implementation is in WASM
 ```cpp
 struct gc_heap_object_t {
     // This tells us where within the object there are references

@@ -79,6 +79,7 @@ export abstract class Macro extends value.Value {
         ctx.stack.push(...inputs);
 
         // Trace the macro
+        // TODO when given number of inputs we should include untouched values as outputs
         const ios = ctx.traceIO(this, token);
         if (ios instanceof error.SyntaxError)
             return ios;
@@ -87,6 +88,16 @@ export abstract class Macro extends value.Value {
         // Validate trace
         if (ios.takes.length > inputs.length)
             return 'differing input lengths';
+
+        // Untouched, designated inputs are still inputs
+        //  special case for identity macro
+        if (ios.takes.length < inputs.length) {
+            ios.gives = (inputs as value.Value[])
+                .slice(0, inputs.length - ios.takes.length)
+                .concat(ios.gives);
+            ios.takes = inputs;
+        }
+
         // if (ios.takes.some((e, i) => e !== inputs[i])) {
         //     console.error(ios.takes, 'vs', inputs);
         //     return 'differing input values';
@@ -325,7 +336,7 @@ export class LiteralMacro extends Macro {
         // Verify outputs
         if (outputs && type.outputTypes && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {
             ctx.warn(this.token, 'incorrectly typed macro');
-            console.warn('incorrectly typed macro, should be', type);
+            console.warn('incorrectly typed macro, should be', type.toString());
             // return type;
         }
 

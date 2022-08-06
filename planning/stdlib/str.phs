@@ -1,13 +1,32 @@
 "./prelude.phs" require $prelude =
+"./list.phs" require "List" "" use_some
 
 # String class
-( I32 I32 ) class $Str =
-((Str): 1 ) (: unpack pop ) $size fun
-((Str): 1 ) (: unpack swap pop ) $addr fun
+( I32 I32 ) class $StaticStr =
+((StaticStr): 1 ) (: unpack prelude.pop ) $size fun
+((StaticStr): 1 ) (: unpack prelude.swap prelude.pop ) $addr fun
 
-# Overload cast operator to convert string literals
-((Syntax:Str Syntax:Type): Str == ) (:
+# Overload cast operator to convert static string literals
+((Syntax:Str Syntax:Type): StaticStr == ) (:
     ( $lit $T ) =
     ( lit ) T make
 ) $prelude.cast fun
 
+# Characters are stored in I32's for performance reasons
+I32 $Char =
+
+# Strings could be represented as a list of characters
+# But generally this wouldn't be ideal in terms of performance
+# For this reason we give it a somewhat obscure name
+# And define a better default string implementation later on
+Char List $ListStr =
+
+# Type for strings generated at runtime
+( I32 I32 ) class $Str =
+((Str): 1 ) (: unpack prelude.pop ) $size fun
+((Str): 1 ) (: unpack prelude.swap prelude.pop ) $addr fun
+
+(( StaticStr Str | prelude.dup ): 1 ) (:
+    ( $lhs $rhs ) =
+
+) $concat fun

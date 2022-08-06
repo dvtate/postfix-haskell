@@ -80,6 +80,8 @@ export class TypeVarType extends Type implements DataTypeInterface {
             type = type.getBaseType();
         if  (!type)
             return false;
+        if (type instanceof AnyType)
+            return true;
         if (type instanceof TypeVarType)
             return this.identifier === type.identifier && this.scope === type.scope;
         if (this.type)
@@ -163,7 +165,7 @@ export class UnionType extends Type {
             return false;
 
         // Verify type is in this set
-        return this.types.includes(type);
+        return this.types.some(t => t.check(type));
     }
 
     flatPrimitiveList(): PrimitiveType[] {
@@ -320,6 +322,8 @@ export class ClassType<T extends DataType> extends DataType {
     check(type: Type): boolean {
         if (type === null)
             return false;
+        if (type instanceof AnyType)
+            return true;
 
         // Check class
         if (type instanceof ClassType) {
@@ -484,8 +488,10 @@ export class TupleType extends DataType {
 
         // Verify types match
         for (let i = 0; i < this.types.length; i++)
-            if (!this.types[i].check(type.types[i]))
+            if (!this.types[i].check(type.types[i])) {
+                console.log("failed ", i);
                 return false;
+            }
         return true;
     }
 
@@ -858,26 +864,28 @@ export class EnumBaseType extends DataType {
         });
     }
 
+
     /**
      * @override
      */
     check(type: Type): boolean {
-        // Any type
-        if (type instanceof AnyType)
-            return true;
-
         // Drop classes
         if (type instanceof ClassType)
             type = type.getBaseType();
         if (!type)
             return false;
 
+        // Any type
+        if (type instanceof AnyType)
+            return true;
+
         // Yikes
         const isChild = () => Object.values(this.subtypes).some(t => t.check(type));
         const isCompat = () => type instanceof EnumBaseType
             && this.token === type.token
             && Object.keys(this.subtypes).length === Object.keys(type.subtypes).length
-            && Object.values(this.subtypes).every(t => t.check(type));
+            && (Object.values(this.subtypes).every(t => t.check(type)));
+        // console.log([this.name, (type as any).name], [this === type, isChild(), isCompat()]);
         return type && (this === type || isChild() || isCompat());
     }
     isUnit(): boolean {
@@ -954,10 +962,18 @@ export class EnumClassType<T extends DataType> extends DataType {
 
         if (type === this.parent)
             return true;
+
+        // if (type instanceof EnumClassType)
+        //     console.log('st: ', [this.type, type.type],
+        //         this.token === type.token,
+        //         this.index === type.index,
+        //         this.type.check(type.type));
+        // else
+        //     console.log(type.constructor);
         return type instanceof EnumClassType
             && this.token === type.token    // corrolaries: same parent, same class id
             && this.index === type.index
-            && this.type.check(type.type);
+            // && this.type.check(type.type);
     }
     isUnit(): boolean {
         return false;

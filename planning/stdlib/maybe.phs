@@ -1,0 +1,10 @@
+"./prelude.phs" require use
+
+(:  $T =
+    (:  () type class $Nothing =
+        T class $Just =
+    ) enum
+) $Maybe =
+
+Any Maybe $AnyMaybe =
+

@@ -1,0 +1,76 @@
+"./prelude.phs" require $prelude =
+
+# Construct a type for Linked Lists of
+(:  $MemberType =
+
+    # Using namespace prelude
+    prelude use
+
+    # Linked List with members of given type
+    ( $ListType rec:
+        ( ) type class $Nil =
+        ( MemberType ListType ) class $Node =
+    ) enum $ListType =
+
+    # Shortcut for empty list
+    () ListType.Nil make $ListType.empty =
+
+    # Append item to list head
+    ((MemberType ListType):
+        ( $m $l ) =
+        ( m l ) ListType.Node make
+    ) $cons =
+
+    # Length of linked list
+    (:  (rec:
+            $ret =
+            (   ListType.Nil (:
+                    pop
+                    ret
+                )
+                ListType.Node (:
+                    unpack ( $v $next ) =
+                    next  ret 1 + iter
+                )
+            ) match
+        ) $iter =
+        0 iter
+    ) $ListType.length =
+
+    # Get item at specific index in list
+    "
+    ((ListType I32):
+        (rec: ( $ll $i ) =
+            (
+                ListType.Nil (:
+
+                )
+
+            ) match
+            (: )
+        ) $iter =
+        iter
+    ) $ListType.at =
+    " pop
+
+    (( ListType  Syntax:Macro (MemberType) (Any) Arrow | ) rec:
+        $f =
+        (   ListType.Nil (: ListType.Nil make )
+            ListType.Node (:
+                unpack ( $v $n ) =
+                (   v f
+                    n $f ~ ListType.map
+                ) ListType.Node make
+            )
+        ) match
+    ) $ListType.map =
+
+    # Return the List type
+    ListType
+) $List =
+
+
+(( Any List Syntax:Macro (Any) (Any) Arrow | ): 1 )
+(: ( $l $f ) = l type $ListType = l $f ~ ListType.map )
+$prelude.map fun
+

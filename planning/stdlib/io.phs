@@ -1,6 +1,6 @@
 "./prelude.phs" require use
 "./monad.phs" require "Monad" "" use_some
-"./str.phs" require "Str" "" use_some
+"./str.phs" require "StaticStr" "" use_some
 
 # Deprecated
 
@@ -14,7 +14,7 @@ $Monad ~ class $IO =
 ) $print fun
 
 # Define print for strings
-((Any IO  Str): 1 )
+((Any IO  StaticStr): 1 )
 (: ( $io $str ) =
-    io str ( io type Str ) ( io type ) Arrow ( "js" "logStr" ) import @
+    io str ( io type StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
 ) $print fun
