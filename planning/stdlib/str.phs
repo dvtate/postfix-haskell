@@ -21,6 +21,8 @@ I32 $Char =
 # And define a better default string implementation later on
 Char List $ListStr =
 
+# TODO implement strings similar to Haskell's Data.Text
+
 # Type for strings generated at runtime
 ( I32 I32 ) class $Str =
 ((Str): 1 ) (: unpack prelude.pop ) $size fun

@@ -1,3 +1,0 @@
-
-
-# We have ability to allocate arbitrary blocks of memory via $__alloc but we have to initialize it in a functional way... how?
