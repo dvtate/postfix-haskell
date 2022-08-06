@@ -25,6 +25,7 @@ These are globally defined operators some may eventually be moved to standard li
 // TODO break this up into files
 // TODO ALWAYS verify input length
 // TODO THINK: could this be moved to a standard library?
+// TODO go through and replace everwhere we return string[] and replace it with error.SyntaxError
 
 // Util to convert to boolean value
 const toBool = (b : boolean, token: LexerToken) =>
@@ -368,7 +369,7 @@ const operators : MacroOperatorsSpec = {
             // Get input types
             let inputs: types.Type[];
             if (inputsTuple instanceof value.TupleValue && inputsTuple.value.length === 0) {
-                ctx.warn(token, '() is context sensitive, you should use warn');
+                ctx.warn(token, '() is context sensitive, you should use `Unit` or use `() type`');
                 inputs = [];
             } else if (inputsTuple.type === value.ValueType.Type) {
                 const bt = inputsTuple.value instanceof types.ClassType
@@ -384,7 +385,7 @@ const operators : MacroOperatorsSpec = {
             // Get output types
             let outputs: types.Type[];
             if (outputsTuple instanceof value.TupleValue && outputsTuple.value.length === 0) {
-                ctx.warn(token, '() is context sensitive, you should use warn');
+                ctx.warn(token, '() is context sensitive, you should use `Unit` or use `() type`');
                 outputs = [];
             } else if (outputsTuple.type === value.ValueType.Type) {
                 const bt = outputsTuple.value instanceof types.ClassType

@@ -488,10 +488,8 @@ export class TupleType extends DataType {
 
         // Verify types match
         for (let i = 0; i < this.types.length; i++)
-            if (!this.types[i].check(type.types[i])) {
-                console.log("failed ", i);
+            if (!this.types[i].check(type.types[i]))
                 return false;
-            }
         return true;
     }
 
@@ -866,6 +864,13 @@ export class EnumBaseType extends DataType {
 
 
     /**
+     * Handle recursive types
+     * When two type is recursive we only care about the non-recursive members
+     * being compatible as that would make the recursive references compatible
+     */
+    private _recCheck: WeakSet<EnumBaseType>;
+
+    /**
      * @override
      */
     check(type: Type): boolean {
@@ -881,10 +886,28 @@ export class EnumBaseType extends DataType {
 
         // Yikes
         const isChild = () => Object.values(this.subtypes).some(t => t.check(type));
-        const isCompat = () => type instanceof EnumBaseType
-            && this.token === type.token
-            && Object.keys(this.subtypes).length === Object.keys(type.subtypes).length
-            && (Object.values(this.subtypes).every(t => t.check(type)));
+        const isCompat = () => {
+            // Handle simple, non-recursive cases first
+            if (!(type instanceof EnumBaseType && this.token === type.token))
+                return false;
+
+            // Recursive case
+            if (this.recursive) {
+                if (!this._recCheck)
+                    this._recCheck = new WeakSet();
+                if (this._recCheck.has(type))
+                    return true;
+                this._recCheck.add(type);
+                const ret = Object.entries(this.subtypes).every(([name, st]) =>
+                    st.type.check((type as EnumBaseType).subtypes[name].type));
+                this._recCheck.delete(type);
+                return ret;
+            }
+
+            // Non recursive
+            return Object.entries(this.subtypes).every(([name, st]) =>
+                st.type.check((type as EnumBaseType).subtypes[name].type));
+        };
         // console.log([this.name, (type as any).name], [this === type, isChild(), isCompat()]);
         return type && (this === type || isChild() || isCompat());
     }
@@ -973,7 +996,8 @@ export class EnumClassType<T extends DataType> extends DataType {
         return type instanceof EnumClassType
             && this.token === type.token    // corrolaries: same parent, same class id
             && this.index === type.index
-            // && this.type.check(type.type);
+            // TODO this is wrong
+            && (this.type.check(type.type));
     }
     isUnit(): boolean {
         return false;

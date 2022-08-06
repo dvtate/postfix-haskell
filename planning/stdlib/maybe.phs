@@ -19,7 +19,7 @@ Any Maybe $AnyMaybe =
 ) $bind fun
 
 # Invokes v when given nothing, otherwise returns given value
-(( Any Maybe dup Syntax:Macro () (Any Maybe) Arrow | | ): 1 ) (:
+(( Any Maybe dup Syntax:Macro () type (Any Maybe) Arrow | | ): 1 ) (:
     $v =
     dup type $TMaybe =
     (   TMaybe.Nothing (: v )
