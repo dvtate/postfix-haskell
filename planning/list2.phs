@@ -25,6 +25,7 @@ ll triple sum :data
 Unit (F64) Arrow ( "js" "Math.random" ) import $random =
 
 F64 list.List $DoubleList =
+
 (I32) (:
     # Append n randomly generated nodes to a list
     ((I32 DoubleList) (DoubleList) rec:
@@ -41,8 +42,8 @@ F64 list.List $DoubleList =
     # Append n randomly generated nodes onto an empty list
     () DoubleList.Nil make mk_list $list =
 
-    (: (: 3 * ) DoubleList.map ) $triple =
-    (: 0 (: + ) DoubleList.foldl ) $sum =
+    (: (: 3.0 * ) DoubleList.map ) $triple =
+    (: 0.0 (: + ) DoubleList.foldl ) $sum =
 
     list triple sum
 ) "test" export

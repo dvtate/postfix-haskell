@@ -58,44 +58,54 @@
 
 
     # Apply function to each element of the list
-    (( ListType  Syntax:Macro (ElemType) (Any) Arrow | ) rec:
+    (( ListType  Syntax:Macro (ElemType) (Any) Arrow | ):
         $f =
-        (   ListType.Nil (: ListType.Nil make )
-            ListType.Node (:
-                unpack ( $v $n ) =
-                (   v f
-                    n $f ~ ListType.map
-                ) ListType.Node make
-            )
-        ) match
+        (rec:
+            (   ListType.Nil (: ListType.Nil make )
+                ListType.Node (:
+                    unpack ( $v $n ) =
+                    (   v f
+                        n iter
+                    ) ListType.Node make
+                )
+            ) match
+        ) $iter =
+        iter
     ) $ListType.map =
 
     # Reduce list into single value starting from the left
     # <list> <initial val> <accumulator> foldl
-    (( ListType  Any  Syntax:Macro (Any ElemType) (Any) Arrow | ) rec:
-        ( $z $f ) =
-        (   ListType.Node (:
-                unpack ( $x $xs ) =
-                xs
-                z x f
-                $f ~
-                ListType.foldl
-            )
-            ListType.Nil (: z )
-        ) match
+    (( ListType  Any  Syntax:Macro (Any ElemType) (Any) Arrow | ):
+        $f =
+        (rec:
+            $z =
+            (   ListType.Node (:
+                    unpack ( $x $xs ) =
+                    xs
+                    z x f
+                    iter
+                )
+                ListType.Nil (: pop z )
+            ) match
+        ) $iter =
+        iter
     ) $ListType.foldl =
 
     # Like foldl but goes the other way around (note: not tail recursive)
-    (( ListType  Any  Syntax:Macro (ElemType Any) (Any) Arrow | ) rec:
-        ( $z $f ) =
-        (   ListType.Node (:
-                unpack ( $x $xs ) =
-                x
-                xs z $f ~ ListType.foldr
-                    f
-            )
-            ListType.Nil (: z )
-        ) match
+    (( ListType  Any  Syntax:Macro (ElemType Any) (Any) Arrow | ):
+        $f =
+        (rec:
+            $z =
+            (   ListType.Node (:
+                    unpack ( $x $xs ) =
+                    x
+                    xs z iter
+                        f
+                )
+                ListType.Nil (: pop z )
+            ) match
+        ) $iter =
+        iter
     ) $ListType.foldr =
 
     # Reverse the list
