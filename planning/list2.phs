@@ -14,4 +14,35 @@ I32 list.List $IntList =
     ) IntList.Node make
 $ll =
 
-ll ((I32)(I32): 2 * ) map :data
+(: (: 3 * ) IntList.map ) $triple =
+(: 0 (: + ) IntList.foldl ) $sum =
+
+ll :data
+ll triple :data
+ll triple sum :data
+
+# Import Math.random from javascript
+Unit (F64) Arrow ( "js" "Math.random" ) import $random =
+
+F64 list.List $DoubleList =
+(I32) (:
+    # Append n randomly generated nodes to a list
+    ((I32 DoubleList) (DoubleList) rec:
+        ( $n $ll ) =
+        (: 1 ) (: ll ) $branch fun
+        (: n 0 > ) (:
+            n 1 -
+            ( random ll ) DoubleList.Node make
+            mk_list
+        ) $branch fun
+        branch
+    ) $mk_list =
+
+    # Append n randomly generated nodes onto an empty list
+    () DoubleList.Nil make mk_list $list =
+
+    (: (: 3 * ) DoubleList.map ) $triple =
+    (: 0 (: + ) DoubleList.foldl ) $sum =
+
+    list triple sum
+) "test" export

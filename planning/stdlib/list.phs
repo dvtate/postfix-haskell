@@ -1,22 +1,25 @@
 "./prelude.phs" require $prelude =
 
-# Construct a type for Linked Lists of
-(:  $MemberType =
+# Macro to construct a type for Linked Lists containing elements of given type
+(:  $ElemType =
 
-    # Using namespace prelude
+    # Using namespace prelude within this macro
     prelude use
 
     # Linked List with members of given type
     ( $ListType rec:
         ( ) type class $Nil =
-        ( MemberType ListType ) class $Node =
+        ( ElemType ListType ) class $Node =
     ) enum $ListType =
+
+    # Member type of the list
+    ElemType $ListType.ElemType =
 
     # Shortcut for empty list
     () ListType.Nil make $ListType.empty =
 
     # Append item to list head
-    ((MemberType ListType):
+    ((ElemType ListType):
         ( $m $l ) =
         ( m l ) ListType.Node make
     ) $cons =
@@ -53,7 +56,9 @@
     ) $ListType.at =
     " pop
 
-    (( ListType  Syntax:Macro (MemberType) (Any) Arrow | ) rec:
+
+    # Apply function to each element of the list
+    (( ListType  Syntax:Macro (ElemType) (Any) Arrow | ) rec:
         $f =
         (   ListType.Nil (: ListType.Nil make )
             ListType.Node (:
@@ -65,12 +70,61 @@
         ) match
     ) $ListType.map =
 
-    # Return the List type
+    # Reduce list into single value starting from the left
+    # <list> <initial val> <accumulator> foldl
+    (( ListType  Any  Syntax:Macro (Any ElemType) (Any) Arrow | ) rec:
+        ( $z $f ) =
+        (   ListType.Node (:
+                unpack ( $x $xs ) =
+                xs
+                z x f
+                $f ~
+                ListType.foldl
+            )
+            ListType.Nil (: z )
+        ) match
+    ) $ListType.foldl =
+
+    # Like foldl but goes the other way around (note: not tail recursive)
+    (( ListType  Any  Syntax:Macro (ElemType Any) (Any) Arrow | ) rec:
+        ( $z $f ) =
+        (   ListType.Node (:
+                unpack ( $x $xs ) =
+                x
+                xs z $f ~ ListType.foldr
+                    f
+            )
+            ListType.Nil (: z )
+        ) match
+    ) $ListType.foldr =
+
+    # Reverse the list
+    (( ListType ):
+        (rec: $ret =
+            (   ListType.Nil (: pop ret )
+                ListType.Node (:
+                    unpack ( $x $xs ) =
+                    xs
+                    ( x ret ) ListType.Node make
+                    iter
+                )
+            ) match
+        ) $iter =
+        () ListType.Nil make
+    ) $ListType.reverse =
+
+    # TODO foldr take drop concat ++ find elem filter some
+
+
+    # Return the List type we created
     ListType
 ) $List =
 
-
-(( Any List Syntax:Macro (Any) (Any) Arrow | ): 1 )
+# Honestly not sure if these should be in prelude ns anymore
+(( Any List Syntax:Macro (Any) (Any) Arrow | ):
+    ( $l $f ) =
+    l type $LT =
+    f type (LT.ElemType) (Any) Arrow Syntax:Macro | ==
+)
 (: ( $l $f ) = l type $ListType = l $f ~ ListType.map )
 $prelude.map fun
-
