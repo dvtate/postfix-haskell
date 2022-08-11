@@ -6,10 +6,11 @@
 
 # Automatically generated documentation
 tsdoc/
-
+docs/
 
 planning/brainstorm/
 planning/spec/
 planning/webdemo/
 planning/implementation/
 planning/gc_test/
+planning/fixme/
