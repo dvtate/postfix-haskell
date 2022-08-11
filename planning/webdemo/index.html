@@ -55,20 +55,24 @@
                 // Debugging
                 window.mod = mod;
                 window.context = context;
+                console.log(mod.instance.exports.test(0));
+                console.log(mod.instance.exports.test(1));
+                console.log(mod.instance.exports.test(2));
+                console.log(mod.instance.exports.test(3));
 
-                (function loop() {
-                    mod.instance.exports.draw();
-                    mod.instance.exports.update();
-                    // requestAnimationFrame(loop);
-                    setTimeout(loop, 30);
-                })();
+                // (function loop() {
+                //     mod.instance.exports.draw();
+                //     mod.instance.exports.update();
+                //     // requestAnimationFrame(loop);
+                //     setTimeout(loop, 30);
+                // })();
 
-                const sleep = ms => new Promise(r => setTimeout(r, ms));
-                while(true) {
-                    mod.instance.exports.draw();
-                    mod.instance.exports.update();
-                    await sleep(5);
-                }
+                // const sleep = ms => new Promise(r => setTimeout(r, ms));
+                // while(true) {
+                //     mod.instance.exports.draw();
+                //     mod.instance.exports.update();
+                //     await sleep(5);
+                // }
                 // Get exports
                 // mod.instance.exports.loop();
 

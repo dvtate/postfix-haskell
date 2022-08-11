@@ -67,7 +67,7 @@ export default async function compileFile(
             process.exit(0);
         } else if (ctx === null) {
             console.error('parse failed with null!');
-            return null;
+            process.exit(-1);
         }
         if (trackTime)
             console.log('parse:', performance.now() - start);
@@ -83,7 +83,7 @@ export default async function compileFile(
     } catch (e) {
         if (e instanceof error.SyntaxError) {
             console.log(util.formatErrorPos([e]));
-            return null;
+            process.exit(-1);
         }
         throw e;
     }

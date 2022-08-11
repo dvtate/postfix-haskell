@@ -43,7 +43,7 @@ F64 list.List $DoubleList =
     () DoubleList.Nil make mk_list $list =
 
     (: (: 3.0 * ) DoubleList.map ) $triple =
-    (: 0.0 (: + ) DoubleList.foldl ) $sum =
+    (: 0.0 (: + ) DoubleList.foldr ) $sum =
 
     list triple sum
 ) "test" export
