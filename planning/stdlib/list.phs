@@ -123,8 +123,23 @@
         () ListType.Nil make
     ) $ListType.reverse =
 
-    # TODO foldr take drop concat ++ find elem filter some
+    (( ListType Syntax:Macro (ElemType) (I32) Arrow | ):
+        $cond =
+        (rec:
+            $ret =
+            (   ListType.Node (:
+                    unpack ( $x $xs ) =
+                    # Skip element if cond fails
+                    (: 1 ) (: xs ret iter ) $branch fun
+                    (: x cond ) (: ( x xs ret iter ) ListType.Node make )
+                )
+                ListType.Nil (: pop ret )
+            ) match
+        ) $iter =
+        iter
+    ) $ListType.filter =
 
+    # TODO take drop concat ++ elem find some
 
     # Return the List type we created
     ListType

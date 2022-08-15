@@ -1,0 +1,49 @@
+"./list.phs" require use
+
+# Contains either left or right types
+(: ( $TLeft $TRight ) =
+    (:
+        TLeft class $Left =
+        TRight class $Right =
+    ) enum $EitherType =
+
+    EitherType
+) $Either =
+
+# Some broad types
+Any Any Either $AnyEither =
+(Any) Any Arrow Syntax:Macro | $Invokeable =
+
+# Invokes different macro depending on which side is populated
+(( AnyEither Invokeable Invokeable ): 1)
+(:
+    ( $e $l $r ) =
+    e type $Te =
+    (   Te.Left (: l )
+        Te.Right (: r )
+    ) match
+) $either fun
+
+# Returns 1 if it's left member, 0 otherwise
+((AnyEither): 1) (
+    dup type $EitherType =
+    (: pop 1 ) (: pop 0 ) either
+) $isLeft fun
+
+# Returns 1 if it's right member, 0 otherwise
+((AnyEither): 1) (
+    dup type $EitherType =
+    (: pop 0 ) (: pop 1 ) either
+) $isRight fun
+
+# Keep only the left elements of a list
+((AnyEither List): 1 ) (:
+    dup type $ListType =
+    (: isLeft ) ListType.filter
+) $lefts fun
+
+# Keep only the right elements of a list
+((AnyEither List): 1 ) (:
+    dup type $ListType =
+    (: isRight ) ListType.filter
+) $rights fun
