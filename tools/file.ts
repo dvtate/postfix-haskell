@@ -75,9 +75,10 @@ export default async function compileFile(
         // Output assembly
         start = performance.now();
         const wast = await (ctx as Context).outWast({ folding, fast, optimize: optimize !== 0, });
-        // TODO if optimize level is 3 pass through wasm-opt afterwards
         if (trackTime)
             console.log('compile:', performance.now() - start);
+
+        // TODO if optimize level is 3 pass through wasm-opt afterwards
 
         return wast;
     } catch (e) {

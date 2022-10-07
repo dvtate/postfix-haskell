@@ -12,7 +12,6 @@ import ModuleManager from './module.js';
  *
  * operates as both a type and a namespace
  */
-// TODO should be able to just use value.ValueType.Type
 export class EnumNs extends value.Value {
     declare value: types.EnumBaseType;
     type: value.ValueType.Type = value.ValueType.Type;
@@ -64,7 +63,6 @@ export class EnumNs extends value.Value {
 /**
  * When enum value is known at compile time thus we can freely use and convert it
  */
-// TODO this should extend DataValue... no reason to have separate ValueType
 export class EnumValue extends value.DataValue {
     declare value: value.Value;
     declare type: value.ValueType.Data;

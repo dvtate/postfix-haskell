@@ -46,8 +46,6 @@ yargs(process.argv.slice(2))
                     describe: 'use folding/s-expr WAT syntax',
                     type: 'boolean',
                 },
-
-                // TODO convert this to a numeric arg
                 'optimize' : {
                     describe: '1 to use additional internal optimizations, 2 to use binaryen optimizer',
                     type: 'number',

@@ -705,13 +705,6 @@ export class RefType<T extends DataType> extends DataType {
     }
 
     /**
-     * Prevent recursive calls to RefType.flatPrimitiveList()
-     *
-     * @remarks Correct solution would be to pass an argument but that's ugly
-     */
-    private static noRecFlatPrimitiveList = false;
-
-    /**
      * @override
      */
     flatPrimitiveList(): RefType<DataType>[] {
@@ -950,7 +943,6 @@ export class EnumBaseType extends DataType {
 /**
  * Matches class defined within an enum
  */
-// TODO maybe shouldn't extend ClassType?
 export class EnumClassType<T extends DataType> extends DataType {
     /**
      * Metadata associating this class with the parent

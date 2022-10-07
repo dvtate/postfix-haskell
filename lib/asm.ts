@@ -332,16 +332,36 @@ function genIntUnaries(): AssemblyDBEntry[] {
  * Memory instructions
  */
 function genMemory() {
-    // Some basic load instructions
-    const ret = Object.values(types.PrimitiveType.Types)
+    // Add instructions for loading from linear memory
+    const ret: AssemblyDBEntry[] = Object.values(types.PrimitiveType.Types)
         .filter(v => typeof v !== 'number')
         .map(t => ({
             symbol: `${t.name}.load`,
             param: [types.PrimitiveType.Types.I32],
             result: [t],
         }));
-
-    // TODO load8_8 load8_s ... etc.
+    [types.PrimitiveType.Types.I32, types.PrimitiveType.Types.I64]
+    .forEach(t =>
+        ['.load8_s', '.load8_u', '.load16_s', '.load16_u']
+        .forEach(sym =>
+            ret.push(
+                {
+                    symbol: t.name + sym,
+                    param: [types.PrimitiveType.Types.I32],
+                    result: [t],
+                }
+            )));
+    ret.push(
+        {
+            symbol: 'i64.load32_s',
+            param: [types.PrimitiveType.Types.I32],
+            result: [types.PrimitiveType.Types.I64],
+        }, {
+            symbol: 'i64.load32_u',
+            param: [types.PrimitiveType.Types.I32],
+            result: [types.PrimitiveType.Types.I64],
+        },
+    );
 
     // Get current linear memory size
     ret.push({

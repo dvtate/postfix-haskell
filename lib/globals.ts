@@ -25,7 +25,7 @@ These are globally defined operators some may eventually be moved to standard li
 // TODO break this up into files
 // TODO ALWAYS verify input length
 // TODO THINK: could this be moved to a standard library?
-// TODO go through and replace everwhere we return string[] and replace it with error.SyntaxError
+// TODO go through and replace everwhere we return string[] and replace it with error.*
 
 // Util to convert to boolean value
 const toBool = (b : boolean, token: LexerToken) =>
@@ -154,7 +154,7 @@ const operators : MacroOperatorsSpec = {
                 // TODO use ctx.traceIO() instead
                 const retlen = ctx.stack.length - ctx.cmpStack(oldStack);
                 if (retlen > 1)
-                    return ['type macro should only return one value']; // TODO need to find a way to improve error tracing
+                    return ['type macro should only return one value']; // TODO use error.SyntaxError here
                 let t = ctx.pop();
                 if (t.type !== value.ValueType.Type)
                     return ['expected a type to append class to'];

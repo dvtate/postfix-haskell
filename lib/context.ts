@@ -20,12 +20,6 @@ import { EnumNs } from './enum.js';
 // Load wabt on next tick
 const wabtProm = wabtMod();
 
-// TODO this class is fucking massive and should be split into different components
-//  so that the amount of state it manages is better organized
-// - Context.stack: StackCtx: manages state associated with stack
-// - Context.scopes: ScopesCtx: manages state associated with scopes and identifiers
-// - Context.tracer: TraceCtx: manages state associated with tracing
-
 // Return Types for Context.traceIO() method
 export class TraceResults {
     /**
@@ -64,6 +58,12 @@ interface TraceResultTracker {
     result?: TraceResults,
     body?: expr.RecursiveBodyExpr,
 }
+
+// TODO this class is fucking massive and should be split into different components
+//  so that the amount of state it manages is better organized
+// - Context.stack: StackCtx: manages state associated with stack
+// - Context.scopes: ScopesCtx: manages state associated with scopes and identifiers
+// - Context.tracer: TraceCtx: manages state associated with tracing
 
 /**
  * This class stores state assocated with the parser
@@ -508,7 +508,7 @@ export default class Context {
             for (let i = 0; i < args.length; i++)
                 if (!args[i].out)
                     // TODO this shouldn't suck so bad :(
-                    return new error.SyntaxError(`cannot pass abstract value ${args[i]} in recursive call`, token, this);
+                    return new error.SyntaxError(`cannot pass compile-time construct ${args[i]} in recursive call`, token, this);
 
             const callExpr = new expr.RecursiveCallExpr(token, body, expr.fromDataValue(args, this));
             // Note that if they're used after this it woudln't be tail recursion and would be unreachable

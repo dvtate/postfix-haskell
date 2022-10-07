@@ -1,0 +1,36 @@
+"./stdlib/prelude.phs" require use
+
+# Copyable trait
+(: $T = T ) class $Copyable =
+
+# Copyable behavior
+((Any Copyable): 1 ) (:
+    $v = v
+) $copy fun
+
+# SameType constraint
+((Any Any): ( $a $b ) =
+    a type b type ==
+    b type a type == &&
+) $same_type =
+
+# Function with SameType constraint
+# Note that global.+ is a polymorphic function and so is this
+((Any Copyable Any): same_type ) (:
+    ( $a $b ) =
+    a copy b copy +
+) $copy_plus fun
+
+# A and be are copyable
+111 I32 Copyable make $a =
+222 I32 Copyable make $b =
+
+# C is not copyable
+333 $c =
+
+# This gives 333 as one would expect
+a b copy_plus :data
+
+# This gives a syntax error
+b c copy_plus :data
+

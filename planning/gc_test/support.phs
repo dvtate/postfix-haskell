@@ -7,5 +7,5 @@
 reg
     static_init_byte
 
-# Out only export is the location of the bitfield for an LL node
+# Our only export is the location of the reference bitfield for an LL node
 Unit (: reg ) "static_ref_bf_010" export

@@ -173,7 +173,7 @@ export default class Fun {
 
         // No truthy condition found
         if (branches.length === 0) {
-            console.error("stack", ctx.stack);
+            // console.error("stack", ctx.stack);
             return new error.SyntaxError(`${this.name}: no matching function case`, [token], ctx);
         }
 
