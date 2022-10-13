@@ -6,6 +6,9 @@ import runShell from './tools/shell.js';
 import compileFile from './tools/file.js';
 
 yargs(process.argv.slice(2))
+    .parserConfiguration({
+        'boolean-negation': false,
+    })
     .scriptName('phc')
     .usage('$0 <command> [args]')
     .option('verbose', {
