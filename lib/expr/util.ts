@@ -194,6 +194,7 @@ export class TupleExpr extends DataExpr {
  */
 export class TeeExpr extends DataExpr {
     inds: FunLocalTracker[] = null;
+    isFinalized = false;
 
     /**
      * @param token - origin in source code
@@ -223,6 +224,11 @@ export class TeeExpr extends DataExpr {
                     }\n\t${fun.getLocalWat(this.inds)}`;
         }
         return fun.getLocalWat(this.inds);
+    }
+
+    finalize(ctx: ModuleManager, fun: FunExpr) {
+        this.isFinalized = true;
+        return fun.removeLocal(this.inds);
     }
 
     // Prevent this from getting re-tee'd

@@ -4,6 +4,8 @@ import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import type { FunExpr } from './fun.js';
 
+// This file defines the abstract base types for expressions
+
 // TODO expr constructors should be augmented to also take in Context object
 // This way they can also emit warnings
 

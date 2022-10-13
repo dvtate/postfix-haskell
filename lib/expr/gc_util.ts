@@ -86,8 +86,7 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
     let totalSize = fpSizes.reduce((a, b) => a + b, 0);
     fpl.reverse().forEach((t, i) => {
         // Swap addr with last component of object before using store instruction
-        // Webassembly is poorly designed, the addr should be scond arg to t.store
-        // TODO OPTIMIZE instead use a local because calling a helper function like this is slow
+        // Webassembly is poorly designed, the addr should be second arg to t.store
         if (t instanceof types.PrimitiveType) {
             // Primitive
             const swapLocal = locals[t.name] || (locals[t.name] = fun.addLocal(t));
@@ -103,7 +102,11 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
     });
 
     // Push gc reference onto ref stack for safety
-    return ret + `(call $__ref_stack_push ${local.getLocalWat()})`;
+    ret += `(call $__ref_stack_push ${local.getLocalWat()})`;
+
+    // Free up temporary locals
+    ret += fun.removeLocal([local].concat(...Object.values(locals)));
+    return ret;
 }
 
 /**

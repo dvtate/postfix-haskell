@@ -1,6 +1,6 @@
 import * as types from './datatypes.js';
 import Context from "./context.js";
-import { BlockToken, IdToken, LexerToken, MacroToken } from "./scan.js";
+import { BlockToken, IdToken, LexerToken, MacroToken, TokenType } from "./scan.js";
 import parse from "./parse.js";
 import Namespace from "./namespace.js";
 import * as error from './error.js';
@@ -361,5 +361,10 @@ export class LiteralMacro extends Macro {
                 .every((v, i) => v.datatype && this.inputTypes[i].check(v.datatype))
         );
     }
-}
 
+    toClosure(ctx: Context, token: LexerToken = this.token): expr.ClosureCreateExpr | error.SyntaxError {
+        if (!this.datatype)
+            return new error.SyntaxError('Untyped macros cannot form closures', [], ctx);
+        return new expr.ClosureCreateExpr(token, this);
+    }
+}

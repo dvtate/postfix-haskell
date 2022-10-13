@@ -86,7 +86,7 @@ export default class ModuleManager {
     /**
      * Optimization level for compilation (0-3)
      */
-    protected optLevel: number;
+    public optLevel: number;
 
     /**
      * Size in bytes of the references stack section of linear memory
@@ -172,13 +172,14 @@ export default class ModuleManager {
      * Define a helper/utility function that we don't really care about
      * If it's already been defined return early
      * @param helperId identifier for the helper function
-     * @depricated
+     * @depricated should just generate helper manually. Currently unused.
      */
     addHelper(helperId: string): void {
         if (this.definedHelpers.has(helperId))
             return;
 
         // Helper to swap 2 values on the stack
+        // Note this has bad performance
         if (helperId.startsWith('__swap_')) {
             const [t1, t2] = helperId.slice(7).split('_');
             this.definitions.push(`(func $${helperId
@@ -195,8 +196,9 @@ export default class ModuleManager {
      * Export a function
      * @param fn - function to export
      */
-    addFunction(fn: expr.FunExportExpr) {
+    addFunction(fn: expr.FunExpr) {
         this.functions.push(fn);
+        fn.module = this;
     }
 
     /**

@@ -162,6 +162,7 @@ export class RecursiveBodyExpr extends Expr {
             this.label,
             this.takeExprs,
             captureExprs,
+            ctx,
         );
         this.helper.outputs = this.gives;
         ctx.addFunction(this.helper);
@@ -260,12 +261,14 @@ export class RecFunExpr extends FunExpr {
         name: string,
         takeExprs: DependentLocalExpr[],
         copiedParams: ParamExpr[],
+        module: ModuleManager,
     ) {
         super(
             token,
             name,
             [].concat(...takeExprs.map(e => e.datatype))
                 .concat(...copiedParams.map(p => p.datatype)),
+            module,
         );
         this.takeExprs = takeExprs;
         this.copiedParams = copiedParams.filter(e => !e.datatype.isUnit());

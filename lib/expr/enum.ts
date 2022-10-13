@@ -9,7 +9,7 @@ import { constructGc, loadRef } from './gc_util.js';
 import { SyntaxError } from '../error.js';
 import { DependentLocalExpr, fromDataValue } from './util.js';
 import { BranchInputExpr } from './branch.js';
-import { uid } from '../../tools/util.js';
+import { uid } from '../util.js';
 import Context from '../context.js';
 
 // export class EnumContainsCheckExpr extends DataExpr {

@@ -4,6 +4,8 @@ export * from './recursion.js';
 export * from './util.js';
 export * from './enum.js';
 export * from './fun.js';
+export * from './closure.js';
+
 /*
  * This directory contains datatypes related to a graph IR used to output webassembly
  *
