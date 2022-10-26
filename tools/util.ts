@@ -57,24 +57,3 @@ export function formatErrorPos(errors: CompileError[]): string {
         }\n${e.stack}`
     }).join('\n\n');
 }
-
-// Used by function uid
-let nUid = 0;
-
-/**
- * Genereate a globally unique identifier string
- * @returns unique string identifier
- */
-export function uid(): string {
-    function encodeNum(n: number): string {
-        const enc = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_-+=|:;.>,<?/";
-        const base = enc.length;
-        let ret = '';
-        do {
-            ret += enc[n % base];
-            n /= base;
-        } while (n >= 1);
-        return ret;
-    }
-    return encodeNum(nUid++);
-}

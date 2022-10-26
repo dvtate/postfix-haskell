@@ -69,7 +69,7 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
         return '(call $__ref_stack_push (i32.const 0))';
 
     // Get reference to gc'd object
-    const fpSizes = fpl.map(primDtSize);
+    const fpSizes = fpl.map(primDtSize).reverse();
     const bf = genGcBitfield(dt, fpl, fpSizes);
     const bfAddr = ctx.addStaticData(bf, true);
     let ret = `\n\t(call $__alloc (i32.const ${bf.length}) (i32.const ${bfAddr}))`;
@@ -136,7 +136,7 @@ export function loadRef(
             `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} ${fun.getLocalWat(ptrLocal)})${
                 t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }`
         ).reverse().join(' ')
-    }`;
+    }${fun.removeLocal(ptrLocal)}`;
 
     // After this point `ptrLocal` is no longer needed so I could
     // add a `fun.freeLocal()` method which allows it to get used to hold other values

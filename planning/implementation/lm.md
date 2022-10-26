@@ -1,6 +1,6 @@
 # Linear Memory & GC Runtime
 ## Regions
-Note that for some of this we might be able to define [custom sections](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Module/customSections).
+TODO for some of this we might be able to define [custom sections](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Module/customSections).
 
 ### Roots/Reference Stack
 - Pointers cannot be on WASM stack because we need to be able to mark and update them

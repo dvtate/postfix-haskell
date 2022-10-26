@@ -136,14 +136,13 @@ export class EnumTypeIndexExpr extends DataExpr {
 export class EnumConstructor extends DataExpr {
     // outExprs: [value.NumberValue, DependentLocalExpr];
     declare _datatype: types.EnumClassType<types.DataType>;
-    private readonly enumClassType;
+
     constructor(
         token: LexerToken,
         public knownValue: value.Value | DataExpr[],
-        datatype: types.EnumClassType<types.DataType>
+        private readonly enumClassType: types.EnumClassType<types.DataType>
     ) {
-        super(token, datatype);
-        this.enumClassType = datatype;
+        super(token, enumClassType);
     }
 
     out(ctx: ModuleManager, fun?: FunExpr): string {

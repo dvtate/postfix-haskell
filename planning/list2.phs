@@ -1,49 +1,37 @@
 "./stdlib/prelude.phs" require use
 "./stdlib/list.phs" require $list =
 
-# Alias for the type of lists of integers
-I32 list.List $IntList =
-
-# Make a linked list
-( 1 ( 2 ( 3 ( 4 ( 5
-    () IntList.Nil make
-    ) IntList.Node make
-    ) IntList.Node make
-    ) IntList.Node make
-    ) IntList.Node make
-    ) IntList.Node make
-$ll =
-
-(: (: 3 * ) IntList.map ) $triple =
-(: 0 (: + ) IntList.foldl ) $sum =
-
-ll :data
-ll triple :data
-ll triple sum :data
-
 # Import Math.random from javascript
 Unit (F64) Arrow ( "js" "Math.random" ) import $random =
 
+# Type for lists of doubles
 F64 list.List $DoubleList =
 
+# Append n randomly generated nodes to given list
+((I32 DoubleList) (DoubleList) rec:
+    ( $ll $n ) =
+    (: 1 ) (: ll ) $branch fun
+    (: n 0 > ) (:
+        ( random ll ) DoubleList.Node make
+        n 1 -
+        mk_list
+    ) $branch fun
+    branch
+) $mk_list =
+
 (I32) (:
-    # Append n randomly generated nodes to a list
-    ((I32 DoubleList) (DoubleList) rec:
-        ( $n $ll ) =
-        (: 1 ) (: ll ) $branch fun
-        (: n 0 > ) (:
-            n 1 -
-            ( random ll ) DoubleList.Node make
-            mk_list
-        ) $branch fun
-        branch
-    ) $mk_list =
+    # Input: number of nodes to use in list
+    $n =
 
-    # Append n randomly generated nodes onto an empty list
-    () DoubleList.Nil make mk_list $list =
+    # A list with n randomly generated elements
+    () DoubleList.Nil make n mk_list $list =
 
+    # Give new list containing the triples of given list
     (: (: 3.0 * ) DoubleList.map ) $triple =
+
+    # Calculate the sum of given list
     (: 0.0 (: + ) DoubleList.foldr ) $sum =
 
+    # Return the sum of the tripled elements of generated list
     list triple sum
 ) "test" export

@@ -752,7 +752,7 @@ export class RefType<T extends DataType> extends DataType {
     }
 
     toString(): string {
-        return this.type.toString() + " Ref";
+        return (this.type ? this.type.toString() : '_') + " Ref";
     }
 }
 

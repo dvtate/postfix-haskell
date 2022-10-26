@@ -10,6 +10,8 @@
 
     ;; Reference stack pointer
     (global $__ref_sp (mut i32) (i32.const {{STACK_END}}))
+
+    ;; Reference variables stack pointer
     (global $__rv_sp (mut i32) (i32.const {{RV_STACK_END}}))
 
     ;; Push a pointer onto the reference stack

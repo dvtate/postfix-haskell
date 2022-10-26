@@ -70,7 +70,7 @@ import * as util from '../tools/util.js';
         console.log('test ( 2 )\t=> ', w.test(2));
         console.log('test ( 3 )\t=> ', w.test(3));
         console.log('test ( 4 )\t=> ', w.test(4));
-        console.log('test ( 4 )\t=> ', w.test(5));
+        console.log('test ( 5 )\t=> ', w.test(5));
     }
 
     // const { get, set, incr }
