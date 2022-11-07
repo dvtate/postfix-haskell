@@ -228,7 +228,7 @@ export class TeeExpr extends DataExpr {
 
     finalize(ctx: ModuleManager, fun: FunExpr) {
         this.isFinalized = true;
-        return fun.removeLocal(this.inds);
+        return fun.removeLocalWat(this.inds);
     }
 
     // Prevent this from getting re-tee'd

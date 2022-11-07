@@ -105,7 +105,7 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
     ret += `(call $__ref_stack_push ${local.getLocalWat()})`;
 
     // Free up temporary locals
-    ret += fun.removeLocal([local].concat(...Object.values(locals)));
+    ret += fun.removeLocalWat([local].concat(...Object.values(locals)));
     return ret;
 }
 
@@ -136,7 +136,7 @@ export function loadRef(
             `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} ${fun.getLocalWat(ptrLocal)})${
                 t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }`
         ).reverse().join(' ')
-    }${fun.removeLocal(ptrLocal)}`;
+    }${fun.removeLocalWat(ptrLocal)}`;
 
     // After this point `ptrLocal` is no longer needed so I could
     // add a `fun.freeLocal()` method which allows it to get used to hold other values

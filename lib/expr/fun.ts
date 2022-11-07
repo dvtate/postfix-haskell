@@ -323,13 +323,17 @@ export abstract class FunExpr extends Expr {
     /**
      * Allows us to recycle locals slots
      * @param locals - locals to free
+     * @param noOverwrite - optimization that only applies to primitives
      * @returns webassembly text required to free up the local slots
      */
-    removeLocal(locals: FunLocalTracker[], noOverwrite = false): string {
-        return noOverwrite ? '' : locals.map(l => l.removeLocalWat()).reverse().join(' ');
-        // TODO recycle local slots
-        //      - For primitives: allows slot to be reused
-        //      - For references: overwrites with zero; allows slot to be reused
+    removeLocalWat(locals: FunLocalTracker[], noOverwrite = false): string {
+        return locals.map(l =>
+            noOverwrite && l.datatype instanceof types.PrimitiveType
+                ? ''
+                : l.removeLocalWat()
+        ).reverse().join(' ');
+
+        // TODO also recycle local slots
     }
 }
 
