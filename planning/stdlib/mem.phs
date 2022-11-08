@@ -67,3 +67,12 @@
 
 # TODO dynamic memory allocation and use
 # We have ability to allocate arbitrary blocks of memory via $__alloc but we have to initialize it in a functional way... how?
+
+#((I32 I32): ( $size $ref_bf_addr $Type ) =
+#    ( I32 I32 ) ( I32 ) "(call $__alloc)(call $__ref_stack_push)" __asm
+#) $alloc =
+#
+#((I32 Syntax:Str):
+#    # Store string literal bf into static memory
+#    $bf_str = bf_str swap pop alloc
+#) $alloc =

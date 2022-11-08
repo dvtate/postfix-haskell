@@ -275,6 +275,14 @@ export abstract class DataType extends SyntaxType implements DataTypeInterface {
     isUnit(): boolean {
         return this.flatPrimitiveList().length === 0;
     }
+
+    /**
+     * Number of i32's needed to store the described datastructure
+     * @returns size in words
+     */
+    size(): number {
+        return this.flatPrimitiveList().reduce((a, t) => a += t.size(), 0);
+    }
 }
 
 /**
@@ -508,14 +516,13 @@ export class TupleType extends DataType {
  * Type that's a component of compilation target
  */
 export class PrimitiveType extends DataType {
-    name: string;
 
     // Map of WASM primitive types
     static Types: { [k: string]: PrimitiveType } = {
-        I32: new PrimitiveType('i32'),
-        I64: new PrimitiveType('i64'),
-        F32: new PrimitiveType('f32'),
-        F64: new PrimitiveType('f64'),
+        I32: new PrimitiveType('i32', 1),
+        I64: new PrimitiveType('i64', 2),
+        F32: new PrimitiveType('f32', 1),
+        F64: new PrimitiveType('f64', 2),
     };
 
     static typeMap = {
@@ -530,10 +537,17 @@ export class PrimitiveType extends DataType {
 
     /**
      * @param name - formal name for type in target spec
+     * @param size - memory size as measured by multiples of 32 bits
      */
-    private constructor(name: string) {
+    private constructor(
+        public name: string,
+        public _size: number,
+    ) {
         super(undefined);
-        this.name = name;
+    }
+
+    size() {
+        return this._size;
     }
 
     /**
@@ -676,6 +690,7 @@ export class ArrowType extends DataType {
  * see: planning/brainstorm/ref_stack_vars.md
  */
 export class RefType<T extends DataType> extends DataType {
+
     /**
      * @param token location in source code
      * @param type type of value being referenced
@@ -751,6 +766,10 @@ export class RefType<T extends DataType> extends DataType {
         return false; // this.type.isUnit();
     }
 
+    size() {
+        return 1;
+    }
+
     toString(): string {
         return (this.type ? this.type.toString() : '_') + " Ref";
     }
@@ -814,6 +833,9 @@ export class RefRefType<T extends DataType> extends DataType {
 
     isUnit(): boolean {
         return false;
+    }
+    size() {
+        return 1;
     }
     toString(): string {
         return this.type.toString() + " Ptr";

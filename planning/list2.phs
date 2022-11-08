@@ -7,6 +7,17 @@ Unit (F64) Arrow ( "js" "Math.random" ) import $random =
 # Type for lists of doubles
 F64 list.List $DoubleList =
 
+( 0.0 ( 1.0 ( 2.0 ( 3.0
+    () DoubleList.Nil make)
+    DoubleList.Node make )
+    DoubleList.Node make )
+    DoubleList.Node make )
+    DoubleList.Node make
+$ll =
+
+ll :data
+ll DoubleList.length :data
+
 # Append n randomly generated nodes to given list
 ((I32 DoubleList) (DoubleList) rec:
     ( $ll $n ) =

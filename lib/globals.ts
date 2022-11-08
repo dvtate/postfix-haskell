@@ -912,6 +912,8 @@ const operators : MacroOperatorsSpec = {
             ctx.push(...matchExpr.results);
         },
     },
+
+    // TODO tuple.at, tuple.length
 };
 
 // Global functions that the user can overload

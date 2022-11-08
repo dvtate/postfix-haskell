@@ -89,6 +89,10 @@ I32 I64 | F32 F64 | | $__Scalar =
 ((I64): is_const ) (: -1L == ) $__is_neg1 fun
 ((F32): is_const ) (: -1.0f == ) $__is_neg1 fun
 ((F64): is_const ) (: -1.0l == ) $__is_neg1 fun
+(: 1 ) (: 0 ) $__is_2 fun
+((I32): is_const ) (: 2 == ) $__is_2 fun
+((I64): is_const ) (: 2L == ) $__is_2 fun
+
 
 ##
 # Operator ==
@@ -218,6 +222,10 @@ $__can_promote ~ (: __promote / ) $global./ fun
 ((I64 I64): 1 ) (: "i64.rem_s" asm ) $global.% fun
 ((F32 F32): 1 ) (: "f32.rem" asm ) $global.% fun
 ((F64 F64): 1 ) (: "f64.rem" asm ) $global.% fun
+
+# Optimization for remainder 2
+((I32 I32): __is_2 ) (: a 1 "i32.and" asm ) $global.% fun
+((I64 I64): __is_2 ) (: a 1L "i64.and" asm ) $global.% fun
 
 # Attempt to promote values to same type
 $__can_promote ~ (: __promote % ) $global.% fun
