@@ -8,11 +8,12 @@ import * as error from './error.js';
 import Context from './context.js';
 import WasmNumber from './numbers.js';
 import Fun, { wideCompat } from './function.js';
-import scan, { LexerToken, MacroToken } from './scan.js';
+import scan, { LexerToken, MacroToken, TokenType } from './scan.js';
 import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
 import { invokeAsm } from './asm.js';
 import { EnumNs, EnumValue } from './enum.js';
 import { EnumMatchExpr } from './expr/index.js';
+import { genGcBitfield } from './expr/gc_util.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -697,6 +698,37 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
+    // Mark a type as recursive so that it's stored on the stack
+    // TODO apply same logic to mark macros as recursive
+    'rec' : {
+        action: ctx => {
+            if (ctx.stack.length == 0)
+                return ['missing argument'];
+            const v = ctx.pop();
+            if (v.type !== value.ValueType.Type)
+                return ['expected a type'];
+            if (!(v.value instanceof types.DataType))
+                return ['type argument must be representable on hardware'];
+            v.value.recursive = true;
+        },
+    },
+
+    '__gc_ref_bf': {
+        action: (ctx, token) => {
+            if (ctx.stack.length == 0)
+                return ['missing argument'];
+            const v = ctx.pop();
+            if (v.type !== value.ValueType.Type)
+                return ['expected a type'];
+            if (!(v.value instanceof types.DataType))
+                return ['type argument must be representable on hardware'];
+            const bf = genGcBitfield(v.value);
+            const ret = new value.StrValue(token, bf);
+            ctx.push(ret);
+        },
+    },
+
+    // Tagged union/sum type
     'enum' : {
         action: (ctx, token) => {
             // Get arg
@@ -725,7 +757,7 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // temporary pattern match operator for enums
+    // Temporary pattern match operator for enums
     'match' : {
         action: (ctx, token) => {
             // Get arg

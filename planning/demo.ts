@@ -4,7 +4,7 @@ import lex from '../lib/scan.js';
 import parse from '../lib/parse.js';
 import Context from '../lib/context.js';
 import * as error from '../lib/error.js';
-import * as util from '../tools/util.js';
+import * as util from '../tools/file_tools.js';
 
 (async () => {
     // Read program source

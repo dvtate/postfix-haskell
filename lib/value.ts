@@ -1,5 +1,5 @@
 import type WasmNumber from './numbers.js';
-import type { IdToken, LexerToken } from './scan.js';
+import { IdToken, LexerToken } from './scan.js';
 import type Context from './context.js';
 import type ModuleManager from './module.js';
 import type * as expr from './expr/index.js';
@@ -201,8 +201,13 @@ export class TupleValue extends DataValue {
  */
 export class StrValue extends Value {
     declare value: string;
-    constructor(token: LexerToken) {
-        super(token, ValueType.Str, token.token);
+    constructor(token: LexerToken, str?: string | Uint8Array) {
+        if (str)
+            super(token, ValueType.Str, typeof str === 'string' ? str : new TextDecoder().decode(str));
+        else if (token.type === LexerToken.Type.String)
+            super(token, ValueType.Str, token.token);
+        else
+            throw new Error('Invalid call');
     }
 }
 

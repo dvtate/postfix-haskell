@@ -282,3 +282,8 @@ $__can_promote ~ (: __promote >= ) $global.>= fun
 
 # Attempt to promote values to same type
 $__can_promote ~ (: __promote <= ) $global.<= fun
+
+# Is this right?
+(: ( $a $b ) =
+    ( a type b type ) ( a b type ) "" __asm
+) $seq =

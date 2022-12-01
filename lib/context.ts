@@ -12,7 +12,7 @@ import debugMacros from './debug_macros.js';
 import globalOps from './globals.js';
 import ModuleManager, { CompilerOptions } from './module.js';
 import { LiteralMacro, Macro } from './macro.js';
-import { formatErrorPos } from '../tools/util.js';
+import { formatErrorPos } from '../tools/file_tools.js';
 import Namespace from './namespace.js';
 import Fun from './function.js';
 import { EnumNs } from './enum.js';
@@ -538,7 +538,7 @@ export default class Context {
         if (v === undefined)
             return this;
         if (v === null || v instanceof Context)
-            return v;
+            return v as Context;
 
         // Error
         if (v instanceof Array)

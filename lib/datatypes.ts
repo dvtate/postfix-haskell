@@ -245,7 +245,7 @@ export class SyntaxType extends Type {
 export abstract class DataType extends SyntaxType implements DataTypeInterface {
     // declare valueType: ValueType.Data;
 
-    constructor(token: LexerToken) {
+    constructor(token: LexerToken, public recursive: boolean = false) {
         super(token, ValueType.Data);
     }
 
@@ -306,8 +306,8 @@ export class ClassType<T extends DataType> extends DataType {
      * @param [id] - Clone a class
      * @param recursive - Does this class need to be stored on the heap?
      */
-    constructor(token: LexerToken, type: T, id?: number, public recursive: boolean = false) {
-        super(token);
+    constructor(token: LexerToken, type: T, id?: number, recursive = false) {
+        super(token, recursive);
         this.type = type;
         this.id = id === undefined ? genId() : id;
 

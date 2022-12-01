@@ -3,7 +3,7 @@ import * as value from "./value.js";
 import * as error from "./error.js";
 import Context from "./context.js";
 import { LexerToken } from "./scan.js";
-import { fileLocate, formatErrorPos } from "../tools/util.js";
+import { fileLocate, formatErrorPos } from "../tools/file_tools.js";
 import path from "path";
 import { EnumValue } from "./enum.js";
 
