@@ -1,5 +1,5 @@
-"./stdlib/prelude.phs" require use
-"./stdlib/monad.phs" require use
+"../std/lang.phs" require use
+"../std/monad.phs" require use
 
 # Cucked linear memory monad
 Unit class $World =

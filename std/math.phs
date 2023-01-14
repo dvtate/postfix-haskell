@@ -1,6 +1,6 @@
-"./prelude.phs" require use
-"./bits.phs" require $bits =
-"./number.phs" require $number =
+"./lang.phs"    require use
+"./bits.phs"    require $bits =
+"./number.phs"  require $number =
 
 # Absolute value
 (: 1 ) (: $v = $v ~ ) $abs fun

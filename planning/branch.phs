@@ -1,5 +1,5 @@
-"./stdlib/prelude.phs" require use
-"./stdlib/math.phs" require use
+"../std/lang.phs" require use
+"../std/math.phs" require use
 
 -1 $fizz =
 -2 $buzz =

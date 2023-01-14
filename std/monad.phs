@@ -1,4 +1,4 @@
-"./prelude.phs" require use
+"./lang.phs" require use
 
 # These 'monads' rly do be cucked ngl
 
@@ -10,5 +10,5 @@
 (: 1 )
 (((Any Monad) (Any Monad) Arrow (Any Monad) (Any Monad) Arrow):
     ( $a $b ) =
-    ((Any Monad) (Any Monad): $m = ( m a b ) seq )
+    ((Any Monad) (Any Monad): $m = ( m a b ) seq )  # TODO seq does nothing here???
 ) $global.>> fun

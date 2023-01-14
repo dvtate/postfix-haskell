@@ -1,4 +1,4 @@
-"../../stdlib/prelude.phs" require use
+"../../std/lang.phs" require use
 
 # Recursive macro
 ( $fib (I32)(I32):

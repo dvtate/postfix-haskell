@@ -1,4 +1,4 @@
-"./prelude.phs" require use
+"./lang.phs" require use
 
 # Left shift
 ((I32 I32): 1 ) (: "i32.shl" asm ) $global.<< fun

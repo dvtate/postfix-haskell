@@ -1,2 +1,0 @@
-( I32 I32 ) ( I32 ) Arrow ( "js" "kekw" ) import $addjs =
-( I32 I32 ) (: addjs ) "add_exp" export

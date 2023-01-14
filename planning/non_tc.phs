@@ -1,4 +1,4 @@
-"./stdlib/prelude.phs" require use
+"../std/lang.phs" require use
 
 (rec: # Intentionally non-tail-recursive factorial
     $n =

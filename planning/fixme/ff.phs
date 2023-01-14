@@ -1,4 +1,4 @@
-"../stdlib/prelude.phs" require use
+"../../std/lang.phs" require use
 
 (: ( $cond $t $f ) =
     (: true ) (: f ) $b fun

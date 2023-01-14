@@ -1,4 +1,4 @@
-"./prelude.phs" require use
+"./lang.phs" require use
 "./bits.phs" require use
 
 ((F32 I32): 1 ) (:

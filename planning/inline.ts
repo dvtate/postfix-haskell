@@ -3,7 +3,8 @@ import { phs } from '../tools/inline';
 (async function main(){
 
     const program = await phs`
-        # TODO now that everything is in stdlib we have to import it somehow...
+        # Now that everything is in stdlib things are more difficult
+        #    because we can't simply import files from a string
 
         # For now just simple demo
         (I32) (: 42 == ) "is_answer" export

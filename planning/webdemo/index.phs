@@ -1,7 +1,7 @@
-"../stdlib/prelude.phs" require use
-"../stdlib/bits.phs" require use
-"../stdlib/math.phs" require use
-"../stdlib/static_mem.phs" require use
+"../../std/lang.phs"         require use
+"../../std/bits.phs"         require use
+"../../std/math.phs"         require use
+"../../std/static_mem.phs"   require use
 
 # Allocate static memory regions
 4 static_region $x_addr =

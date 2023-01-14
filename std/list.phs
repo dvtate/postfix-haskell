@@ -1,4 +1,4 @@
-"./prelude.phs" require $prelude =
+"./lang.phs" require $prelude =
 
 # Macro to construct a type for Linked Lists containing elements of given type
 (:  $ElemType =

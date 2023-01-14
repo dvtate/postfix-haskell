@@ -1,6 +1,6 @@
-"lang.phs"  require use
-"monad.phs" require "Monad" "" use_some
-"str.phs"   require "StaticStr" "" use_some
+"./lang.phs"    require use
+"./monad.phs"   require "Monad" "" use_some
+"./str.phs"     require "StaticStr" "" use_some
 
 # Deprecated
 

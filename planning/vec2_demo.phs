@@ -1,5 +1,5 @@
 # Import standard library (ie - math, stack operators)
-"./stdlib/prelude.phs" require use
+"../std/lang.phs" require use
 
 # TODO use namespaces
 

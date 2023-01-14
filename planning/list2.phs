@@ -1,5 +1,5 @@
-"./stdlib/prelude.phs" require use
-"./stdlib/list.phs" require $list =
+"../std/lang.phs" require use
+"../std/list.phs" require $list =
 
 # Import Math.random from javascript
 Unit (F64) Arrow ( "js" "Math.random" ) import $random =

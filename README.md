@@ -2,14 +2,14 @@
 A very low-level functional programming language designed to compile to WebAssembly in the browser. The language actually bears very little resemblance to Haskell despite the name.
 
 ## How to use
-The all examples can be run in an interactive shell like below. Alternatively you can install [the more stable npm package](https://www.npmjs.com/package/postfix-haskell)). For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/planning/stdlib/*`.
+The all examples can be run in an interactive shell like below. Alternatively you can install [the more stable npm package](https://www.npmjs.com/package/postfix-haskell)). For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/planning/std/*`.
 ```
 $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell
 $ npm run build
 $ npm install --global
 $ phc shell
-> "./planning/stdlib/prelude.phs" require use
+> "std/lang.phs" require use
 > 1 2 + :data
 :data - 3n
 ```
@@ -38,7 +38,7 @@ The shell is probably the best way to learn the language, allowing you to run sh
 
 ```
 [postfix-haskell]$ npm start
-> "./planning/stdlib/prelude.phs" include use
+> "./std/lang.phs" include use
 > 1 2 + :data
 :data - 3n
 
@@ -98,7 +98,7 @@ You can embed the language in JavaScript or TypeScript. See a demo in `planning/
 - postfix: operators follow the operands they act on (ie - `1 2 +`)
   + the stack (place where expressions are put) is a compile-time abstraction, and values stored on it often aren't included in the compiled code
 - All the below examples assume you've imported the standard library which contains many basic operators like `+` and `&&`.
-  + to import it use `"/[path to this repo]/postfix-haskell/planning/stdlib/prelude.phs" require use`
+  + to import it use `"/[path to this repo]/postfix-haskell/std/lang.phs" require use`
 
 ## Identifiers
 - Escaped identifiers (ie - `$name`) can be used to store any type of value
@@ -193,9 +193,9 @@ add_and_double apply_operator :data
 - Modules are imported using the `require` keyword which gives a namespace
 - the `export` keyword
 ```php
-# Import the prelude library which defines `+` and `-` among other things
+# Import basic language features such as `+` and `-` among other things
 # And apply it to the current scope
-"./planning/stdlib/prelude.phs" require use
+"./std/lang.phs" require use
 
 # Create a namespace 'ns'
 (:

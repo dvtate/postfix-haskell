@@ -1,5 +1,5 @@
-"stdlib/prelude.phs" require use
-"stdlib/number.phs"  require $number =
+"../std/lang.phs"    require use
+"../std/number.phs"  require $number =
 
 # Average
 (: + 2 / ) $avg =
@@ -9,7 +9,7 @@
 (: 0 < ) (: -1 * ) $abs fun
 
 # Square route via newton-rhapson method
-#   Please instead use sqrt function defined in stdlib/math.phs
+#   Please instead use sqrt function defined in std/math.phs
 ((number.Float):
     dup type $T =
 	((T T) (T) rec: # Tail-recursive helper

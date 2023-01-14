@@ -42,21 +42,21 @@ import * as util from '../tools/file_tools.js';
 
     const w = mod.instance.exports as any;
 
-    if (fname.includes('sqrt.phs')) {
+    if (fname.endsWith('sqrt.phs')) {
         // Print sqrts of 1-10
         for (let i = 1; i < 10; i++)
             console.log(w.sqrt(i));
-    } else if (fname.includes('helloworld.phs')) {
+    } else if (fname.endsWith('helloworld.phs')) {
         w.main();
-    } else if (fname.includes('fizzbuzz.phs')) {
+    } else if (fname.endsWith('fizzbuzz.phs')) {
         // Do fizzbuzz for n=1..100
         w.main(100);
-    } else if (fname.includes('enum.phs')) {
+    } else if (fname.endsWith('enum.phs')) {
         console.log('0 & 0 => ', w.anddemo(0, 0));
         console.log('0 & 1 => ', w.anddemo(0, 1));
         console.log('1 & 0 => ', w.anddemo(1, 0));
         console.log('1 & 1 => ', w.anddemo(1, 1));
-    } else if (fname.includes('maybe.phs')) {
+    } else if (fname.endsWith('maybe.phs')) {
         console.log('sqrt( log( -Infinity ) ) \t=> ', w.test(-Infinity));
         console.log('sqrt( log( -1 ) ) \t\t=> ', w.test(-1));
         console.log('sqrt( log( 0 ) ) \t\t=> ', w.test(0));
@@ -65,7 +65,7 @@ import * as util from '../tools/file_tools.js';
         console.log('sqrt( log( 2 ) ) \t\t=> ', w.test(2));
         console.log('sqrt( log( 20 ) ) \t\t=> ', w.test(20));
         console.log('sqrt( log( 54 ) ) \t\t=> ', w.test(54));
-    } else if (fname.includes('list.phs') || fname.includes('list2.phs')) {
+    } else if (fname.endsWith('list.phs') || fname.endsWith('list2.phs')) {
         console.log('test ( 0 )\t=> ', w.test(0));
         console.log('test ( 1 )\t=> ', w.test(1));
         console.log('test ( 2 )\t=> ', w.test(2));

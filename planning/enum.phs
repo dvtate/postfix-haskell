@@ -1,4 +1,4 @@
-"./stdlib/prelude.phs" require use
+"../std/lang.phs" require use
 
 # Define an enum type
 (:  I32 class $Number =

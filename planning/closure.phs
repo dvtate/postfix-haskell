@@ -1,4 +1,4 @@
-"./stdlib/prelude.phs" require use
+"../std/lang.phs" require use
 
 # Macro which returns a closure
 ((I32 I32)((I32) (I32) Arrow):

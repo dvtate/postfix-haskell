@@ -1,4 +1,4 @@
-"stdlib/prelude.phs" require use
+"../std/lang.phs" require use
 
 # Generic vec2 type
 (: $T = ( T T ) ) class $Vec2 =

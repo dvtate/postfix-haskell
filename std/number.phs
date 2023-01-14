@@ -1,4 +1,4 @@
-"./prelude.phs" require use
+"./lang.phs" require use
 
 # Some number types
 I32 I64 | $Int =

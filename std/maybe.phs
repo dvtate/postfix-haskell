@@ -1,4 +1,4 @@
-"./prelude.phs" require use
+"./lang.phs" require use
 
 (:  $T =
     (:  () type class $Nothing =

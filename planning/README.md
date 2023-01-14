@@ -16,9 +16,6 @@ it's basically just fleeting thoughts in here.
 CBA to make a formalized language spec since nothing is set in stone,
 but do occasionally enjoy making guides/intros
 
-## `stdlib/`
-A working (as in work in progress) standard library for the language. Just so that I don't have to include a bunch basics in demos
-
 ## Other stuff
 - `.ts` files: these are probably demos
 - `.js` files: these are probably experiments/unrelated demos

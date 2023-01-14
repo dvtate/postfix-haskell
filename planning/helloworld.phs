@@ -1,7 +1,7 @@
 # Import stuff from modules
-"stdlib/prelude.phs" require use
-"stdlib/io.phs"      require $io =
-"stdlib/str.phs"     require use
+"../std/lang.phs"    require use
+"../std/io.phs"      require $io =
+"../std/str.phs"     require use
 
 # Lazy evaluated IO action
 (: "Testing" StaticStr cast io.print )

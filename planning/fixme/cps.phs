@@ -1,4 +1,4 @@
-"../stdlib/prelude.phs" require use
+"../../std/lang.phs" require use
 
 ((I32 (I32) (Any) Arrow) rec:
     ( $n $k ) =
