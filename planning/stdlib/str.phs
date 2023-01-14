@@ -1,6 +1,16 @@
 "./prelude.phs" require $prelude =
 "./list.phs" require "List" "" use_some
 
+# Make concatenate string literals
+((Syntax:Str Syntax:Str): 1 ) (:
+    # I just wasted 2 mins making this lol
+    "(() => {
+        const b = ctx.pop().value;
+        const v = ctx.pop().value + b;
+        ctx.push(new value.StrValue(token, v));
+    })()" :eval
+) $global.+ fun
+
 # String class
 ( I32 I32 ) class $StaticStr =
 ((StaticStr): 1 ) (: unpack prelude.pop ) $size fun
@@ -8,8 +18,8 @@
 
 # Overload cast operator to convert static string literals
 ((Syntax:Str Syntax:Type): StaticStr == ) (:
-    ( $lit $T ) =
-    ( lit ) T make
+    pop $lit =
+    ( lit ) StaticStr make
 ) $prelude.cast fun
 
 # Characters are stored in I32's for performance reasons
@@ -30,5 +40,5 @@ Char List $ListStr =
 
 (( StaticStr Str | prelude.dup ): 1 ) (:
     ( $lhs $rhs ) =
-
+    # TODO
 ) $concat fun

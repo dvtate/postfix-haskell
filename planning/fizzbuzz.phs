@@ -1,6 +1,6 @@
 "stdlib/prelude.phs" require "\\%|Unit|\\+|\\=\\=|\\<\\=|true|pop|cast" "" use_some
-"stdlib/str.phs" require use
-"stdlib/io.phs" require $io =
+"stdlib/str.phs"     require use
+"stdlib/io.phs"      require $io =
 
 # export for performing IO
 ( Unit io.IO  I32 ) (:

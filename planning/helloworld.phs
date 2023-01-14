@@ -3,10 +3,8 @@
 "stdlib/io.phs"      require $io =
 "stdlib/str.phs"     require use
 
-(: ( $a $b ) = (: a b ) ) $>> =
-
 # Lazy evaluated IO action
-(: "Testing" Str cast io.print )
+(: "Testing" StaticStr cast io.print )
 (: 888.5 io.print ) >> $action =
 
 # Export that performs IO
@@ -15,7 +13,7 @@
     action
 
     # Print string
-    "Hello, world!" Str cast io.print
+    "Hello, world!" StaticStr cast io.print
 
     # Print an i32
     123456 io.print

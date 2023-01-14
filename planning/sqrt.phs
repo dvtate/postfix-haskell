@@ -1,5 +1,5 @@
 "stdlib/prelude.phs" require use
-"stdlib/number.phs" require $number =
+"stdlib/number.phs"  require $number =
 
 # Average
 (: + 2 / ) $avg =

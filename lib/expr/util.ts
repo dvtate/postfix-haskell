@@ -169,6 +169,9 @@ export class TupleExpr extends DataExpr {
      * @override
      */
     out(ctx: ModuleManager, fun: FunExpr) {
+        // See implementation for seq in standard library
+        if (this.instr.length === 0)
+            return this.args.map(e => e.out(ctx, fun)).join('\n\t');
         const ret = `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
         // console.log(this.constructor.name, ret);
         return ret;

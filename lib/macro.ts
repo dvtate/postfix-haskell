@@ -330,8 +330,12 @@ export class LiteralMacro extends Macro {
 
         if (typeof type == 'string')
             return new error.SyntaxError(type, this.token, ctx);
+
+        // NOTE in the past it would complain if the user gives a macro an invalid signature
+        //      but this almost always is a false-alarm.
+        // TODO flag which makes compiler trust and enforce user provided type signatures
         if (type instanceof error.SyntaxError)
-            return type;
+            return;
 
         // Verify outputs
         if (outputs && type.outputTypes && !outputs.types.every((t, i) => t.check(type.outputTypes[i]))) {

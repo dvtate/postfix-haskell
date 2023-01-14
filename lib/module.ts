@@ -31,6 +31,7 @@ import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
      * Program unlikely to run but useful for debugging
      */
     noRuntime?: boolean,
+
 }
 
 /**

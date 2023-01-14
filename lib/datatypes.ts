@@ -239,6 +239,29 @@ export class SyntaxType extends Type {
     }
 }
 
+// This is bad because tuple types will have type Syntax:Type
+// export class AnyTupleType extends Type {
+//     protected constructor() {
+//         super(new IdToken('Tuple', 0, undefined));
+//     }
+//     static readonly singleton = new AnyTupleType();
+
+//     check(type: Type): boolean {
+//         // Drop classes
+//         if (type instanceof ClassType)
+//             type = type.getBaseType();
+
+//         // Typecheck
+//         return type instanceof TupleType
+//             || type instanceof AnyTupleType
+//             || type instanceof AnyType;
+//     }
+
+//     toString(): string {
+//         return 'Tuple';
+//     }
+// }
+
 /**
  * Types of entities that can be physically represented
  */
@@ -475,16 +498,16 @@ export class TupleType extends DataType {
         if (type == null)
             return false;
 
-        // Always match Any
-        if (type instanceof AnyType)
-            return true;
-
         // Don't care about classes
         if (type instanceof ClassType) {
             type = type.getBaseType();
             if (!type)
                 return false;
         }
+
+        // Always match Any
+        if (type instanceof AnyType)
+            return true;
 
         // Not a tuple
         if (!(type instanceof TupleType))

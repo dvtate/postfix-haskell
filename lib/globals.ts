@@ -631,7 +631,7 @@ const operators : MacroOperatorsSpec = {
                 return ['expected type signature to be an arrow type'];
 
             // Get inputs
-            const { inputTypes, outputTypes } = sig.value;
+            const { inputTypes, outputTypes } = sig.value as types.ArrowType;
             if (ctx.stack.length < inputTypes.length)
                 return ['not enough inputs given'];
             const inputs = ctx.popn(inputTypes.length).reverse();

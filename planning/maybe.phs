@@ -1,5 +1,5 @@
-"./stdlib/prelude.phs" require use
-"./stdlib/math.phs" require $math =
+"./stdlib/prelude.phs"  require use
+"./stdlib/math.phs"     require $math =
 
 # Identity
 (: $a = $a ~ ) $id =

@@ -42,13 +42,14 @@ import * as util from '../tools/file_tools.js';
 
     const w = mod.instance.exports as any;
 
-    // Print sqrts of 1-10
     if (fname.includes('sqrt.phs')) {
+        // Print sqrts of 1-10
         for (let i = 1; i < 10; i++)
             console.log(w.sqrt(i));
-
-    // Do fizzbuzz for n=1..100
+    } else if (fname.includes('helloworld.phs')) {
+        w.main();
     } else if (fname.includes('fizzbuzz.phs')) {
+        // Do fizzbuzz for n=1..100
         w.main(100);
     } else if (fname.includes('enum.phs')) {
         console.log('0 & 0 => ', w.anddemo(0, 0));
