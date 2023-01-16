@@ -2,7 +2,7 @@
 A very low-level functional programming language designed to compile to WebAssembly in the browser. The language actually bears very little resemblance to Haskell despite the name.
 
 ## How to use
-The all examples can be run in an interactive shell like below. Alternatively you can install [the more stable npm package](https://www.npmjs.com/package/postfix-haskell)). For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/planning/std/*`.
+The all examples can be run in an interactive shell like below. Alternatively you can install [the more stable npm package](https://www.npmjs.com/package/postfix-haskell)). For better examples check out the recently edited files in the `planning/*` folder. Also note the standard library in `/std/*`.
 ```
 $ git clone https://github.com/dvtate/postfix-haskell
 $ cd postfix-haskell

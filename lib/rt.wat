@@ -16,7 +16,7 @@
 
     ;; Push a pointer onto the reference stack
     (func $__ref_stack_push (param $ptr i32)
-        ;; Note we decrement for better cache efficiency
+        ;; Note decrement for better cache efficiency
         ;; __ref_sp--
         global.get $__ref_sp
         i32.const 4

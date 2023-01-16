@@ -19,7 +19,7 @@ import type { FunExpr, FunLocalTracker } from './fun.js';
 /**
  * Create the reference bitfield used by garbage collector when tracing
  *
- * See the documentation on linear memory and garbage collection in planning/
+ * See the documentation on linear memory and garbage collection in planning/implementation/lm.md
  *
  * @param dt datatype to add bitfield for
  * @param fpl primitive components for the datatype dt.flatPrimitiveList()

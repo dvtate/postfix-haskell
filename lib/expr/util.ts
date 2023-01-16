@@ -121,7 +121,7 @@ export class TupleExpr extends DataExpr {
  *
  * used to handle multi-returns so that they don't get used out of order
  */
- export class DependentLocalExpr extends DataExpr {
+export class DependentLocalExpr extends DataExpr {
     // Expression produces the output captured by this one
     source: Expr;
 
@@ -151,7 +151,7 @@ export class TupleExpr extends DataExpr {
 /**
  * Passes stack arguments to desired WASM instruction
  */
- export class InstrExpr extends DataExpr {
+export class InstrExpr extends DataExpr {
     // WASM instruction mnemonic
     instr: string;
 
@@ -447,15 +447,23 @@ export class DummyDataExpr extends DataExpr {
 }
 
 /**
- * Wrapper around another expr with possibly different datatype
+ * Wrapper around another, mutable expr with possibly different datatype
  */
-// export class ProxyExpr extends DataExpr {
-//     constructor(token: LexerToken, public expr: DataExpr, dt: types.DataType = expr.datatype) {
-//         super(token, dt);
-//     }
-//     children() { return this.expr.children(); }
-//     out(ctx: ModuleManager, fun: FunExpr) {
-//         this._isCompiled = true;
-//         return this.expr.out(ctx, fun);
-//     }
-// }
+export class ProxyExpr extends DataExpr {
+    constructor(
+        token: LexerToken,
+        public expr: DataExpr,
+        public fun?: FunExpr,
+        dt: types.DataType = expr.datatype,
+    ) {
+        super(token, dt);
+    }
+    children() { return this.expr.children(); }
+    out(ctx: ModuleManager, fun: FunExpr) {
+        this._isCompiled = true;
+        return this.expr.out(ctx, fun);
+    }
+    clone() {
+        return new ProxyExpr(this.token, this.expr, this.fun, this._datatype);
+    }
+}

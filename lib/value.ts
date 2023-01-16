@@ -178,7 +178,6 @@ export class TupleValue extends DataValue {
     }
 
     children(): expr.Expr[] {
-        // @ts-ignore
         return [].concat(...this.value.map(v => v.children && v.children()));
     }
     out(ctx: ModuleManager, fun?: expr.FunExpr) {
