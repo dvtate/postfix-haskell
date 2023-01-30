@@ -14,6 +14,7 @@ import { invokeAsm } from './asm.js';
 import { EnumNs, EnumValue } from './enum.js';
 import { EnumMatchExpr } from './expr/index.js';
 import { genGcBitfield } from './expr/gc_util.js';
+import stdlibs from '../std/index.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -541,15 +542,27 @@ const operators : MacroOperatorsSpec = {
             if (!(arg instanceof value.StrValue))
                 return ['expected a string path'];
 
-            // Get full-path
+            // Get absolute path
+            let realpath: string;
             const curDir = token.file ? path.parse(token.file).dir : '.';
-            let realpath : string;
-            try {
-                realpath = fs.realpathSync(path.normalize(arg.value[0] == '/'
-                    ? arg.value
-                    : path.join(curDir, arg.value)));
-            } catch (e: any) {
-                return new error.SyntaxError(`include: ${e && e.message}`, token, ctx);
+            let moduleSource: string;
+
+            if (arg.value in stdlibs) {
+                // Standard library
+                // @ts-ignore TODO remove this when ts fixes its shit
+                const mod = stdlibs[arg.value];
+                realpath = mod.path;
+                moduleSource = mod.src;
+            } else {
+                // Get full-path
+                try {
+                    realpath = fs.realpathSync(path.normalize(arg.value[0] == '/'
+                        ? arg.value
+                        : path.join(curDir, arg.value)));
+                } catch (e: any) {
+                    return new error.SyntaxError(`include: ${e && e.message}`, token, ctx);
+                }
+                moduleSource = fs.readFileSync(realpath).toString();
             }
 
             // Check if already included
@@ -562,7 +575,7 @@ const operators : MacroOperatorsSpec = {
             }
 
             // Load file
-            const tokens = scan(fs.readFileSync(realpath).toString(), realpath);
+            const tokens = scan(moduleSource, realpath);
 
             // Put file into a macro
             const block = new MacroToken(token.token, token.position, token.file || curDir, tokens, [], false);

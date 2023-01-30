@@ -9,7 +9,7 @@ $ cd postfix-haskell
 $ npm run build
 $ npm install --global
 $ phc shell
-> "std/lang.phs" require use
+> "lang" require use
 > 1 2 + :data
 :data - 3n
 ```
@@ -38,7 +38,7 @@ The shell is probably the best way to learn the language, allowing you to run sh
 
 ```
 [postfix-haskell]$ npm start
-> "./std/lang.phs" include use
+> "lang" require use
 > 1 2 + :data
 :data - 3n
 
