@@ -2,6 +2,11 @@
 import { writeFileSync, readFileSync } from 'fs';
 import { exec } from 'child_process';
 
+/**
+ * Environment variables
+ * - PATH_PREFIX: where to find the source files for the imports
+ * - NO_TSC: don't compile typescript
+ */
 
 // It really sucks that there isn't a viable preprocessor for TypeScript
 console.log("Compensating for TypeScript's lack of a preprocessor...");
@@ -18,20 +23,58 @@ console.log('Generated runtime source import');
 // Make standard library not dependent on file-system (ie - for use within browser)
 writeFileSync(
     './std/index.ts',
-    `export default \{
-        // These are generated via the build.js script, do not edit directly!
-        'bits' : ${JSON.stringify(readFileSync('./std/bits.phs').toString())},
-        'either' : ${JSON.stringify(readFileSync('./std/either.phs').toString())},
-        'io' : ${JSON.stringify(readFileSync('./std/io.phs').toString())},
-        'lang' : ${JSON.stringify(readFileSync('./std/lang.phs').toString())},
-        'list' : ${JSON.stringify(readFileSync('./std/list.phs').toString())},
-        'math' : ${JSON.stringify(readFileSync('./std/math.phs').toString())},
-        'maybe' : ${JSON.stringify(readFileSync('./std/maybe.phs').toString())},
-        'mem' : ${JSON.stringify(readFileSync('./std/mem.phs').toString())},
-        'monad' : ${JSON.stringify(readFileSync('./std/monad.phs').toString())},
-        'number' : ${JSON.stringify(readFileSync('./std/number.phs').toString())},
-        'str' : ${JSON.stringify(readFileSync('./std/str.phs').toString())},
-    \};`,
+    `
+// For browser version this should be a url
+const pathPrefix = ${process.env.PATH_PREFIX
+    ? JSON.stringify(process.env.PATH_PREFIX)
+    : 'import.meta.url.slice(0, -8)'};
+export default \{
+    // These are generated via the build.js script, do not edit directly!
+    'bits' : \{
+        src: ${JSON.stringify(readFileSync('./std/bits.phs').toString())},
+        path: pathPrefix + 'bits.phs',
+    \},
+    'either' : \{
+        src: ${JSON.stringify(readFileSync('./std/either.phs').toString())},
+        path: pathPrefix + 'either.phs',
+    \},
+    'io' : \{
+        src: ${JSON.stringify(readFileSync('./std/io.phs').toString())},
+        path: pathPrefix + 'io.phs',
+    \},
+    'lang' : \{
+        src: ${JSON.stringify(readFileSync('./std/lang.phs').toString())},
+        path: pathPrefix + 'lang.phs',
+    \},
+    'list' : \{
+        src: ${JSON.stringify(readFileSync('./std/list.phs').toString())},
+        path: pathPrefix + 'list.phs',
+    \},
+    'math' : \{
+        src: ${JSON.stringify(readFileSync('./std/math.phs').toString())},
+        path: pathPrefix + 'math.phs',
+    \},
+    'maybe' : \{
+        src: ${JSON.stringify(readFileSync('./std/maybe.phs').toString())},
+        path: pathPrefix + 'maybe.phs',
+    \},
+    'mem' : \{
+        src: ${JSON.stringify(readFileSync('./std/mem.phs').toString())},
+        path: pathPrefix + 'mem.phs',
+    \},
+    'monad' : \{
+        src: ${JSON.stringify(readFileSync('./std/monad.phs').toString())},
+        path: pathPrefix + 'monad.phs',
+    \},
+    'number' : \{
+        src: ${JSON.stringify(readFileSync('./std/number.phs').toString())},
+        path: pathPrefix + 'number.phs',
+    \},
+    'str' : \{
+        src: ${JSON.stringify(readFileSync('./std/str.phs').toString())},
+        path: pathPrefix + 'str.phs',
+    \},
+\};`,
 );
 console.log('Generated standard library import');
 

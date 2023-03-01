@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# TODO eventually should probably use streaming pipes if we care about compilation time but eh this is fine for now
+# TODO eventually should probably use streaming pipes
 
 # PHS: Compile to wat
 phc file -O2 $1 -o /tmp/ph_opt_demo.wat
