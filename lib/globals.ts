@@ -25,9 +25,10 @@ These are globally defined operators some may eventually be moved to standard li
 */
 
 // TODO break this up into files
-// TODO ALWAYS verify input length
-// TODO THINK: could this be moved to a standard library?
 // TODO go through and replace everwhere we return string[] and replace it with error.*
+
+// NOTE ALWAYS verify inputs
+// NOTE THINK: could this be moved to a standard library?
 
 // Util to convert to boolean value
 const toBool = (b : boolean, token: LexerToken) =>
@@ -39,6 +40,10 @@ type MacroOperatorsSpec = {
         action: (ctx: Context, token: LexerToken)
             => Context | Array<string> | undefined | SyntaxError | void;
         type?: types.ArrowType;
+        description: string;
+        signature: string;
+        example?: string | string[];
+        deprecated?: boolean;
     };
 };
 
@@ -46,6 +51,9 @@ type MacroOperatorsSpec = {
 const operators : MacroOperatorsSpec = {
     // Bind identifier(s) to expression(s)
     '=' : {
+        description: 'assign an expression to an identifier',
+        signature: '<expression> <escaped identifier> =',
+        example: '90.0 $angle =',
         action: (ctx, token) => {
             // Get symbols to bind
             if (ctx.stack.length < 2)
@@ -95,6 +103,9 @@ const operators : MacroOperatorsSpec = {
     // TODO override for bitwise or
     // TODO convert to function
     '|' : {
+        description: 'create a union type',
+        signature: '<type 1> <type 2> |',
+        example: 'I32 I64 | $Int =',
         action: (ctx, token) => {
             // Get input
             if (ctx.stack.length < 2)
@@ -120,6 +131,9 @@ const operators : MacroOperatorsSpec = {
 
     // Make a type wrapper that assigns class tag to output datatype
     'class' : {
+        description: 'create a class type',
+        signature: '<macro | type> class',
+        example: '(: $T = ( T T T ) ) class $Vec3 =',
         action: (ctx, token) => {
             // Pull a macro or type
             if (ctx.stack.length === 0)
@@ -184,6 +198,9 @@ const operators : MacroOperatorsSpec = {
 
     // Unpack a tuple
     'unpack' : {
+        description: 'put the elements of a tuple onto the stack',
+        signature: '<tuple> unpack',
+        example: '( 1 2 3 ) unpack + +',
         action: (ctx, token) => {
             // Pull
             if (ctx.stack.length === 0)
@@ -225,6 +242,9 @@ const operators : MacroOperatorsSpec = {
     // TODO Exprs, recursive types, etc.
     // TODO make this a function?
     'make' : {
+        description: 'instantiate a class',
+        signature: '<expression> <class type> make',
+        example: '( 0 0 0 ) I32 Vec3 make $origin =',
         action: (ctx, token) => {
             // Get type
             if (ctx.stack.length < 2)
@@ -259,6 +279,9 @@ const operators : MacroOperatorsSpec = {
 
     // Get the datatype of a value
     'type' : {
+        description: 'get the type of an expression',
+        signature: '<expr> type',
+        example: '123 type',
         action: (ctx: Context, token: LexerToken) => {
             if (ctx.stack.length === 0)
                 return ['expected an expression to get type from'];
@@ -273,6 +296,9 @@ const operators : MacroOperatorsSpec = {
 
     // Function operator
     'fun' : {
+        description: 'create a \'function\' for branching. Using the identifier invokes the function',
+        signature: '<macro condition> <macro action> <escaped identifier name> fun',
+        example: '(: 1 ) (: $n = n ) $abs fun\n(: 0 < ) (: -1 * ) $abs fun',
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
             if (ctx.stack.length < 3)
@@ -306,9 +332,10 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Export a macro as wasm
-    // (I32 I32) (: + ) "add" export
     'export' : {
+        description: 'define a function to export from current module',
+        signature: '<tuple input types> <macro body> <string identifier> export',
+        example: '(I32 I32) (: + ) "add" export',
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
             if (ctx.stack.length < 3)
@@ -359,8 +386,10 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Functor type
     'Arrow' : {
+        description: 'create an arrow type',
+        signature: '<tuple input types> <tuple output types> Arrow',
+        example: '(I32 I32) (I32) Arrow',
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
             if (ctx.stack.length < 2)
@@ -406,8 +435,10 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Import
     'import' : {
+        description: 'Import function from the module host',
+        signature: '<arrow type signature> <tuple of scope strings> import',
+        example: '(Unit I32) (Unit) Arrow ( "js" "consoleLog" ) import $log_i32 =',
         action: (ctx: Context, token: LexerToken) => {
             // Get operands
             if (ctx.stack.length < 2)
@@ -475,8 +506,10 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Namespaces
     'namespace' : {
+        description: 'create a named scope for identifiers',
+        signature: '<macro> namespace',
+        example: '(: (: + ) $add = ) namespace $math =',
         action: (ctx: Context, token: LexerToken) => {
             // Pull macro
             if (ctx.stack.length === 0)
@@ -494,8 +527,10 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Promote all members of namespace to current scope
     'use' : {
+        description: 'promote all members of namespace to current scope',
+        signature: '<namespace> use',
+        example: 'math use',
         action: (ctx: Context, token: LexerToken) => {
             // Get namespace
             if (ctx.stack.length === 0)
@@ -509,10 +544,11 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Promote some of the members of a namespace to current scope
-    // <namespace> <include rxp> <exclude rxp> use_some
-    // TODO this is unintuitive
+    // TODO this is not intuitive
     'use_some' : {
+        description: 'promote some members of namespace to current scope',
+        signature: '<namespace> <string regular expression include symbols> <string regular expression exclude symbols> use_some',
+        example: 'math "add" "" use_some',
         action: (ctx: Context, token: LexerToken) => {
             // Get params
             if (ctx.stack.length < 3)
@@ -534,6 +570,9 @@ const operators : MacroOperatorsSpec = {
 
     // Include another file as a module
     'require' : {
+        description: 'load another source file into a namespace',
+        signature: '<string path to file> require <namespace>',
+        example: ['"./math.phs" require $math =', '"lang" require use'],
         action: (ctx: Context, token: LexerToken) => {
             // Get argument
             if (ctx.stack.length === 0)
@@ -549,8 +588,7 @@ const operators : MacroOperatorsSpec = {
 
             if (arg.value in stdlibs) {
                 // Standard library
-                // @ts-ignore TODO remove this when ts fixes its shit
-                const mod = stdlibs[arg.value];
+                const mod = stdlibs[arg.value as keyof typeof stdlibs];
                 realpath = mod.path;
                 moduleSource = mod.src;
             } else {
@@ -591,6 +629,9 @@ const operators : MacroOperatorsSpec = {
 
     // Is the value known at compile-time
     'is_const' : {
+        description: 'Check if value is known at compile-time',
+        signature: '<expression> is_const <1 or 0>',
+        example: '1 2 + is_const',
         action: (ctx: Context, token: LexerToken) => {
             // Only expressions are
             if (ctx.stack.length === 0)
@@ -600,8 +641,10 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Defer results of calculations invloving this value until runtime
     'defer' : {
+        description: 'Defer results of calculations invloving this value until runtime',
+        signature: '<expression> defer <expression>',
+        example: '1 2 + defer',
         action: (ctx: Context) => {
             // Get value from stack
             if (ctx.stack.length === 0)
@@ -615,8 +658,10 @@ const operators : MacroOperatorsSpec = {
         }
     },
 
-    // ASM instruction
-    'asm' : {
+    'asm' : {        
+        description: 'Inline assembly',
+        signature: 'Signature varies based on operator used',
+        example: '1 2 "i32.add" asm',
         action: (ctx: Context, token: LexerToken) => {
             // Get number of arguments and symbol
             if (ctx.stack.length === 0)
@@ -632,6 +677,9 @@ const operators : MacroOperatorsSpec = {
 
     // Unsafe, custom inline assembly
     '__asm' : {
+        description: 'Unsafe/custom inline assembly',
+        signature: '<arrow type signature> <string mnemonic> __asm <return types from signature>',
+        example: '( Unit I32 I32 ) ( Unit ) "i32.store" __asm',
         action: (ctx: Context, token: LexerToken) => {
             // Get args
             if (ctx.stack.length < 2)
@@ -669,6 +717,9 @@ const operators : MacroOperatorsSpec = {
 
     // Moving typechecking behavior from == to here
     '__typecheck' : {
+        description: 'Check if two types are compatible (used internally to define ==)',
+        signature: '<type 1> <type 2> __typecheck',
+        example: '55 type I32 __typecheck',
         action: (ctx, token) => {
             if (ctx.stack.length < 2)
                 return ['missing values'];
@@ -678,6 +729,9 @@ const operators : MacroOperatorsSpec = {
     },
 
     'static_region' : {
+        description: 'Allocate a region of mutable static memory for program use',
+        signature: '<I32 number of bytes needed> static_region <I32 address>',
+        example: '32 static_region $name_addr =',
         action: (ctx, token) => {
             if (ctx.stack.length === 0)
                 return ['missing number of bytes to mark'];
@@ -696,6 +750,9 @@ const operators : MacroOperatorsSpec = {
     },
 
     'static_init_byte' : {
+        description: 'Initialize a byte of memory at an address allocated by static_region to a value',
+        signature: '<I32 value> <I32 address> static_init_byte',
+        example: '0 name_addr static_init_byte',
         action: (ctx) => {
             // Get args
             if (ctx.stack.length < 2)
@@ -714,6 +771,10 @@ const operators : MacroOperatorsSpec = {
     // Mark a type as recursive so that it's stored on the stack
     // TODO apply same logic to mark macros as recursive
     'rec' : {
+        description: 'Mark a type as recursive',
+        signature: '<type> rec',
+        example: [],
+        deprecated: true,
         action: ctx => {
             if (ctx.stack.length == 0)
                 return ['missing argument'];
@@ -727,6 +788,10 @@ const operators : MacroOperatorsSpec = {
     },
 
     '__gc_ref_bf': {
+        description: 'Generate a reference bitfield for a type. This is potentially relevant for garbage collection and unsafe memory operations',
+        signature: '<type> __gc_ref_bf <string ref bf>',
+        example: 'I32 Vec3 __gc_ref_bf',
+        deprecated: true,
         action: (ctx, token) => {
             if (ctx.stack.length == 0)
                 return ['missing argument'];
@@ -743,6 +808,9 @@ const operators : MacroOperatorsSpec = {
 
     // Tagged union/sum type
     'enum' : {
+        description: 'Ereate an enum type. Similar to namespace',
+        signature: '<macro> enum',
+        example: '(: I64 class $Int =  F64 class $Float = ) enum $Num =',
         action: (ctx, token) => {
             // Get arg
             if (ctx.stack.length === 0)
@@ -772,6 +840,9 @@ const operators : MacroOperatorsSpec = {
 
     // Temporary pattern match operator for enums
     'match' : {
+        description: 'Pattern match on an enum value',
+        signature: '<enum value> <tuple branches> match',
+        example: '( Num.Int (: -1.0 * ) Num.float (: -1.0 * ) ) match',
         action: (ctx, token) => {
             // Get arg
             if (ctx.stack.length < 2)

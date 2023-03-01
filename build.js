@@ -2,6 +2,11 @@
 import { writeFileSync, readFileSync } from 'fs';
 import { exec } from 'child_process';
 
+/**
+ * Environment variables
+ * - PATH_PREFIX: where to find the source files for the imports
+ * - NO_TSC: don't compile typescript
+ */
 
 // It really sucks that there isn't a viable preprocessor for TypeScript
 console.log("Compensating for TypeScript's lack of a preprocessor...");

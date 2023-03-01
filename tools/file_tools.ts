@@ -9,8 +9,8 @@ export interface FileSnapshot {
 
 /**
  * Get a snapshot of a token
- * @param {string} file - file name/path
- * @param {number} pos - character index in file
+ * @param file - file name/path
+ * @param pos - character index in file
  */
 export function fileLocate(file: string, pos: number): FileSnapshot {
     const lines = readFileSync(file).toString().split('\n');
