@@ -26,3 +26,11 @@ Any Maybe $AnyMaybe =
         TMaybe ((TMaybe)(TMaybe): )
     ) match
 ) $fails fun
+
+(( Any Maybe Syntax:Macro () type (Any) Arrow | | Any ): 1 ) (:
+    ( $bound $default ) =
+    dup type $TMaybe =
+    (   TMaybe.Nothing (: default )
+        TMaybe         (: bound   )
+    ) match
+) $bind_default fun

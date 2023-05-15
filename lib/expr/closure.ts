@@ -59,24 +59,24 @@ export class ClosureCreateExpr extends DataExpr {
         // Trace, with relevant context modifications
         const copyStack     = ctx.stack;
         const copyScopes    = ctx.scopes;
-        const copyCurrFun   = ctx.currentFunction;
-        const copyProxyLocs = ctx.proxyLocals;
+        // const copyCurrFun   = ctx.currentFunction;
+        // const copyProxyLocs = ctx.proxyLocals;
         ctx.stack           = paramsExprs;
         ctx.scopes          = this.macro.scopes;
-        ctx.currentFunction = this.func;
-        ctx.proxyLocals     = [];
+        // ctx.currentFunction = this.func;
+        // ctx.proxyLocals     = [];
         const ios = ctx.traceIO(this.macro, this.token);
         if (ios instanceof error.CompilerError)
             throw ios;
         ctx.stack           = copyStack;
         ctx.scopes          = copyScopes;
-        ctx.currentFunction = copyCurrFun;
-        const proxiedLocals = ctx.proxyLocals;
-        ctx.proxyLocals     = copyProxyLocs;
+        // ctx.currentFunction = copyCurrFun;
+        // const proxiedLocals = ctx.proxyLocals;
+        // ctx.proxyLocals     = copyProxyLocs;
         this._datatype = ios.toArrowType(this.token);
 
         // Get things to capture
-        proxiedLocals.filter(l => l.)
+        // proxiedLocals.filter(l => l.)
         const leaves = [].concat(...ios.gives.map(e => e instanceof Expr ? e.getLeaves() : []));
         const specialLeaves = leaves.find(l => [ParamExpr, DependentLocalExpr, TeeExpr, ].includes(l.constructor));
 

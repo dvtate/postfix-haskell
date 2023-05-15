@@ -27,7 +27,7 @@ writeFileSync(
 // For browser version this should be a url
 const pathPrefix = ${process.env.PATH_PREFIX
     ? JSON.stringify(process.env.PATH_PREFIX)
-    : 'import.meta.url.slice(0, -8)'};
+    : 'import.meta.url.slice(7, -8) + "../../std/"'};
 export default \{
     // These are generated via the build.js script, do not edit directly!
     'bits' : \{
