@@ -210,7 +210,7 @@ export abstract class FunExpr extends Expr {
     /**
      * Parameter expressions
      */
-    readonly params: ParamExpr[];
+    params: ParamExpr[];
 
     /**
      * @param token - Source location
