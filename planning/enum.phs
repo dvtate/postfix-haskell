@@ -41,7 +41,7 @@ nodejs_version get_major_version :data
     Unit class $False =
 ) enum $Bool =
 
-# Overload prelude.cast to cast ints to Bool enums
+# Overload lang.cast to cast ints to Bool enums
 
 ((Bool Syntax:Type): I32 == ) (:
     pop

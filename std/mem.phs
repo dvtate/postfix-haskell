@@ -1,5 +1,5 @@
 "./lang.phs" require use
-"./bits.phs" require use
+"./bits.phs" require $bits =
 
 ((F32 I32): 1 ) (:
     swap "i32.reinterpret_f32" asm swap
@@ -31,7 +31,7 @@
 ) $static_init fun
 
 # Store value in memory
-# <unit> <addr> <value> store
+# <unit> <value> <addr> store
 ((Unit I32 I32): 1 ) (:
     swap ( Unit I32 I32 ) ( Unit ) Arrow "i32.store" __asm
 ) $store fun

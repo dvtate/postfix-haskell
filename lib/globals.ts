@@ -598,7 +598,7 @@ const operators : MacroOperatorsSpec = {
                         ? arg.value
                         : path.join(curDir, arg.value)));
                 } catch (e: any) {
-                    return new error.SyntaxError(`include: ${e && e.message}`, token, ctx);
+                    return new error.SyntaxError(`require: ${e && e.message}`, [arg.token, token], ctx);
                 }
                 moduleSource = fs.readFileSync(realpath).toString();
             }

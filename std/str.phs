@@ -1,4 +1,4 @@
-"./lang.phs" require $prelude =
+"./lang.phs" require $lang =
 "./list.phs" require "List" "" use_some
 
 # Make concatenate string literals
@@ -13,14 +13,14 @@
 
 # String class
 ( I32 I32 ) class $StaticStr =
-((StaticStr): 1 ) (: unpack prelude.pop ) $size fun
-((StaticStr): 1 ) (: unpack prelude.swap prelude.pop ) $addr fun
+((StaticStr): 1 ) (: unpack lang.pop ) $size fun
+((StaticStr): 1 ) (: unpack lang.swap lang.pop ) $addr fun
 
 # Overload cast operator to convert static string literals
 ((Syntax:Str Syntax:Type): StaticStr == ) (:
     pop $lit =
     ( lit ) StaticStr make
-) $prelude.cast fun
+) $lang.cast fun
 
 # Characters are stored in I32's for performance reasons
 I32 $Char =
@@ -35,10 +35,10 @@ Char List $ListStr =
 
 # Type for strings generated at runtime
 ( I32 I32 ) class $Str =
-((Str): 1 ) (: unpack prelude.pop ) $size fun
-((Str): 1 ) (: unpack prelude.swap prelude.pop ) $addr fun
+((Str): 1 ) (: unpack lang.pop ) $size fun
+((Str): 1 ) (: unpack lang.swap lang.pop ) $addr fun
 
-(( StaticStr Str | prelude.dup ): 1 ) (:
+(( StaticStr Str | lang.dup ): 1 ) (:
     ( $lhs $rhs ) =
     # TODO
 ) $concat fun

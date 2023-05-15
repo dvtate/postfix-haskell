@@ -1,6 +1,6 @@
 
-import { writeFileSync, readFileSync } from 'fs';
-import { exec } from 'child_process';
+import { writeFileSync, readFileSync, chmodSync, constants } from 'fs';
+import { exec, execSync } from 'child_process';
 
 /**
  * Environment variables
@@ -92,5 +92,8 @@ if (!process.env.NO_TSC)
             // fs.unlinkSync('./lib/rt.wat.ts');
 
             console.log('Compiled TypeScript');
+
+            console.log('Marking index.js as executable');
+            execSync('chmod +x ./dist/index.js');
         }
     );

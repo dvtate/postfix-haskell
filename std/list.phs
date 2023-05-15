@@ -1,10 +1,10 @@
-"./lang.phs" require $prelude =
+"./lang.phs" require $lang =
 
 # Macro to construct a type for Linked Lists containing elements of given type
 (:  $ElemType =
 
-    # Using namespace prelude within this macro
-    prelude use
+    # Using namespace lang within this macro
+    lang use
 
     # Linked List with members of given type
     ( $ListType rec:
@@ -145,11 +145,11 @@
     ListType
 ) $List =
 
-# Honestly not sure if these should be in prelude ns anymore
+# Honestly not sure if these should be in lang ns anymore
 (( Any List Syntax:Macro (Any) (Any) Arrow | ):
     ( $l $f ) =
     l type $LT =
     f type (LT.ElemType) (Any) Arrow Syntax:Macro | ==
 )
 (: ( $l $f ) = l type $ListType = l $f ~ ListType.map )
-$prelude.map fun
+$lang.map fun

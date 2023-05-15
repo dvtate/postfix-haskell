@@ -91,18 +91,18 @@ export class BlockToken extends LexerToken {
 
         const types: BlockToken[] = [];
         let recursive = false;
-        let recursiveId: IdToken;
+        let recursiveId: IdToken = null;
         let i : number;
         const l = Math.min(4, this.body.length)
         for (i = 0; i < l; i++) {
             const t = this.body[i];
             if (t.token === ':')
                 break;
-            if (t.token === 'rec:') {
+            if (t.token === 'rec:' || t.token === 'fun:') {
                 recursive = true;
                 break;
             }
-            if (t.token === 'rec')
+            if (t.token === 'rec' || t.token === 'fun')
                 recursive = true;
             else if (t instanceof BlockToken)
                 types.push(t);
