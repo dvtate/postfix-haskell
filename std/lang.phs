@@ -224,8 +224,8 @@ $__can_promote ~ (: __promote / ) $global./ fun
 ((F64 F64): 1 ) (: "f64.rem" asm ) $global.% fun
 
 # Optimization for remainder 2
-((I32 I32): __is_2 ) (: a 1 "i32.and" asm ) $global.% fun
-((I64 I64): __is_2 ) (: a 1L "i64.and" asm ) $global.% fun
+((I32 I32): __is_2 ) (: pop 1  "i32.and" asm ) $global.% fun
+((I64 I64): __is_2 ) (: pop 1L "i64.and" asm ) $global.% fun
 
 # Attempt to promote values to same type
 $__can_promote ~ (: __promote % ) $global.% fun

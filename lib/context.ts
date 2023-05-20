@@ -203,7 +203,9 @@ export default class Context {
 
         // Resolve namespaces
         for (let i = 1; i < id.length; i++)
-            if (ret instanceof value.NamespaceValue) {
+            if (!ret) {
+                return undefined;
+            } else if (ret instanceof value.NamespaceValue) {
                 ret = ret.value.getId(id[i]);
             } else if (ret.type === value.ValueType.Type) {
                 let bt = ret.value;

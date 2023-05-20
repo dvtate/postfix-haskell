@@ -1018,7 +1018,8 @@ export class EnumClassType<T extends DataType> extends DataType {
             type = type.getBaseType();
         if (!type)
             return false;
-
+        if (type == this)
+            return true;
 
         if (type === this.parent)
             return true;

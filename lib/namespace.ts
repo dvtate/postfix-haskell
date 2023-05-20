@@ -51,7 +51,7 @@ export default class Namespace {
         const curScope = ctx.scopes[ctx.scopes.length - 1];
         toPromote.forEach(([id, v]) => {
             // Warn on overwrite
-            if (curScope[id] && curScope[id] != v)
+            if (curScope[id] && curScope[id] != v && v.token != curScope[id].token)
                 ctx.warn(token, `Overwrote identifier $${id}`);
 
             // Write to current scope

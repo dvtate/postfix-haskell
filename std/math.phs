@@ -58,21 +58,25 @@
 
 # Raise given number to given power
 ((number.Float number.Int): 1) (:
-    ( $x $n ) =
-    x type $Tf =
+    # TODO this doesn't work
+    (rec:
+        ( $x $n ) =
+        x type $Tf =
 
-    (: 1 ) (:
-        ((n type Tf Tf) rec: ( $n $r $l ) =
-            (: 1 ) (:       n 2 /   r       l l *   iter ) $branch fun
-            (: n 2 % ) (:   n 2 /   r l *   l l *   iter ) $branch fun
-            (: n 1 <= ) (: r l * ) $branch fun
-            branch
-        ) $iter =
-        n x 1.0 Tf cast iter
-    ) $edges fun
-    (: n 0 < ) (: 1 x -1 n - pow ) $edges fun
-    (: n 0 == ) (: 1.0 Tf cast ) $edges fun
-    edges
+        (: 1 ) (:
+            ((n type Tf Tf) rec: ( $n $r $l ) =
+                (: 1 ) (:       n 2 /   r       l l *   iter ) $branch fun
+                (: n 2 % ) (:   n 2 /   r l *   l l *   iter ) $branch fun
+                (: n 1 <= ) (: r l * ) $branch fun
+                branch
+            ) $iter =
+            n x 1.0 Tf cast iter
+        ) $edges fun
+        (: n 0 < ) (: 1 x -1 n - pow ) $edges fun
+        (: n 0 == ) (: 1.0 Tf cast ) $edges fun
+        edges
+    ) $powf =
+    powf
 ) $pow fun
 
 # ** for power operator
@@ -231,3 +235,48 @@
 ((Any): 1 ) (: $x = x cos  x sin / ) $cot fun
 ((Any): 1 ) (: $x = 1 x cos / ) $sec fun
 ((Any): 1 ) (: $x = 1 x sin / ) $csc fun
+
+# Exp2
+# Comppute 2^(a + b) where a ≥ b ≥ 0 or a ≤ b ≤ 0
+# algo from jdh8/metallic/src/math/double/pow.c
+((F64 F64): 1 ) (:
+    ( $a $b ) =
+
+    (:  ( $a $b ) =
+        1.6666666666666661553e-1  $c0 =
+        -2.7777777777564778614e-3 $c1 =
+        6.6137564717940089175e-5  $c2 =
+        -1.6534060280704224368e-6 $c3 =
+        4.1437773411068822733e-8  $c4 =
+        a b + $x =
+        x x * $xx =
+        x c_4 xx * c_3 + xx * c_2 + xx * c_1 + xx * c_0 + xx * - $y =
+        y 2 y - / x * b + a +
+    ) $kern_expb =
+
+    0x1.62e42ffp-1 $ln2_0 =
+    -0x1.718432a1b0e26p-35 $ln2_1 =
+
+    a b + $s =
+
+    (: 1 ) (:
+        s nearest $n =
+        s n - $t =
+        t _bits.reinterpret_i64 t 1 32 << 1 - & $t0 =
+        t0 ln2_0 * $u =
+        t ln2_1 * a n t0 + - b + ln2_0 * + $v =
+        u v kern_expb 1 + _bits.reinterpret_i64 n I64 cast 52L << + $i =
+        (: 1 ) (:
+            i _bits.reinterpret_f64
+        ) $b2 fun
+        (: s -1020 < ) (:
+            0x1p-1020 i 0x3FC0000000000000 + _bits.reinterpret_f64 *
+        ) $b2 fun
+        b2
+    ) $b1 fun
+    (: s 1024  > s 1024  == b > s - a && || ) (: F64 number.limits.pos_inf ) $b1 fun
+    (: s -1075 < s -1075 == b s a - < && || ) (: 0.0 ) $b1 fun
+    b1
+) $exp2 fun
+
+# TODO pow

@@ -19,8 +19,8 @@ export enum TokenType {
     Tuple = 6,          // Tuple
 }
 
-// Internal
-export enum ContainerType {
+// Content wrapper
+enum ContainerType {
     Curly = 0,      // {}
     Bracket = 1,    // []
     Paren = 2,      // ()
@@ -98,11 +98,11 @@ export class BlockToken extends LexerToken {
             const t = this.body[i];
             if (t.token === ':')
                 break;
-            if (t.token === 'rec:' || t.token === 'fun:') {
+            if (t.token === 'rec:' /* || t.token === 'fun:'*/) {
                 recursive = true;
                 break;
             }
-            if (t.token === 'rec' || t.token === 'fun')
+            if (t.token === 'rec' /*|| t.token === 'fun'*/)
                 recursive = true;
             else if (t instanceof BlockToken)
                 types.push(t);

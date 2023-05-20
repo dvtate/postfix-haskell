@@ -27,9 +27,10 @@ Any Maybe $AnyMaybe =
     ) match
 ) $fails fun
 
-(( Any Maybe Syntax:Macro () type (Any) Arrow | | Any ): 1 ) (:
-    ( $bound $default ) =
-    dup type $TMaybe =
+(( Any Any Any ): 1 ) (:
+    ( $maybe $bound $default ) =
+    $maybe ~ type $TMaybe =
+    maybe
     (   TMaybe.Nothing (: default )
         TMaybe         (: bound   )
     ) match
