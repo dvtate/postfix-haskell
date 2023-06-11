@@ -106,24 +106,20 @@ export class RecursiveBodyExpr extends Expr {
         //     = this.giveExprs.map(e => !e.datatype.getBaseType().isUnit() && e);
 
         // Store inputs in locals
-        this.takeExprs.forEach(e => {
-            e.inds = fun.addLocal(e.datatype);
-        });
+        this.takeExprs.forEach(e => e.setInds(fun));
         let ret = `\n\t${this.takeExprs.map((e, i) =>
-            `${this.takes[i].out(ctx, fun)}${fun.setLocalWat(e.inds)}`
+            `${this.takes[i].out(ctx, fun)}${fun.setLocalWat(e.getInds())}`
         ).join('\n\t')}\n\t`;
 
         // Create place to store outputs
-        this.giveExprs.forEach(e => {
-            e.inds = fun.addLocal(e.datatype);
-        });
+        this.giveExprs.forEach(e => e.setInds(fun));
 
         // Body
         const retType = this.gives.map(e => e.datatype.getWasmTypeName()).join(' ');
         ret += `(loop ${this.label} (result ${retType})\n\t${
             this.gives.map(e => e.out(ctx, fun)).join('\n\t')
         })\n\t${
-            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join(' ')
+            this.giveExprs.map(e => fun.setLocalWat(e.getInds())).join(' ')
         }\n\t`;
 
         // console.log('RecursiveBodyExpr', ret);
@@ -140,11 +136,12 @@ export class RecursiveBodyExpr extends Expr {
             .reduce((a, v) => a.concat(v), [])
             .filter(e => {
                 // Should not already be bound, right?
-                if ((e instanceof DependentLocalExpr && e.inds)
-                    || (e instanceof TeeExpr && e.inds))
-                {
-                    console.error(e);
-                    throw new Error("wtf?");
+                const eInds = e instanceof DependentLocalExpr && e.getInds();
+                if ( (eInds && eInds.length)
+                    || (e instanceof TeeExpr && e.inds)) {
+                // console.error(e, e instanceof DependentLocalExpr && e.getInds());
+                // throw new Error("wtf?");
+                    return true;
                 }
 
                 // Parameters need to be passed as arguments to helper
@@ -168,9 +165,7 @@ export class RecursiveBodyExpr extends Expr {
         ctx.addFunction(this.helper);
 
         // Create place to store outputs
-        this.giveExprs.forEach(e => {
-            e.inds = fun.addLocal(e.datatype);
-        });
+        this.giveExprs.forEach(e => e.setInds(fun));
 
         // Invoke helper function and capture return values into dependent locals
         return `${
@@ -178,7 +173,7 @@ export class RecursiveBodyExpr extends Expr {
         }${
             captureExprs.map((e: DataExpr) => e.out(ctx, fun)).join('')
         }\n\t(call ${this.label})${
-            this.giveExprs.map(e => fun.setLocalWat(e.inds)).join('')
+            this.giveExprs.map(e => fun.setLocalWat(e.getInds())).join('')
         }`;
     }
 
@@ -357,9 +352,9 @@ export class RecursiveCallExpr extends Expr {
             // Set arg locals
             let ret = `\n\t${this.takeExprs.map((e, i) =>
                 `${e.out(ctx, fun)}${
-                    !this.body.takeExprs[i] || !this.body.takeExprs[i].inds
+                    !this.body.takeExprs[i] || !this.body.takeExprs[i].getInds()
                         ? ''
-                        : fun.setLocalWat(this.body.takeExprs[i].inds)}`
+                        : fun.setLocalWat(this.body.takeExprs[i].getInds())}`
             ).join('\n\t')}\n\t`;
 
             // Invoke function

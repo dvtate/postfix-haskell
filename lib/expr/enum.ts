@@ -123,7 +123,6 @@ export class EnumTypeIndexExpr extends DataExpr {
 
 
         // Simply discard the reference
-        // console.log('ee', this.enumExpr);
         return this.enumExpr.out(ctx, fun)
         // equiv (call $__ref_stack_pop) (drop)
         + '(global.set $__ref_sp (i32.add (global.get $__ref_sp) (i32.const 4)))'

@@ -45,7 +45,7 @@ export class BranchInputExpr extends DataExpr {
      */
     out(ctx: ModuleManager, fun: FunExpr) {
         if (!this._datatype.isUnit() && !this.index) {
-            console.log(this.value);
+            console.log('branch input: ', this.value);
             console.log(new Error('bt'));
         }
         return fun.getLocalWat(this.index);
@@ -145,10 +145,7 @@ export class BranchExpr extends Expr {
         const retType = this.actions[0].map(e => e.datatype.getWasmTypeName()).join(' ');
 
         // Set up dependent locals
-        const results = this.results;
-        results.forEach(r => {
-            r.inds = fun.addLocal(r.datatype);
-        });
+        this.results.forEach(r => r.setInds(fun));
 
         // Last condition must be else clause
         if (conds[conds.length - 1] != '(i32.const 1)') {
@@ -182,7 +179,7 @@ export class BranchExpr extends Expr {
 
         // Compile to (if (...) (result ...) (then ...) (else ...))
         // Note that there's some BS done here to work around multi-return if statements not being allowed :(
-        const retSet = results.map(r => fun.setLocalWat(r.inds)).join('');
+        const retSet = this.results.map(r => fun.setLocalWat(r.getInds())).join('');
         let ret: string = inputs + (function compileIf(i): string {
             return i + 1 >= acts.length
                 ? acts[i] + retSet

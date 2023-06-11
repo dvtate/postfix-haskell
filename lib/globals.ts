@@ -228,8 +228,9 @@ const operators : MacroOperatorsSpec = {
                     v.value.value.forEach(val => ctx.push(val));
 
                 // TODO probably more ways to have tuple exprs...
+                // TODO value should contain tuple
                 else {
-                    console.log(v);
+                    console.log('unexpected runtime expr', v);
                     return ['unexpected runtime-expr'];
                 }
             } else {
@@ -473,7 +474,8 @@ const operators : MacroOperatorsSpec = {
                 for (let i = type.value.inputTypes.length - 1; i >= 0; i--) {
                     const v = ctx.pop();
                     if (!v.datatype || !type.value.inputTypes[i].check(v.datatype)) {
-                        console.log(v, type.value.inputTypes[i]);
+                        console.log('incompatible value passed to imported function call',
+                            v, type.value.inputTypes[i]);
                         return ['incompatible value passed to imported function call'];
                     }
                     inputs.push(v);
@@ -846,7 +848,7 @@ const operators : MacroOperatorsSpec = {
         action: (ctx, token) => {
             // Get arg
             if (ctx.stack.length < 2)
-                return ['operator `match` expected branches and an enum to match on'];
+                return ['operator `match` expected branches and an enum to match on. `<enum> <branches tuple> match`'];
             const arg = ctx.pop();
             if (!(arg instanceof value.TupleValue))
                 return ['expected a tuple of macro branches'];
@@ -892,12 +894,18 @@ const operators : MacroOperatorsSpec = {
             const edt = (enumv.datatype instanceof types.ClassType)
                 ? enumv.datatype.getBaseType()
                 : enumv.datatype;
-            if (!edt.check(enumType))
+            if (!edt.check(enumType)) {
+                // console.log('edt:', edt.toString());
+                // if (edt.toString() == 'F64')
+                //     console.log(enumv);
+                // console.log('enumType:', enumType.toString());
+                // console.log('enumType.c(edt):', enumType.check(edt));
                 return new error.SyntaxError(
                     'Attempt to match on type incompatible with that of given value',
                     [edt.token, enumv.token, enumType.token, token],
                     ctx,
                 );
+            }
 
             // Constexpr
             const subtypes = enumType.sortedSubtypes();

@@ -72,21 +72,7 @@ import * as util from '../tools/file_tools.js';
         console.log('test ( 3 )\t=> ', w.test(3));
         console.log('test ( 4 )\t=> ', w.test(4));
         console.log('test ( 5 )\t=> ', w.test(5));
+    } else {
+        console.log('no demo for source file', fname);
     }
-
-    // const { get, set, incr }
-    //     = mod.instance.exports as any;
-    // console.log(get());
-    // set(20);
-    // console.log(get());
-    // incr();
-    // console.log(get());
-    // incr();
-    // console.log(get());
-
-    // const w = mod.instance.exports as any;
-    // for (let i = 0; i < 5; i++) {
-    //     w.test(1);
-    //     console.log([...new Uint32Array(mod.instance.exports.memory.buffer)].slice(0,4));
-    // }
 })();

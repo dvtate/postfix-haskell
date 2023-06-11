@@ -57,7 +57,7 @@ export class FunLocalTrackerStored extends FunLocalTracker {
         if (datatype instanceof types.PrimitiveType) {
             // Use WASM Locals
             // this.method = FunLocalStorageMethod.Prim;
-            fun.locals.push(this);
+            if (fun) fun.locals.push(this);
             this.watTypename = datatype.name;
         } else {
             // Use RV Stack
@@ -297,7 +297,7 @@ export abstract class FunExpr extends Expr {
         //     return [this.locals.push(types.PrimitiveType.Types.I32) - 1];
 
         // Can't be stored
-        console.error(type, type);
+        console.error('cannot be stored', type, type);
         throw new error.SyntaxError("invalid local type", this.token);
     }
 

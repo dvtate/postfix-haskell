@@ -23,7 +23,7 @@ export class ClosureCreateExpr extends DataExpr {
      */
     captured: ProxyExpr[] = [];
 
-    func:InternalFunExpr;
+    func: InternalFunExpr;
 
     // The body of the function
     params: DataExpr[];
@@ -138,10 +138,10 @@ export class ClosureInvokeExpr extends Expr {
         // Load function index from closure object pointer on the stack
         // And invoke function via function table
         // The first argument being the closure object
-        this.outputs.forEach(r => r.inds = fun.addLocal(r.datatype));
+        this.outputs.forEach(r => r.setInds(fun));
         let ret = this.closure.out(ctx, fun);
         ret += '(i32.load (global.get $__ref_sp)) (call_indirect)';
-        ret += this.outputs.map(r => fun.setLocalWat(r.inds));
+        ret += this.outputs.map(r => fun.setLocalWat(r.getInds()));
         return ret;
     }
 

@@ -6,7 +6,7 @@ import { Expr, DataExpr } from './expr.js';
 import ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
-import { FunExpr, FunLocalTracker, FunLocalTrackerStored } from './fun.js';
+import { FunExpr, FunLocalTracker, FunLocalTrackerStored, InternalFunExpr } from './fun.js';
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -126,11 +126,72 @@ export class DependentLocalExpr extends DataExpr {
     source: Expr;
 
     // Local variable index to which this value is stored
-    inds: FunLocalTracker[] = null;
+    private _inds: FunLocalTracker[] = null;
 
-    constructor(token: LexerToken, datatype: types.DataType, source: Expr) {
+    declare value: value.TupleValue | null;
+
+    constructor(
+        token: LexerToken, 
+        datatype: types.DataType, 
+        source: Expr,
+        // private unpackParent: DependentLocalExpr = null,
+    ) {
         super(token, datatype);
         this.source = source;
+        if (datatype instanceof types.ClassType)
+            datatype = datatype.getBaseType();
+        if (datatype instanceof types.TupleType) {
+            this.value = new value.TupleValue(
+                token,
+                datatype.types.map(t => 
+                    new DependentLocalExpr(
+                        token,
+                        t as types.DataType,
+                        this.source,
+                        // unpackParent || this
+                    )
+                ), 
+                datatype,
+            );
+        }
+    }
+
+    set inds(inds: FunLocalTracker[]) {
+        if (this.value && this.value.value.length) {
+            // Recursively apply indicies to fields
+            // TODO this is a hack... should have dedicated static function
+            inds = inds.slice();
+            const f = new InternalFunExpr(null, '', this.value.value.map(v => v.datatype as types.DataType));
+            f.params.forEach((p, i) =>
+                (this.value.value[i] as DependentLocalExpr).inds = inds.splice(0, p.inds.length)
+            );
+        } else {
+            this._inds = inds;
+        }
+    }
+
+    get inds() {
+        return this.getInds();
+    }
+
+    getInds(): FunLocalTracker[] {
+        if (!this.value)
+            return this._inds;
+        if (this.value.value.every(Boolean)) {
+            const ret = [].concat(...this.value.value.map(v => 
+                (v as DependentLocalExpr).getInds()));
+            if (ret.every(Boolean))
+                return ret;
+        }
+        return null;
+    }
+
+    setInds(fun: FunExpr) {
+        if (this.value)
+            this.value.value.forEach(v =>
+                (v as DependentLocalExpr).setInds(fun));
+        else
+            this._inds = fun.addLocal(this._datatype);
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {
@@ -277,14 +338,14 @@ export class MultiInstrExpr extends Expr {
         // Get locals
         this.results.forEach(e => {
             if (!e.datatype.isUnit())
-                e.inds = fun.addLocal(e.datatype);
+                e.setInds(fun);
         });
 
         // Instruction + capture results
         return `(${this.instr} ${
             this.args.map(e => e.out(ctx, fun)).join(' ')
         })\n${
-            this.results.map(e => fun.setLocalWat(e.inds)).join(' ')
+            this.results.map(e => fun.setLocalWat(e.getInds())).join(' ')
         }`;
     }
 

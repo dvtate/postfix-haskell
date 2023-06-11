@@ -678,12 +678,12 @@ export default class Context {
             try {
                 const invalid = Boolean(mod.validate());
                 if (invalid) {
-                    console.error(invalid);
+                    console.error('invalid:', invalid);
                     console.log(src);
                     return;
                 }
             } catch (e) {
-                console.log(src);
+                console.log('validate error:', src);
                 throw e;
             }
         }

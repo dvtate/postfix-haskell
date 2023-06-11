@@ -10,7 +10,7 @@ export function encodeNum(n: number): string {
     let ret = '';
     do {
         ret += enc[n % base];
-        n /= base;
+        n = Math.floor(n / base);
     } while (n >= 1);
     return ret;
 }

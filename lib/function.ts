@@ -213,7 +213,7 @@ export default class Fun {
                 // Revert stack types
                 return ret;
             })
-            .filter(io => io !== null);
+            .filter(io => io !== null); // skip recursive cases for now
 
         // Look for an error
         const err = traceResults.find(t => !(t instanceof TraceResults)) as error.SyntaxError;
@@ -266,10 +266,12 @@ export default class Fun {
         ctx.stack = oldStack.slice(0, ctx.stack.length);
 
         // Make branch expr
+        const conditions = expr.fromDataValue(branches.map(b => b[0]), ctx);
+        const actions = ios.map(t => expr.fromDataValue(t.gives, ctx));
         const branch = new expr.BranchExpr(
             this.tokens,
-            expr.fromDataValue(branches.map(b => b[0]), ctx),
-            ios.map(t => expr.fromDataValue(t.gives, ctx)),
+            conditions,
+            actions,
             inputs.filter(e => e instanceof expr.BranchInputExpr) as expr.BranchInputExpr[],
             this.name,
         );
@@ -277,6 +279,9 @@ export default class Fun {
         branch.results = results;
         branch.args = inputs;
         ctx.push(...results);
+
+        // if (conditions.length !== actions.length)
+        //     ctx.warn(token, 'conditions and actions have differing lengths!');
     }
 }
 
