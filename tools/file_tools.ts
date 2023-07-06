@@ -57,3 +57,8 @@ export function formatErrorPos(errors: CompileError[]): string {
         }\n${e.stack}`
     }).join('\n\n');
 }
+
+
+export function debugToken(token: lex.LexerToken) {
+    return formatErrorPos([{ name: token.token, message: token.token, tokens: [token] }]);
+}

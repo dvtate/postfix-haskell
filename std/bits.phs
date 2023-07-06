@@ -49,11 +49,11 @@
 ((F64): 1 ) (: "i64.reinterpret_f64" asm ) $reinterpret fun
 
 # Extend
-((I32): 1 ) (: "i32.extend8_s" asm ) $sign_extend8 =
-((I64): 1 ) (: "i64.extend8_s" asm ) $sign_extend8 =
-((I32): 1 ) (: "i32.extend16_s" asm ) $sign_extend16 =
-((I64): 1 ) (: "i64.extend16_s" asm ) $sign_extend16 =
-((I64): 1 ) (: "i64.extend32_s" asm ) $sign_extend32 =
+((I32): 1 ) (: "i32.extend8_s" asm ) $sign_extend8 fun
+((I64): 1 ) (: "i64.extend8_s" asm ) $sign_extend8 fun
+((I32): 1 ) (: "i32.extend16_s" asm ) $sign_extend16 fun
+((I64): 1 ) (: "i64.extend16_s" asm ) $sign_extend16 fun
+((I64): 1 ) (: "i64.extend32_s" asm ) $sign_extend32 fun
 
 # Cast U32 to U64
 ((I32)(I64): "i64.extend_i32_u" asm ) $zero_extend =

@@ -222,8 +222,8 @@ export default class ModuleManager {
         // Compile imports
         const importDefs = Object.values(this.imports)
             .map(is => is.map(i => `(import ${
-                    // TODO use String.prototype.replaceAll() in 2 years or regex
-                    i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
+                    i.scopes.map(s => `"${s.replaceAll('"', '\\"')}"`).join(' ')
+                    // i.scopes.map(s => `"${s.split('').map(c => c === '"' ? '\\"' : c).join('')}"`).join(' ')
                 } ${
                     i.type.getWasmTypeName(i.importId)
                 })`)
