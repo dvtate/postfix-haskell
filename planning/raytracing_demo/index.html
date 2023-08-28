@@ -1,0 +1,35 @@
+<canvas id="scene"></canvas>
+
+<script>
+(async function () {
+    // Get canvas 2d context
+    const canvas = document.getElementById('scene');
+    const context = canvas.getContext('2d');
+
+    // Instantiate wasm
+    const resp = await fetch('raytrace.wasm');
+    const wasm = await resp.arrayBuffer();
+
+    const mod = await WebAssembly.instantiate(wasm, {
+        js: {
+            'console.log': console.log,
+            'Math.random': Math.random,
+            'Math.pow': Math.pow,
+        },
+    });
+
+    function draw() {
+        const { __memory, width, height } = mod.instance.exports;
+        const ptr = mod.instance.exports.draw();
+        context.putImageData(
+            new ImageData(new Uint8ClampedArray(
+                __memory.arrayBuffer,
+                ptr,
+                width * height * 4,
+            )),
+        );
+    }
+
+    draw();
+})();    
+</script>

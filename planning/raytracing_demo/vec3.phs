@@ -1,0 +1,124 @@
+"lang" require use
+"math" require $math =
+
+# Namespace Vec3
+
+(F64 F64 F64) class $Vec3 =
+((Vec3): unpack ( $x $y $z ) = x ) $_x =
+((Vec3): unpack ( $x $y $z ) = y ) $_y =
+((Vec3): unpack ( $x $y $z ) = z ) $_z =
+
+( 0.0 0.0 0.0 ) Vec3 make $zero =
+
+# Overload * for dot-product
+((Vec3 Vec3): 1 ) (:
+    ( $a $b ) =
+    a _x  b _x *
+    a _y  b _y * +
+    a _z  b _z * +
+) $global.* fun
+
+# Scalar multiplication
+((Vec3 math.number.Num): 1 ) (:
+    ( $a $b ) =
+    (   a _x  b *
+        a _y  b *
+        a _z  b *
+    ) Vec3 make
+) $global.* fun
+((math.number.Num Vec3): 1 ) (: swap global.* ) $global.* fun
+
+# Scalar division
+((Vec3 math.number.Num): 1 ) (:
+    ( $a $b ) =
+    (   a _x  b /
+        a _y  b /
+        a _z  b /
+    ) Vec3 make
+) $global./ fun
+((Vec3 math.number.Num): 1 ) (:
+    ( $a $b ) =
+    (   b a _x /
+        b a _y /
+        b a _z /
+    ) Vec3 make
+) $global./ fun
+
+# Addition
+((Vec3 Vec3): 1 ) (:
+    ( $a $b ) =
+    (   a _x b _x +
+        a _y b _y +
+        a _z b _z +
+    ) Vec3 make
+) $global.+ fun
+((Vec3 math.number.Num): 1 ) (:
+    ( $a $b ) =
+    (   a _x b +
+        a _y b +
+        a _z b +
+    ) Vec3 make
+) $global.+ fun
+
+# Subtraction
+((Vec3 Vec3): 1 ) (:
+    ( $a $b ) =
+    (   a _x b _x -
+        a _y b _y -
+        a _z b _z -
+    ) Vec3 make
+) $global.- fun
+((Vec3 math.number.Num): 1 ) (:
+    ( $a $b ) =
+    (   a _x b -
+        a _y b -
+        a _z b -
+    ) Vec3 make
+) $global.- fun
+((math.number.Num Vec3): 1 ) (:
+    ( $a $b ) =
+    (   a b _x -
+        a b _y -
+        a b _z -
+    ) Vec3 make
+) $global.- fun
+
+# Project a onto b
+((Vec3 Vec3): 
+    ( $a $b ) =
+    a b *
+    b b * /     # ||b|| ^ 2 = b dot b
+    b *
+) $proj =
+
+# Length of a vector
+((Vec3):
+    unpack ( $x $y $z ) =
+    x dup * y dup * + z dup * + math.sqrt
+) $len =
+
+# Normalize a vector
+((Vec3):
+    dup len /
+) $norm =
+
+# Reflection
+((Vec3 Vec3): ( $v $axis ) =
+    v 2.0 v axis * * axis * -
+) $reflect =
+
+((Vec3 F64 F64):
+    # This could be simplified
+    ( $v $min $max ) =
+    (:  $x =
+        (: 1 ) (: x ) $b fun
+        (: x min < ) (: min ) $b fun
+        (: x max > ) (: max ) $b fun
+        b
+    ) $clamp_s =
+    ( v unpack ( $x $y $z ) =
+        x min max math.clamp
+        y min max math.clamp
+        z min max math.clamp
+    ) Vec3 make
+) $clamp =

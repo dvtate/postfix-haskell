@@ -1,0 +1,24 @@
+"lang" require use
+"./vec3.phs" require $Vec3 =
+
+(   Vec3.Vec3   # Ambient color
+    Vec3.Vec3   # Diffuse color
+    Vec3.Vec3   # Specular color
+    F64         # Shininess
+    F64         # Reflectivity
+) class $Material =
+((Material): 
+    unpack ( $ambient $diffuse $specular $shininess $reflectivity ) = ambient
+) $ambient =
+((Material): 
+    unpack ( $ambient $diffuse $specular $shininess $reflectivity ) = diffuse
+) $diffuse =
+((Material): 
+    unpack ( $ambient $diffuse $specular $shininess $reflectivity ) = specular
+) $specular =
+((Material): 
+    unpack ( $ambient $diffuse $specular $shininess $reflectivity ) = shininess
+) $shininess =
+((Material): 
+    unpack ( $ambient $diffuse $specular $shininess $reflectivity ) = reflectivity
+) $reflectivity =

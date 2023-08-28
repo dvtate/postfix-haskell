@@ -54,7 +54,7 @@ export function formatErrorPos(errors: CompileError[]): string {
                 ? `${toks.slice(0, 15).map(ppToken).join('\n')
                     }\n\n...\n\n${toks.slice(-15).map(ppToken).join('\n')}`
                 : toks.map(ppToken).join('\n')
-        }\n${e.stack}`
+        }\n${e.stack}`;
     }).join('\n\n');
 }
 

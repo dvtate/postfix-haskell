@@ -1,0 +1,40 @@
+"lang" require use
+
+"./vec3.phs" require $Vec3 =
+"./material.phs" require $Material =
+"./ray.phs" require $Ray =
+
+(   Vec3.Vec3           # Center
+    F64                 # Radius
+    Material.Material   # Material
+) class $Sphere =
+((Sphere):
+    unpack ( $center $radius $material ) = center
+) $center =
+((Sphere):
+    unpack ( $center $radius $material ) = radius
+) $radius =
+((Sphere):
+    unpack ( $center $radius $material ) = material
+) $material =
+
+
+F64 Maybe.Maybe $MaybeF64 =
+((Sphere Ray.Ray) (MaybeF64) rec:
+    ( $sphere $ray ) =
+    ray unpack ( $ray_origin $ray_direction ) =
+    
+    ray_direction ray_origin sphere center - * 2.0 * $b =
+    ray_origin sphere center - Vec3.norm 2 ** sphere radius 2 ** - $c =
+    b 2 ** 4.0 c * - $delta =
+
+    (: 1 ) (: () MaybeF64.Nothing make ) $branch fun
+    (: delta 0 > ) (:
+        delta math.sqrt b - 2.0 / $t1 =
+        0.0 b - delta math.sqrt - 2.0 / $t2 =
+        (: 1 ) (: () MaybeF64.Nothing make ) $b2 fun
+        (: t1 0.0 > t2 0.0 > * ) (: t1 t2 math.min MaybeF64.Just make ) $b2 fun
+        b2
+    ) $branch fun
+    branch
+) $intersect =

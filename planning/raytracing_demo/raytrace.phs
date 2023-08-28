@@ -1,0 +1,165 @@
+"lang"  require use
+"math"  require $math =
+
+# Overload because i cba to properly implement pow
+
+((F64 F64): 1 ) (: ( F64 F64 ) ( F64 ) Arrow ( "js" "Math.pow" ) import @ ) $math.pow fun
+
+"maybe" require $Maybe =
+"mem"   require $mem =
+
+"./vec3.phs" require $Vec3 =
+"./sphere.phs" require $Sphere =
+"./ray.phs" require $Ray =
+"./material.phs" require $Material =
+
+# Image
+640             $width =
+480             $height =
+width F64 cast height /  $aspect_ratio =
+width height 4 * static_region $image_ptr =
+
+((Unit Vec3.Vec3 I32 I32):
+    ( $color $x $y ) = 
+    color 0.0 1.0 Vec3.clamp unpack ( $r $g $b ) =
+
+    # Pack color into a single i32
+    r 255 * I32 cast 24 <<
+    g 255 * I32 cast 16 << mem.bits.or
+    b 255 * I32 cast 8  << mem.bits.or
+    $packed_color =
+
+    # Write color to memory
+    packed_color
+    y width 4 * * x + 4 * image_ptr +
+    mem.store
+) $write_pixel =
+
+# Camera
+( 0.0 0.0 0.1 ) Vec3.Vec3 make $camera =
+
+math.pi 2 / $fov =
+
+# TODO make movable
+( 0.0 0.0 0.0 ) Vec3.Vec3 make $eye_pox =
+( 0.0 0.0 1.0 ) Vec3.Vec3 make $z_dir =
+
+# Sphere
+(   ( -0.2 0.0 1.0 ) Vec3.Vec3 make
+    0.7 
+    (   ( 0.1 0.0 0.0 ) Vec3.Vec3 make
+        ( 0.7 0.0 0.0 ) Vec3.Vec3 make 
+        ( 1.0 1.0 1.0 ) Vec3.Vec3 make
+        100.0
+        0.5
+    ) Material.Material make 
+) Sphere.Sphere make $obj =
+
+# Lighting
+( 5.0 5.0 5.0 ) Vec3.Vec3 make $light_pos =
+( 1.0 1.0 1.0 ) Vec3.Vec3 make $light_ambient =
+( 1.0 1.0 1.0 ) Vec3.Vec3 make $light_diffuse =
+( 1.0 1.0 1.0 ) Vec3.Vec3 make $light_specular =
+
+3 $max_depth =
+
+((Unit)(Unit):
+    (: ( $min $max $slices $i ) =
+        min max min - slices / i * +
+    ) $lin_slice =
+    ((Unit I32) rec:
+        ( $u $i ) =
+        -1.0 1.0 width i lin_slice $x =
+        (: 1 ) (: u ) $b1 fun
+        (: i width < ) (:
+            ((Unit I32) rec:
+                ( $u $j ) =
+                1.0 aspect_ratio / -1.0 aspect_ratio / height j lin_slice $y =
+                u
+                (: 1 ) (: $x = x ) $b2 fun
+                (: j height < ) (:
+                    $u =
+                    ( x y 0.0 ) Vec3.Vec3 make $pixel =
+                    1.0 $reflection =
+                    
+                    (( Unit I32 Vec3.Vec3 F64 Ray.Ray ) ( Unit ) rec:
+                        ( $unit $i $color $reflection $ray ) =
+                        ray unpack ( $origin $direction ) =
+                    
+                        # intersect with sphere
+                        obj ( origin direction ) Ray.Ray make Sphere.intersect $maybe =
+                        ((Unit F64)(Unit):
+                            $dist =
+                            dist direction * origin + $intersection =
+                            intersection obj Sphere.center - Vec3.norm $normal_to_surface =
+                            1e-5 normal_to_surface * intersection + $shifted_point =
+                            light_pos shifted_point - Vec3.norm $intersection_to_light =
+
+                            obj ( shifted_point intersection_to_light ) Ray.Ray make Sphere.intersect $maybe2 =
+                            ((Unit F64)(Unit):
+                                # Calculate illumination
+                                camera intersection - Vec3.norm $intersection_to_camera =
+                                intersection_to_light intersection_to_camera + Vec3.norm $H =
+                                obj Sphere.material $m =
+                                ( 0.0 0.0 0.0 ) Vec3.Vec3 make
+                                m Material.ambient light_ambient * +
+                                m Material.diffuse light_diffuse * intersection_to_light normal_to_surface * * +
+                                #m Material.specular light_specular * normal_to_surface H * ** m Material.shininess 4 / ** +
+                                $illumination =
+
+                                reflection illumination * color + $color2 =
+                                m Material.reflectivity reflection * $reflection2 =
+                                shifted_point $origin2 =
+                                direction normal_to_surface Vec3.reflect $direction2 =
+
+                                (: 1 ) (: unit color2 i j write_pixel ) $b3 fun
+                                (: i max_depth 1 - < ) (:
+                                    unit
+                                    i 1 +
+                                    color2
+                                    reflection2
+                                    ( origin2 direction2 ) Ray.Ray make
+                                    rt
+                                ) $b3 fun
+                                b3
+                            )
+                            ((Unit)(Unit): color i j write_pixel )
+                            ( $act $no_v ) =
+                            maybe2
+                            (   Sphere.MaybeF64.Nothing (: unit pop no_v )
+                                Sphere.MaybeF64.Just    (: unit swap act )
+                            ) match
+                        )
+                        ((Unit)(Unit): color i j write_pixel )
+                        ( $bound $default ) =
+                        maybe
+                        (   Sphere.MaybeF64.Nothing (: unit pop default )
+                            Sphere.MaybeF64.Just    (: unit swap bound )
+                        ) match
+                        #Maybe.bind_default
+                    ) $rt =
+
+                    # Raytrace
+                    u
+                    0
+                    Vec3.zero
+                    1.0
+                    (   camera
+                        pixel camera - Vec3.norm
+                    ) Ray.Ray make
+                    rt
+
+                    j 1 + iter_y
+                ) $b2 fun
+                b2
+                i 1 + iter_x
+            ) $iter_y =
+            u 0 iter_y
+        ) $b1 fun
+        b1
+    ) $iter_x =
+    0 iter_x
+
+) $draw =
+
+(Unit) (: draw image_ptr ) "draw" export

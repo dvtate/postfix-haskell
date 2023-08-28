@@ -1,0 +1,9 @@
+"lang" require use
+
+(
+    Vec3.Vec3   # origin
+    Vec3.Vec3   # direction
+) class $Ray =
+((Ray): unpack ( $orig $dir ) = orig ) $origin =
+((Ray): unpack ( $orig $dir ) = dir )  $direction =
+
