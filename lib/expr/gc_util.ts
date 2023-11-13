@@ -39,7 +39,7 @@ export function genGcBitfield(
             : '1'
     ).join('');
 
-    // Converty bitstring to int8 array
+    // Convert bitstring to int8 array
     const ret: number[] = [];
     let i = 0;
     while (i < bfStr.length) {

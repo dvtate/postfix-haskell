@@ -32,8 +32,8 @@
   },
   "homepage": "https://github.com/dvtate/postfix-haskell#readme",
   "dependencies": {
-    "binaryen": "^109.0.0",
-    "wabt": "^1.0.29",
+    "binaryen": "^116.0.0",
+    "wabt": "^1.0.32",
     "yargs": "^17.6.0"
   },
   "devDependencies": {

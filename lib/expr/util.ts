@@ -3,7 +3,7 @@ import * as error from '../error.js';
 import * as value from '../value.js';
 import * as types from '../datatypes.js';
 import { Expr, DataExpr } from './expr.js';
-import ModuleManager from '../module.js';
+import type ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
 import { FunExpr, FunLocalTracker, FunLocalTrackerStored, InternalFunExpr } from './fun.js';
@@ -85,34 +85,6 @@ export class NumberExpr extends DataExpr {
 
     toValue(): value.Value {
         return this.value;
-    }
-}
-
-/**
- * @depricated don't remember why I made this, not used currently... thonkers
- */
-export class TupleExpr extends DataExpr {
-    declare value: DataExpr[];
-
-    constructor(token: LexerToken, ctx: Context, v: value.TupleValue) {
-        super(token, v.datatype);
-        this.value = fromDataValue(v.value, ctx);
-    }
-
-    get expensive(): boolean {
-        return false;
-    }
-
-    out(ctx: ModuleManager, fun?: FunExpr): string {
-        return this.value.map(v => v.out(ctx, fun)).join(' ');
-    }
-
-    children(): Expr[] {
-        return this.value;
-    }
-
-    toValue(): value.Value {
-        return new value.TupleValue(this.token, this.value);
     }
 }
 

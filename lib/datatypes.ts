@@ -428,8 +428,8 @@ export class ClassType<T extends DataType> extends DataType {
     isRecursive(): boolean {
         return this.recursive
         || (this.type instanceof ClassType && this.type.isRecursive())
-        || (this.type instanceof EnumBaseType && this.type.isRecursive())
-        || (this.type instanceof EnumClassType && this.type.parent.isRecursive());
+        || (this.type instanceof EnumClassType && this.type.parent.recursive)
+        || (this.type instanceof DataType && this.type.recursive);
     }
 }
 
@@ -965,7 +965,7 @@ export class EnumBaseType extends DataType {
     }
     toString(): string {
         return `(: ${
-            this.isRecursive()
+            this.recursive
                 ?  Object.keys(this.subtypes).join(' ') + ' '
                 :  `\n${Object.entries(this.subtypes).map(([sym, t]) =>
                     `${t.toString()} $${sym} =`).join('\n')}\n`
@@ -974,10 +974,6 @@ export class EnumBaseType extends DataType {
 
     sortedSubtypes() {
         return Object.values(this.subtypes).sort((a, b) => a.index - b.index);
-    }
-
-    isRecursive() {
-        return this.recursive;
     }
 
     getId(id: string) {

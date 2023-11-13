@@ -6,12 +6,12 @@ import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
 import type { FunExpr } from './fun.js';
 import { constructGc, loadRef } from './gc_util.js';
-import { SyntaxError } from '../error.js';
 import { DependentLocalExpr, fromDataValue } from './util.js';
 import { BranchInputExpr } from './branch.js';
 import { uid } from '../util.js';
 import Context from '../context.js';
 
+// Check if an enum contains specified value
 // export class EnumContainsCheckExpr extends DataExpr {
 //     _datatype: types.ClassOrType<types.PrimitiveType> = types.PrimitiveType.Types.I32;
 

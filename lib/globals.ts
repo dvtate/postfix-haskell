@@ -224,12 +224,13 @@ const operators : MacroOperatorsSpec = {
                 v.value.forEach(val => ctx.push(val));
             } else if (v.type === value.ValueType.Expr) {
                 // Verify it's a tuple expr
-                if (v.value instanceof value.TupleValue)
+                if (v.value instanceof value.TupleValue) {
                     v.value.value.forEach(val => ctx.push(val));
 
                 // TODO probably more ways to have tuple exprs...
+                //  for example: types marked with 'rec' should be stored in LM
                 // TODO value should contain tuple
-                else {
+                } else {
                     console.log('unexpected runtime expr', v);
                     return ['unexpected runtime-expr'];
                 }
@@ -261,7 +262,7 @@ const operators : MacroOperatorsSpec = {
             if (![value.ValueType.Data, value.ValueType.Expr].includes(v.type))
                 return ['expected data to apply class to'];
 
-            // Apply class to data
+            // Check compatibility
             const compatible = t.value instanceof types.ClassType
                 ? t.value.getBaseType().check(v.datatype)
                 : t.value.type.check(v.datatype);
@@ -269,8 +270,15 @@ const operators : MacroOperatorsSpec = {
                 // console.log('make: incompatible', t.value, t.value.getBaseType(), v.datatype);
                 ctx.warn(token, 'class applied to incompatible data');
             }
+
+            // Apply class to data
             if (t.value instanceof types.EnumClassType) {
                 ctx.push(new EnumValue(v.token, v, t.value));
+            // } if ((t instanceof types.ClassType && t.isRecursive) 
+            //     || (t instanceof types.DataType && t.recursive)) 
+            // {
+            //     if (v.type == value.ValueType.Expr)
+            //         new expr.
             } else {
                 v.datatype = t.value;
                 ctx.push(v);
@@ -770,7 +778,7 @@ const operators : MacroOperatorsSpec = {
         },
     },
 
-    // Mark a type as recursive so that it's stored on the stack
+    // Mark a type as recursive so that it's stored in linear memory
     // TODO apply same logic to mark macros as recursive
     'rec' : {
         description: 'Mark a type as recursive',
@@ -786,6 +794,7 @@ const operators : MacroOperatorsSpec = {
             if (!(v.value instanceof types.DataType))
                 return ['type argument must be representable on hardware'];
             v.value.recursive = true;
+            ctx.push(v);
         },
     },
 
