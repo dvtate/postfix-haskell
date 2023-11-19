@@ -5,6 +5,7 @@ import * as error from './error.js';
 
 // Import WAST template as a string
 import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
+import wat, { WatCode } from "./wat.js";
 
 /**
  * Adjust compiler behavior
@@ -77,7 +78,7 @@ export default class ModuleManager {
     /**
      * Primarily function exports. Compiled functions and stuff that go in main body of module
      */
-    definitions: string[] = [];
+    definitions: WatCode[] = [];
 
     /**
      * Used to generate unique importIds
@@ -110,6 +111,8 @@ export default class ModuleManager {
      * Don't include normal runtime boilerplate
      */
     protected noRuntime: boolean;
+
+    public src: WatCode;
 
     /**
      * @param ctx - parser context object
@@ -183,7 +186,7 @@ export default class ModuleManager {
         // Note this has bad performance
         if (helperId.startsWith('__swap_')) {
             const [t1, t2] = helperId.slice(7).split('_');
-            this.definitions.push(`(func $${helperId
+            this.definitions.push(wat(null)`(func $${helperId
                 } (param ${t1} ${t2}) (result ${t2} ${t1
                 }) (local.get 1) (local.get 0))`);
             this.definedHelpers.add(helperId);
@@ -227,13 +230,15 @@ export default class ModuleManager {
                 } ${
                     i.type.getWasmTypeName(i.importId)
                 })`)
-                .join('\n')
-            ).join('\n\n');
+                .join('')
+            ).join('');
 
         // Insert user-generated code into our runtime
+        const defs = this.definitions.filter(Boolean);
+        this.src = new WatCode(null).concat(...this.definitions);
         return this.generateRuntime(
             importDefs,
-            this.definitions.filter(Boolean).join('\n\n'),
+            this.src.toString(),
         );
 
         // Create module as string (no runtime)

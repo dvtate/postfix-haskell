@@ -1,12 +1,11 @@
-"lang"  require use
-"math"  require $math =
+"../../std/lang.phs"  require use
+"../../std/math.phs"  require $math =
+"../../std/maybe.phs" require $Maybe =
+"../../std/mem.phs"   require $mem =
 
 # Overload because i cba to properly implement pow
 
 ((F64 F64): 1 ) (: ( F64 F64 ) ( F64 ) Arrow ( "js" "Math.pow" ) import @ ) $math.pow fun
-
-"maybe" require $Maybe =
-"mem"   require $mem =
 
 "./vec3.phs" require $Vec3 =
 "./sphere.phs" require $Sphere =
@@ -21,7 +20,7 @@ width height 4 * static_region $image_ptr =
 
 ((Unit Vec3.Vec3 I32 I32):
     ( $color $x $y ) = 
-    color 0.0 1.0 Vec3.clamp unpack ( $r $g $b ) =
+    color unpack ( $r $g $b ) =
 
     # Pack color into a single i32
     r 255 * I32 cast 24 <<
