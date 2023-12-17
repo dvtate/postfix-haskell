@@ -54,14 +54,14 @@ $factorial ~ type ((I32) (I32)) RecFun ==
 # Note: could omit type annotations
 ((I32) (I32): $n =
     ((I32 I32) (I32) rec: ($ret $n) =
-        (: true ) (: ret n * n 1 - iter ) $act case
-        (: n 0 <= ) (: 1 ) $act case
+        (: true ) (: ret n * n 1 - iter ) $act fun
+        (: n 0 <= ) (: 1 ) $act fun
         act
     ) $iter =
     1 n iter =
 ) $fac =
 
-(I32) {fac} "factorial" export
+(I32) (: fac ) "factorial" export
 ```
 
 
@@ -115,6 +115,6 @@ The `__2_with_types` boilerplate is no longer needed as untyped values are elimi
 
 We can even define the `has_type` operator in the language itself now.
 ```php
-(: true ) (: false) $has_type fun
+(: true ) (: false ) $has_type fun
 ((Any)(I32): true) (: true ) $has_type fun
 ```
