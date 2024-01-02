@@ -1,7 +1,4 @@
 (module
-    ;; Imported functions from the host
-    {{USER_IMPORTS}}
-
     ;; Function reference table
     {{USER_TABLE}}
 
@@ -1457,5 +1454,7 @@
     ;; (export "free" (func $__heap_free))
     ;; (export "coalesce" (func $__coalesce))
 
+    ;; Imported functions from the host && user code
+    {{USER_IMPORTS}}
     {{USER_CODE_STR}}
 )

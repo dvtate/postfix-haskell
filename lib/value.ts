@@ -5,6 +5,7 @@ import type ModuleManager from './module.js';
 import type * as expr from './expr/index.js';
 import type Namespace from './namespace.js';
 import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
+import wat, { WatCode } from './wat.js';
 
 // TODO should move these to /expr/value.ts so that cyclic imports are less anal
 
@@ -62,7 +63,7 @@ export class Value {
      * @param ctx compilation context
      * @param fun function export body
      */
-    out?(ctx: ModuleManager, fun?: expr.FunExpr): string;
+    out?(ctx: ModuleManager, fun?: expr.FunExpr): WatCode;
     // out(ctx: ModuleManager, fun?: expr.FunExpr): string {
     //     return expr.fromDataValue([this]).map(e => e.out(ctx, fun)).join(' ');
     // }
@@ -97,14 +98,16 @@ export class Value {
 /**
  * Data with a user-level type, this includes numbers, tuples and classes
  */
-export class DataValue extends Value {
-    declare _datatype: types.Type;
+export abstract class DataValue extends Value implements expr.Compileable {
+    declare _datatype: types.DataType;
     type: ValueType.Data = ValueType.Data;
 
     constructor(token: LexerToken, type: types.Type, value: any) {
         super(token, ValueType.Data, value, type);
     }
 
+    abstract out(ctx: ModuleManager, fun?: expr.FunExpr): WatCode;
+    
     get datatype(): typeof this._datatype {
         return this._datatype;
     }
@@ -117,6 +120,7 @@ export class DataValue extends Value {
  * Primitive data, native wasm types
  */
 export class NumberValue extends DataValue {
+    declare value: WasmNumber;
     declare _datatype: types.ClassOrType<types.PrimitiveType>;
 
     constructor(token: LexerToken, wasmNumber: WasmNumber) {
@@ -126,8 +130,8 @@ export class NumberValue extends DataValue {
     /**
      * See code in expr/expr.ts
      */
-    out(): string {
-        return this.value.toWAST();
+    out(): WatCode {
+        return new WatCode(this, this.value.toWAST());
     }
 
     /**
@@ -181,7 +185,7 @@ export class TupleValue extends DataValue {
         return [].concat(...this.value.map(v => v.children && v.children()));
     }
     out(ctx: ModuleManager, fun?: expr.FunExpr) {
-        return this.value.map(v => v.out(ctx, fun)).join('');
+        return new WatCode().concat(...this.value.map(v => v.out(ctx, fun)));
     }
 
     get datatype(): typeof this._datatype {

@@ -5,6 +5,7 @@ import ModuleManager from '../module.js';
 import { DataExpr, Expr } from './expr.js';
 import type { FunExpr, FunLocalTracker } from './fun.js';
 import { DependentLocalExpr } from './util.js';
+import wat, { WatCode } from '../wat.js';
 
 /**
  * Describes expensive expressions which were on the stack before a branch was invoked
@@ -33,22 +34,22 @@ export class BranchInputExpr extends DataExpr {
      * @param fun
      * @returns WAT
      */
-    capture(ctx: ModuleManager, fun: FunExpr) {
+    capture(ctx: ModuleManager, fun: FunExpr): WatCode {
         // if (this.index)
         //     return '';
         this.index = fun.addLocal(this.value.datatype);
-        return `${this.value.out(ctx, fun)}\n${fun.setLocalWat(this.index)}`;
+        return wat(this)`${this.value.out(ctx, fun)}\n${fun.setLocalWat(this.index)}`;
     }
 
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExpr) {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         if (!this._datatype.isUnit() && !this.index) {
             console.log('branch input: ', this.value);
             console.log(new Error('bt'));
         }
-        return fun.getLocalWat(this.index);
+        return wat(this)`${fun.getLocalWat(this.index)}`;
     }
 
     /**
@@ -123,20 +124,23 @@ export class BranchExpr extends Expr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExpr) {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         // Prevent multiple compilations
         this._isCompiled = true;
-        const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n\t');
+        // const inputs = this.inputExprs.map(e => e.capture(ctx, fun)).join('\n\t');
+        const inputs = new WatCode().concat(
+            ...this.inputExprs.map(e => e.capture(ctx, fun)));
 
         // Compile body
         // Notice order of compilation from top to bottom so that locals are assigned before use
         // TODO FIXME still not perfect... may need to convert tee-exprs
-        const conds = new Array(this.conditions.length);
-        const acts = new Array(this.actions.length);
+        const conds = new Array<WatCode>(this.conditions.length);
+        const acts = new Array<WatCode>(this.actions.length);
         for (let i = this.conditions.length - 1; i >= 0; i--) {
             const invIdx = (this.conditions.length - i) - 1;
             conds[invIdx] = this.conditions[i].out(ctx, fun);
-            acts[invIdx] = this.actions[i].reverse().map(a => a.out(ctx, fun)).join(' ');
+            acts[invIdx] = new WatCode()
+                .concat(...this.actions[i].reverse().map(a => a.out(ctx, fun)));
         }
         // const conds = this.conditions.map(c => c.out(ctx, fun)).reverse();
         // const acts = this.actions.map(a => a.map(v => v.out(ctx, fun)).join(' ')).reverse();
@@ -148,8 +152,8 @@ export class BranchExpr extends Expr {
         this.results.forEach(r => r.setInds(fun));
 
         // Last condition must be else clause
-        if (conds[conds.length - 1] != '(i32.const 1)') {
-            // console.log(conds[conds.length - 1]);
+        if (conds[conds.length - 1].toString() != '(i32.const 1)') {
+            console.log(conds[conds.length - 1].toString());
             throw new error.SyntaxError("no else case for fun branch", this.tokens);
         }
 
@@ -180,19 +184,20 @@ export class BranchExpr extends Expr {
         // Compile to (if (...) (result ...) (then ...) (else ...))
         // Note that there's some BS done here to work around multi-return if statements not being allowed :(
         const retSet = this.results.map(r => fun.setLocalWat(r.getInds())).join('');
-        let ret: string = inputs + (function compileIf(i): string {
+        const self = this as Expr;
+        let ret: WatCode = inputs.concat((function compileIf(i): WatCode {
             return i + 1 >= acts.length
-                ? acts[i] + retSet
-                : `${conds[i]}\n\t(if ${
+                ? wat(self)`${acts[i]}${retSet}`
+                : wat(self as any)`${conds[i]}\n\t(if ${
                     retType.length === 1 ? `(result ${retType})` : ''
                 }\n\t(then ${
                     acts[i] + retSet
                 })\n\t(else ${
                     compileIf(i + 1)
                 }))`;
-        })(0);
+        })(0));
         if (retType.length === 1)
-            ret += '\n\t' + retSet;
+            ret.add(this, '\n\t' + retSet);
 
         // console.log('BranchExpr', ret);
         return ret;

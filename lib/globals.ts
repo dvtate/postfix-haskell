@@ -13,7 +13,6 @@ import { ActionRet, CompilerMacro, LiteralMacro, Macro } from './macro.js';
 import { invokeAsm } from './asm.js';
 import { EnumNs, EnumValue } from './enum.js';
 import { EnumMatchExpr } from './expr/index.js';
-import { genGcBitfield } from './expr/gc_util.js';
 import stdlibs from '../std/index.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
@@ -811,7 +810,7 @@ const operators : MacroOperatorsSpec = {
                 return ['expected a type'];
             if (!(v.value instanceof types.DataType))
                 return ['type argument must be representable on hardware'];
-            const bf = genGcBitfield(v.value);
+            const bf = expr.Expr.genGcBitfield(v.value);
             const ret = new value.StrValue(token, bf);
             ctx.push(ret);
         },

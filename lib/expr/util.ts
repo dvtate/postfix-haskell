@@ -7,6 +7,7 @@ import type ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
 import { FunExpr, FunLocalTracker, FunLocalTrackerStored, InternalFunExpr } from './fun.js';
+import wat, { WatCode } from '../wat.js';
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -36,7 +37,7 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx?: Context):
         throw new error.TypeError("incompatible value", [v.token], [v], null);
     }).reduce(
         (a: DataExpr[], v: DataExpr | DataExpr[]) =>
-            v instanceof Array ? a.concat(v) : (a.push(v), a),
+            v instanceof Array ? a.concat(v) : (a.push(v), a), // shouldn't this be a.concat(...v) ???
         [],
     );
 }
@@ -44,8 +45,8 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx?: Context):
 // Provide default implementation of .out for values
 // TODO this is ghetto... fuck ESM
 // TODO this should go in Value class
-value.Value.prototype.out = function (ctx: ModuleManager, fun?: FunExpr): string {
-    return fromDataValue([this]).map(e => e.out(ctx, fun)).join(' ');
+value.Value.prototype.out = function (ctx: ModuleManager, fun?: FunExpr): WatCode {
+    return new WatCode().concat(...fromDataValue([this]).map(e => e.out(ctx, fun)));
 };
 
 
@@ -68,10 +69,10 @@ export class NumberExpr extends DataExpr {
      * @override
      */
     out() {
-        const outValue = (v: value.Value): string =>
+        const outValue = (v: value.Value): WatCode =>
             v instanceof value.TupleValue
-                ? v.value.map(outValue).join()
-                : v.value.toWAST();
+                ? new WatCode().concat(...v.value.map(outValue))
+                : new WatCode(this, v.value.toWAST());
         return outValue(this.value);
     }
 
@@ -169,7 +170,7 @@ export class DependentLocalExpr extends DataExpr {
     out(ctx: ModuleManager, fun: FunExpr) {
         // source.out() will update our index to be valid and capture relevant values
         // into our local
-        const ret = `${
+        const ret: WatCode = wat(this)`${
             !this.source._isCompiled ? this.source.out(ctx, fun) : ''
         } ${fun.getLocalWat(this.inds)}`;
         this.source._isCompiled = true;
@@ -201,13 +202,11 @@ export class InstrExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExpr) {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         // See implementation for seq in standard library
         if (this.instr.length === 0)
-            return this.args.map(e => e.out(ctx, fun)).join('\n\t');
-        const ret = `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
-        // console.log(this.constructor.name, ret);
-        return ret;
+            return new WatCode().concat(...this.args.map(e => e.out(ctx, fun)));
+        return wat(this)`(${this.instr} ${wat.join(this, ' ', ...this.args.map(e => e.out(ctx, fun)))})`;
     }
 
     /**
@@ -244,7 +243,7 @@ export class TeeExpr extends DataExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExpr) {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         // TODO why is this commented out??
         // if (!this.value.expensive)
         //     return this.value.out(ctx, fun);
@@ -254,12 +253,12 @@ export class TeeExpr extends DataExpr {
             if (this.inds.length === 1
                 && this.inds[0].datatype instanceof types.PrimitiveType
                 && this.inds[0] instanceof FunLocalTrackerStored)
-                return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.inds[0].index})`;
+                return wat(this)`${this.value.out(ctx, fun)}\n\t(local.tee ${String(this.inds[0].index)})`;
             else
-                return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.inds)
+                return  wat(this)`${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.inds)
                     }\n\t${fun.getLocalWat(this.inds)}`;
         }
-        return fun.getLocalWat(this.inds);
+        return new WatCode(this, fun.getLocalWat(this.inds));
     }
 
     finalize(ctx: ModuleManager, fun: FunExpr) {
@@ -304,7 +303,7 @@ export class MultiInstrExpr extends Expr {
     /**
      * @override
      */
-    out(ctx: ModuleManager, fun: FunExpr) {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         this._isCompiled = true;
 
         // Get locals
@@ -314,7 +313,7 @@ export class MultiInstrExpr extends Expr {
         });
 
         // Instruction + capture results
-        return `(${this.instr} ${
+        return wat(this)`(${this.instr} ${
             this.args.map(e => e.out(ctx, fun)).join(' ')
         })\n${
             this.results.map(e => fun.setLocalWat(e.getInds())).join(' ')
@@ -471,7 +470,7 @@ export class DummyDataExpr extends DataExpr {
     /**
      * @override
      */
-    out(): string {
+    out(): WatCode {
         throw new Error('Invalid Compile-Time only Expr: ' + this.constructor.name);
     }
     children(): Expr[] {

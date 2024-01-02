@@ -1,5 +1,5 @@
-"lang" require use
-"math" require $math =
+"../../std/lang.phs" require use
+"../../std/math.phs" require $math =
 
 # Namespace Vec3
 

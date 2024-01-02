@@ -5,11 +5,11 @@ import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
 import type { FunExpr } from './fun.js';
-import { constructGc, loadRef } from './gc_util.js';
 import { DependentLocalExpr, fromDataValue } from './util.js';
 import { BranchInputExpr } from './branch.js';
 import { uid } from '../util.js';
 import Context from '../context.js';
+import wat, { WatCode } from '../wat.js';
 
 // Check if an enum contains specified value
 // export class EnumContainsCheckExpr extends DataExpr {
@@ -37,7 +37,7 @@ import Context from '../context.js';
 //         // Need to determine dynamically
 //         if (eedt instanceof types.EnumBaseType)
 //             return `${this.enumExpr.out(ctx, fun)
-//                 }\n\t(call $__ref_stack_pop)(i32.load)(i32.const ${
+//                 } (call $__ref_stack_pop)(i32.load)(i32.const ${
 //                     this.checkType.index})(i32.eq)`;
 
 //         throw new SyntaxError('Not cannot check if non-enum contains type', [this.enumExpr.token, this.token]);
@@ -57,17 +57,19 @@ export class EnumGetExpr extends DataExpr {
         super(token, dt.type);
     }
 
-    out(ctx: ModuleManager, fun?: FunExpr) {
+    out(ctx: ModuleManager, fun?: FunExpr): WatCode {
         if (!this.results)
-            return this.enumExpr.out(ctx, fun)
-                + '(drop)'
-                + loadRef(new types.RefType(this.token, this._datatype), fun);
+            return wat(this)`${
+                this.enumExpr.out(ctx, fun)
+            }(drop)${
+                this.loadRef(new types.RefType(this.token, this._datatype), fun)
+            }`;
 
         this.results.forEach(r => r.inds = fun.addLocal(r.datatype));
-        return `${
+        return wat(this)`${
             this.enumExpr.out(ctx, fun)
         } (drop) ${
-            loadRef(new types.RefType(this.token, this._datatype), fun)
+            this.loadRef(new types.RefType(this.token, this._datatype), fun)
         } ${
             this.results.map(r => fun.setLocalWat(r.inds)).join(' ')
         }`;
@@ -113,7 +115,7 @@ export class EnumTypeIndexExpr extends DataExpr {
         return this.enumExpr.children();
     }
 
-    out(ctx: ModuleManager, fun?: FunExpr) {
+    out(ctx: ModuleManager, fun?: FunExpr): WatCode {
         // let eedt = this.enumExpr.datatype;
         // if (eedt instanceof types.ClassType)
         //     eedt = eedt.getBaseType();
@@ -123,9 +125,9 @@ export class EnumTypeIndexExpr extends DataExpr {
 
 
         // Simply discard the reference
-        return this.enumExpr.out(ctx, fun)
+        return wat(this)`${this.enumExpr.out(ctx, fun)
+        }(global.set $__ref_sp (i32.add (global.get $__ref_sp) (i32.const 4)))`;
         // equiv (call $__ref_stack_pop) (drop)
-        + '(global.set $__ref_sp (i32.add (global.get $__ref_sp) (i32.const 4)))'
     }
 }
 
@@ -144,13 +146,13 @@ export class EnumConstructor extends DataExpr {
         super(token, enumClassType);
     }
 
-    out(ctx: ModuleManager, fun?: FunExpr): string {
+    out(ctx: ModuleManager, fun?: FunExpr): WatCode {
         const v = this.knownValue instanceof value.Value
             ? fromDataValue([this.knownValue])
             : this.knownValue;
-        return `(i32.const ${this._datatype.index})\n\t${
-                v.map(v => v.out(ctx, fun)).join(' ')
-            }\n\t${constructGc(this.enumClassType.type, ctx, fun)}`;
+        return wat(this)`(i32.const ${String(this._datatype.index)}) ${
+                v.map(v => v.out(ctx, fun))
+            } ${this.constructGc(this.enumClassType.type, ctx, fun)}`;
     }
 
     children(): Expr[] {
@@ -189,27 +191,27 @@ export class EnumMatchExpr extends Expr {
             // .concat(...this.results.map(r => r.children()));
     }
 
-    out(ctx: ModuleManager, fun: FunExpr): string {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         // Prevent multiple compilations
         this._isCompiled = true;
 
-        let ret = this.inputs.map(inp => inp.capture(ctx, fun)).join('\n\t');
+        const inpWat = this.inputs.map(inp => inp.capture(ctx, fun))
         this.results.forEach(r => r.inds = fun.addLocal(r.datatype));
 
         const retType = this.outputTypes.map(t => t.getWasmTypeName()).join(' ');
         const branchId = `$branch_${uid()}`;
-        ret += `(block ${branchId} (result ${retType}) ${
+        const ret = wat(this)`${inpWat}(block ${branchId} (result ${retType}) ${
             this.branches.slice(1).map(() => '(block ').join('')
         } (block (block ${
             this.typeIndexExpr.out(ctx, fun)
-        }\n\t (br_table ${
+        }  (br_table ${
             this.branchBindings.map(n => String(n + 1)).join(' ')
         } 0)) unreachable) ${
-            this.branches
-                .map(vs => vs.map(v => v.out(ctx, fun)).join(' '))
-                .join(`(br ${branchId}) )`)
-        } )`;
-        ret += this.results.map(dl => fun.setLocalWat(dl.inds));
+            wat.join(this, `(br ${branchId}) )`, 
+                ...this.branches.map(vs => vs.map(v => v.out(ctx, fun))))
+        } ) ${this.results.map(dl => fun.setLocalWat(dl.inds)).join(' ')}`;
+
+        console.log('this should error if not 1 or 0: ', this.results.length)
 
         return ret;
     }
