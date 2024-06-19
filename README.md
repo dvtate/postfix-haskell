@@ -83,13 +83,6 @@ Options:
                                                                 [default: false]
 ```
 
-### Optimized.sh
-Compile given file using `tools/file.ts` and then pass it's output through `wasm-opt` from binaryen. Flags passed at the end are passed to `wasm-opt`, defaulting to `-O`
-```
-[postfix-haskell]$ ./tools/optimized.sh ./planning/sqrt.phs -Oz
-(module ... )
-```
-
 ### Inline
 You can embed the language in JavaScript or TypeScript. See a demo in `planning/inline.ts`.
 
