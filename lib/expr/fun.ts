@@ -5,6 +5,7 @@ import type ModuleManager from '../module.js';
 import { LexerToken } from '../scan.js';
 import { Expr, DataExpr } from './expr.js';
 import { uid } from '../util.js';
+import wat, { WatCode } from '../wat.js';
 
 
 // Methods for storing and accessing locals
@@ -234,8 +235,8 @@ export abstract class FunExpr extends Expr {
      * @param body original body
      * @returns wrapped body
      */
-    protected wrapBody(body: string): string {
-        return `\n\t(local ${
+    protected wrapBody(...body: WatCode[]): WatCode {
+        return wat(this)`\n\t(local ${
             this.locals.slice(this.nparams).map(l => l.watTypename).join(' ')
         })\n\t${ this.rvStackOffset
             ? `(global.set $__rv_sp (i32.sub (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`
@@ -343,18 +344,18 @@ export abstract class FunExpr extends Expr {
  export class InternalFunExpr extends FunExpr {
     // TODO should make apis to help lift nested functions/closures
 
-    out(ctx: ModuleManager): string {
+    out(ctx: ModuleManager): WatCode {
         // TODO tuples
         const outs = this.outputs.map(o => o.out(ctx, this));
         const paramTypes = this.locals.slice(0, this.nparams).map(t => t.datatype.getWasmTypeName()).join(' ');
         const resultTypes = this.outputs.map(r => r.datatype.getWasmTypeName()).filter(Boolean).join(' ');
 
-        return `(func $${this.name} ${
+        return wat(this)`(func $${this.name} ${
             paramTypes ? `(param ${paramTypes})` : ''
         } ${
             resultTypes ? `(result ${resultTypes})` : ''
         } ${
-            this.wrapBody(outs.join('\n\t'))
+            this.wrapBody(...outs)
         })`;
     }
 
@@ -372,8 +373,8 @@ export class FunExportExpr extends InternalFunExpr {
     /**
      * @override
      */
-    out(ctx: ModuleManager): string {
-        return `${super.out(ctx)}\n(export "${this.name}" (func $${this.name}))`;
+    out(ctx: ModuleManager): WatCode {
+        return wat(this)`${super.out(ctx)}\n(export "${this.name}" (func $${this.name}))`;
     }
 
     children(): Expr[] {
@@ -417,7 +418,7 @@ export class ParamExpr extends DataExpr {
     /**
      * @override
      */
-    out() {
-        return this.source.getLocalWat(this.inds);
+    out(): WatCode {
+        return new WatCode(this, this.source.getLocalWat(this.inds));
     }
 }

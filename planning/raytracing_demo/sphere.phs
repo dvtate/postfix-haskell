@@ -1,4 +1,4 @@
-"lang" require use
+"../../std/lang.phs" require use
 
 "./vec3.phs" require $Vec3 =
 "./material.phs" require $Material =
@@ -7,7 +7,7 @@
 (   Vec3.Vec3           # Center
     F64                 # Radius
     Material.Material   # Material
-) class $Sphere =
+) rec class $Sphere =
 ((Sphere):
     unpack ( $center $radius $material ) = center
 ) $center =

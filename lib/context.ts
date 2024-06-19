@@ -679,12 +679,17 @@ export default class Context {
                 const invalid = Boolean(mod.validate());
                 if (invalid) {
                     console.error('invalid:', invalid);
-                    console.log(src);
+                    // console.log(src);
                     return;
                 }
-            } catch (e) {
-                console.log('validate error:', src);
-                throw e;
+            } catch (e: any) {
+                console.log('Generated WAT did not pass validator:', e);
+                
+                const lineNum = Number(e.message.split('\n')[1].split(':')[1]) - 1460;
+                this.module.src.debug(lineNum - 10, lineNum);
+
+                // throw e;
+                process.exit();
             }
         }
 

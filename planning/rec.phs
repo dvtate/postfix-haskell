@@ -1,0 +1,17 @@
+"lang" require use
+"math" require $math =
+
+( F64 F64 ) rec class rec $Vec =
+
+((Vec Vec):
+    unpack ( $x1 $y1 ) =
+    unpack ( $x2 $y2 ) =
+    x1 x2 *  y1 y2 * +
+) $dp =
+
+( F64 F64 F64 F64 ) (:
+    ( $x2 $y2 ) =
+    ( $x1 $y1 ) =
+    ( x1 y1 ) Vec make
+    ( x2 y2 ) Vec make dp    
+) "demo" export

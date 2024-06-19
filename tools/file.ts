@@ -74,7 +74,7 @@ export default async function compileFile(
 
         // Output assembly
         start = performance.now();
-        const wast = await (ctx as Context).outWast({ folding, fast, optimize: optimize !== 0, });
+        const wast = await (ctx as Context).outWast({ folding, fast, optimize: optimize !== 0, validate: true });
         if (trackTime)
             console.log('compile:', performance.now() - start);
 
