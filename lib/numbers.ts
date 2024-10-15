@@ -127,6 +127,9 @@ export default class WasmNumber {
      * @returns {string} - WAST representation
      */
     toWAST(): string {
+        // Infinity
+        if (typeof this.value === 'number' && !isFinite(this.value) && !isNaN(this.value))
+            return `(${this.typeName()} ${this.value < 0 ? '-' : ''}inf)`;
         return `(${this.typeName()} ${Number(this.value)})`;
     }
 
@@ -573,6 +576,7 @@ export default class WasmNumber {
      */
     neg() {
         this.value = -this.value;
+        return this;
     }
 
     /**

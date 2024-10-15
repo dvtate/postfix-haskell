@@ -52,8 +52,14 @@ export abstract class Expr extends value.Value {
      * Get all expressions which constitute this one
      * @returns child nodes
      * @virtual
+     * @deprecated instead should use inputExprs and outputExprs
      */
     abstract children(): Expr[];
+
+    // TODO use these instead of .children()
+    //      IR is a DAG, not an AST so above method makes no sense
+    // abstract inputExprs(): Expr[];
+    // abstract outputExprs(): Expr[];
 
     /**
      * Would it be better to store the value in a local or inline it multiple times?
@@ -67,6 +73,7 @@ export abstract class Expr extends value.Value {
     /**
      * Exhaustive version of .children()
      * @returns all child nodes which don't have children
+     * @deprecated
      */
     getLeaves(): Expr[] {
         let ret: Set<Expr> = new Set(this.children());

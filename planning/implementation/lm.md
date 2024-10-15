@@ -46,6 +46,10 @@ struct gc_heap_object_t {
     // Currently used to cache move address in nursery
     struct gc_heap_object_t* next; // uint32_ptr_t
 };
+
+struct gc_heap_object_t* gc_nursury;
+struct gc_heap_object_t* gc_nursury_end;
+struct gc_heap_object_t* gc_main_heap_start;
 ```
 
 ## Free space LL
