@@ -1,4 +1,4 @@
-"lang" require use
+"../../std/lang.phs" require use
 "./vec3.phs" require $Vec3 =
 
 (   Vec3.Vec3   # Ambient color

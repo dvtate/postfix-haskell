@@ -11,6 +11,7 @@ import { InternalFunExpr, FunExpr, ParamExpr } from './fun.js';
 import { LiteralMacro, Macro } from '../macro.js';
 import { DependentLocalExpr, ProxyExpr, TeeExpr } from './util.js';
 import Context from '../context.js';
+import wat, { WatCode } from '../wat.js';
 
 /**
  * Capture lexically scoped variables and store them into a new closure object
@@ -96,7 +97,7 @@ export class ClosureCreateExpr extends DataExpr {
         this.func.nparams = 1 + this.params.length;
     }
 
-    out(ctx: ModuleManager, fun: FunExpr) {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         // Add function to module table once only
         if (!this._isCompiled) {
             ctx.addFunction(this.func);
@@ -107,7 +108,7 @@ export class ClosureCreateExpr extends DataExpr {
             // this is super painful ... maybe check to see if they've been compiled yet?
             // maybe extend expressions?
 
-        return '';
+        return new WatCode();
     }
     children(): Expr[] {
         throw new Error('todo');
@@ -131,7 +132,7 @@ export class ClosureInvokeExpr extends Expr {
             new DependentLocalExpr(token, t as types.DataType, this));
     }
 
-    out(ctx: ModuleManager, fun: FunExpr) {
+    out(ctx: ModuleManager, fun: FunExpr): WatCode {
         // DependentLocalExpr checks this
         this._isCompiled = true;
 
@@ -139,10 +140,11 @@ export class ClosureInvokeExpr extends Expr {
         // And invoke function via function table
         // The first argument being the closure object
         this.outputs.forEach(r => r.setInds(fun));
-        let ret = this.closure.out(ctx, fun);
-        ret += '(i32.load (global.get $__ref_sp)) (call_indirect)';
-        ret += this.outputs.map(r => fun.setLocalWat(r.getInds()));
-        return ret;
+        return wat(this)`${
+            this.closure.out(ctx, fun)
+        }(i32.load (global.get $__ref_sp)) (call_indirect)${
+            this.outputs.map(r => fun.setLocalWat(r.getInds())).join('')
+        }`;
     }
 
     invoke(ctx: Context) {
