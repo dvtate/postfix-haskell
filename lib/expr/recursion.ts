@@ -87,7 +87,7 @@ export class RecursiveBodyExpr extends Expr {
 
         // Unique labels
         this.id = RecursiveBodyExpr._uid++;
-        this.label = `$rec_${this.id}`;
+        this.label = `$rec_${this.id} (; ${this.token.token} ;) `;
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {

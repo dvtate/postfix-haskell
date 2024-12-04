@@ -546,6 +546,7 @@ export class PrimitiveType extends DataType {
         I64: new PrimitiveType('i64', 2),
         F32: new PrimitiveType('f32', 1),
         F64: new PrimitiveType('f64', 2),
+        V128: new PrimitiveType('v128', 4),
     };
 
     static typeMap = {
@@ -556,6 +557,7 @@ export class PrimitiveType extends DataType {
         // TODO add these
         [WasmNumber.Type.U32]: PrimitiveType.Types.I32,
         [WasmNumber.Type.U64]: PrimitiveType.Types.I64,
+        
     };
 
     /**

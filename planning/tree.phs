@@ -1,0 +1,149 @@
+"../std/lang.phs" require use
+"../std/maybe.phs" require $maybe =
+"../std/io.phs" require $io =
+
+((Syntax:Type Syntax:Type):
+    ( $KeyType $ElemType ) =
+
+    ( $Tree rec:
+        () type class $Nil =
+        ( KeyType ElemType Tree Tree ) class $Node =
+    ) enum $Tree =
+
+    ((Tree KeyType ElemType) rec: # set tree key value
+        ( $t $key $value ) =
+
+        t (
+            # Make new [sub]tree
+            Tree.Nil (:
+                pop
+                (
+                    key
+                    value
+                    () Tree.Nil make
+                    () Tree.Nil make
+                ) Tree.Node make
+            )
+
+            # Search Existing tree
+            Tree.Node (:
+                unpack ( $k $v $l $r ) =
+
+                # Same key -> update node with new value
+                (: 
+                    # k key == 
+                    1
+                ) (()(Tree):
+                    ( k value l r ) Tree.Node make
+                ) $branch fun
+
+                # GT: branch right
+                (: k key > ) (()(Tree):
+                    # Recurse into right branch
+                    r key value Tree.set $new_r =
+                    ( k v l new_r ) Tree.Node make
+                ) $branch fun
+
+                # LT: branch left
+                (: k key < ) (()(Tree):
+                    # Recurse into left branch
+                    l key value Tree.set $new_l =
+                    ( k v new_l r ) Tree.Node make
+                ) $branch fun
+                branch
+            )
+        ) match
+    ) $Tree.set =
+
+    ((Tree KeyType) rec:
+        ( $t $key ) =
+
+        ElemType maybe.Maybe $Maybe =
+
+        t (
+            # Not in empty tree
+            Tree.Nil (:
+                pop
+                () Maybe.Nothing make
+            )
+
+            Tree.Node (:
+                unpack ( $k $v $l $r ) =
+
+                # Same key: We found it!
+                (: 
+                    # k key == 
+                    true
+                ) (:
+                    v Maybe.Just make
+                ) $branch fun
+
+                # GT: branch right
+                (: k key > ) (:
+                    r key Tree.get
+                ) $branch fun
+
+                # LT: branch left
+                (: k key < ) (:
+                    l key Tree.get
+                ) $branch fun
+                branch
+            )
+        ) match
+    ) $Tree.get =
+
+    #((() io.IO Tree) rec:
+    #) $Tree.print =
+
+    $Tree ~
+) $BSTreeMap =
+
+
+I32 F64 BSTreeMap $Tree =
+
+
+#() Tree.Nil make
+#2 2.0 Tree.set
+#0 0.0 Tree.set
+#1 1.0 Tree.set
+#3 3.0 Tree.set
+#4 4.0 Tree.set
+#5 5.0 Tree.set
+#
+#dup -1 Tree.get :data
+#dup 0 Tree.get :data
+#dup 1 Tree.get :data
+#dup 2 Tree.get :data
+#dup 3 Tree.get :data
+#dup 4 Tree.get :data
+#dup 5 Tree.get :data
+#dup 6 Tree.get :data
+#pop
+
+
+( Unit io.IO I32 I32 I32 I32 ) (:
+
+    (( Unit io.IO Tree I32) (Unit io.IO Tree) rec:
+        ( $t $n ) =
+        
+        (: 1 ) (: "done" io.print t ) $b fun
+        (: n 0 > ) (: 
+            n io.print
+            t n n n * F64 cast Tree.set
+            n 1 -
+            mk_tree
+        ) $b fun
+        b
+    ) $mk_tree =
+
+    ( $n $n2 $n3 $i ) =
+
+    () Tree.Nil make
+    n 1.0 Tree.set
+    n2 2.0 Tree.set
+    n3 3.0 Tree.set    
+    $t =
+
+    t i Tree.get
+    -1.0 maybe.or_default
+) "demo" export

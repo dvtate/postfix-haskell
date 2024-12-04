@@ -15,6 +15,7 @@ import { EnumNs, EnumValue } from './enum.js';
 import { EnumMatchExpr } from './expr/index.js';
 import { genGcBitfield } from './expr/gc_util.js';
 import stdlibs from '../std/index.js';
+import PackedV128 from './v128.js';
 
 // function fromDataValue(params: value.Value[]): DataExpr[] {
 //     return params as DataExpr[];
@@ -36,7 +37,7 @@ const toBool = (b : boolean, token: LexerToken) =>
 
 // Type for following type
 type MacroOperatorsSpec = {
-    [k : string] : {
+    [operator : string] : {
         action: (ctx: Context, token: LexerToken)
             => Context | Array<string> | undefined | SyntaxError | void;
         type?: types.ArrowType;
@@ -231,8 +232,17 @@ const operators : MacroOperatorsSpec = {
                 //  for example: types marked with 'rec' should be stored in LM
                 // TODO value should contain tuple
                 } else {
-                    console.log('unexpected runtime expr', v);
-                    return ['unexpected runtime-expr'];
+                    let e: expr.UnpackExpr;
+                    try {
+                        e = new expr.UnpackExpr(token, v, ctx);
+                    } catch (e) {
+                        if (e instanceof error.SyntaxError) {
+                            return e;
+                        } else {
+                            throw e;
+                        }
+                    }
+                    ctx.push(...e.results);
                 }
             } else {
                 return ['expected a tuple to unpack'];
@@ -300,6 +310,25 @@ const operators : MacroOperatorsSpec = {
             ctx.push(v.datatype
                 ? new value.Value(token, value.ValueType.Type, v.datatype)
                 : new value.NumberValue(token, new WasmNumber(WasmNumber.Type.I32, 0n)));
+        },
+    },
+
+    // Vector literal
+    'v128' : {
+        description: 'make a V128 literal given a string literal',
+        signature: '<string literal> v128',
+        example: '"i32x4 1 2 3 4" v128',
+        action: (ctx: Context, token: LexerToken) => {
+            if (ctx.stack.length === 0)
+                return ['expected a vector literal string'];
+            const v = ctx.pop();
+            if (v.type !== value.ValueType.Str)
+                return ['expected a vector literal string'];
+            try {
+            ctx.push(new value.VectorValue(token, new PackedV128(v.value as string)));
+            } catch (e: any) {
+                return new error.SyntaxError('Invalid vector literal: ' + e?.message, v.token || token, ctx)
+            }
         },
     },
 

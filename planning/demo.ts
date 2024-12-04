@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import { createInterface } from 'readline';
 
 import lex from '../lib/scan.js';
 import parse from '../lib/parse.js';
@@ -42,7 +43,22 @@ import * as util from '../tools/file_tools.js';
 
     const w = mod.instance.exports as any;
 
-    if (fname.endsWith('sqrt.phs')) {
+    if (process.argv[3] === 'shell') {
+        // Create line reader
+        const rl = createInterface ({
+            input: process.stdin,
+            output: process.stdout,
+            terminal: true,
+            prompt: "> "
+        });
+
+        // For each line
+        rl.on('line', line => {
+            console.log(' => ', eval(line));
+        });
+    }
+
+    else if (fname.endsWith('sqrt.phs')) {
         // Print sqrts of 1-10
         for (let i = 1; i < 10; i++)
             console.log(w.sqrt(i));
@@ -72,6 +88,8 @@ import * as util from '../tools/file_tools.js';
         console.log('test ( 3 )\t=> ', w.test(3));
         console.log('test ( 4 )\t=> ', w.test(4));
         console.log('test ( 5 )\t=> ', w.test(5));
+    } else if (fname.endsWith('tree.phs')) {
+        console.log('demo ( 10, 3 )\t => ', w.demo(10, 3));
     } else {
         console.log('no demo for source file', fname);
     }

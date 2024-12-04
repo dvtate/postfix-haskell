@@ -18,3 +18,10 @@ $Monad ~ class $IO =
 (: ( $io $str ) =
     io str ( io type StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
 ) $print fun
+
+# Convert string literals to static strings
+((Any IO Syntax:Str ): 1 )
+(: ( $io $strl ) =
+    $strl ~ StaticStr cast $str =
+    io str ( io type StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
+) $print fun

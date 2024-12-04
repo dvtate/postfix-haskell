@@ -35,3 +35,14 @@ Any Maybe $AnyMaybe =
         TMaybe         (: bound   )
     ) match
 ) $bind_default fun
+
+(:  ( $maybe $default_value ) =
+
+    $maybe ~ type $TMaybe =
+    $default_value ~ type $TDV =
+
+    maybe
+    (   TMaybe.Nothing (: pop default_value )
+        TMaybe.Just    (: $v = $v ~ )
+    ) match
+) $or_default =

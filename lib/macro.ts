@@ -83,6 +83,9 @@ export abstract class Macro extends value.Value {
         const ios = ctx.traceIO(this, token);
         if (ios instanceof error.SyntaxError)
             return ios;
+        if (ios === null)
+            return new error.SyntaxError('Cannot infer datatype (probably due to recursion)', token, ctx);
+
         ctx.popn(inputs.length);
 
         // Validate trace
@@ -224,7 +227,7 @@ export abstract class Macro extends value.Value {
  */
 export class LiteralMacro extends Macro {
     body: LexerToken[];
-    scopes: Array<{ [k: string] : value.Value }>;
+    scopes: Array<{ [k: string] : value.Value }>; // TODO refactor into separate class
 
     // Cannot infer return type for wildcards so can't make arrow type
     // But still we want to verify the input matches

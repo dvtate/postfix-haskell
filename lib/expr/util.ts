@@ -7,6 +7,7 @@ import type ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
 import { FunExpr, FunLocalTracker, FunLocalTrackerStored, InternalFunExpr } from './fun.js';
+import { loadRef } from './gc_util.js';
 
 /**
  * Flatten a list of mixed values+expressions into a single list of expressions
@@ -498,5 +499,43 @@ export class ProxyExpr extends DataExpr {
     }
     clone() {
         return new ProxyExpr(this.token, this.expr, this.fun, this._datatype);
+    }
+}
+
+export class UnpackExpr extends Expr {
+    results: DependentLocalExpr[];
+    refType?: types.RefType<any> = null;
+
+    constructor(
+        token: LexerToken,
+        public expr: DataExpr | value.Value,
+        ctx: Context,
+    ) {
+        super(token);
+        let dt = expr.datatype;
+        if (dt instanceof types.ClassType)
+            dt = dt.getBaseType();
+
+        let memberTypes: types.DataType[];
+        if (dt instanceof types.RefType) {
+            this.refType = dt;
+            memberTypes = dt.unpackRefs();
+        } else if (dt instanceof types.TupleType) {
+            memberTypes = dt.types as types.DataType[];
+        } else {
+            throw new error.TypeError('Expected a tuple type to unpack', token, [expr], [new types.TupleType(null)], ctx );
+        }
+
+        this.results = memberTypes.map(t => new DependentLocalExpr(token, t, this));
+    }
+    out(ctx: ModuleManager, fun: FunExpr): string {
+        this._isCompiled = true;
+        if (this.refType)
+            return loadRef(this.refType, fun);
+        else
+            return this.expr.out(ctx, fun);
+    }
+    children(): Expr[] {
+        return [];
     }
 }

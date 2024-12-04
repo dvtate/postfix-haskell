@@ -5,6 +5,7 @@ import type ModuleManager from './module.js';
 import type * as expr from './expr/index.js';
 import type Namespace from './namespace.js';
 import * as types from './datatypes.js'; // If we actually have to import datatypes here it will not work
+import PackedV128 from './v128.js';
 
 // TODO should move these to /expr/value.ts so that cyclic imports are less anal
 
@@ -121,6 +122,35 @@ export class NumberValue extends DataValue {
 
     constructor(token: LexerToken, wasmNumber: WasmNumber) {
         super(token, types.PrimitiveType.typeMap[wasmNumber.type], wasmNumber);
+    }
+
+    /**
+     * See code in expr/expr.ts
+     */
+    out(): string {
+        return this.value.toWAST();
+    }
+
+    /**
+     * See code in expr/expr.ts
+     */
+    children(): expr.Expr[] {
+        return [];
+    }
+
+    get datatype(): typeof this._datatype {
+        return this._datatype;
+    }
+    set datatype(t: typeof this._datatype) {
+        this._datatype = t;
+    }
+}
+
+export class VectorValue extends DataValue {
+    declare _datatype: types.ClassOrType<types.PrimitiveType>;
+
+    constructor(token: LexerToken, vector: PackedV128) {
+        super(token, types.PrimitiveType.Types.V128, vector);
     }
 
     /**
