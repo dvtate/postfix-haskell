@@ -2,7 +2,6 @@ import * as types from '../datatypes.js';
 import type ModuleManager from '../module.js';
 import type { FunExpr, FunLocalTracker } from './fun.js';
 
-
 /**
  * Size of primitve datatype, otherwise assume it's a reference thus sizeof(i32) => 4
  */
@@ -32,28 +31,26 @@ export function genGcBitfield(
     sizes = fpl.map(primDtSize),
 ): Uint8Array {
     // Generate bitstring
-    const bfStr = fpl.map((t, i) =>
+    let bfStr = fpl.map((t, i) =>
         t instanceof types.PrimitiveType
             ? sizes[i] === 4
                 ? '0' : '00'
-            : '1'
+            : '1' // pointers always i32
     ).join('');
 
-    // Convert bitstring to int8 array
-    const ret: number[] = [];
-    let i = 0;
-    while (i < bfStr.length) {
-        let b = 0;
-        const ni = i + 7;
-        for (; i < ni; i++) {
-            if (bfStr[i] === '1')
-                b++;
-            b <<= 1;
-        }
-        ret.push(b);
+    // Pad the bitstring with trailing zeros to make the length a multiple of 8
+    if (bfStr.length % 8 !== 0) {
+        const paddingLength = 8 - (bfStr.length % 8);
+        bfStr = bfStr.padEnd(bfStr.length + paddingLength, '0');
     }
 
-    return new Uint8Array(ret);
+    // Convert to Uint8Array
+    let ret = new Uint8Array(bfStr.length / 8);
+    for (let i = 0; i < bfStr.length; i += 8) {
+        const byteString = bfStr.slice(i, i + 8);
+        ret[i] = parseInt(byteString, 2);
+    }
+    return ret;
 }
 
 /**
@@ -66,13 +63,14 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
     // No reason to allocate object for unit values
     const fpl = dt.flatPrimitiveList();
     if (fpl.length == 0)
-        return '(call $__ref_stack_push (i32.const 0))';
+        return '\n\t(call $__ref_stack_push (i32.const 0))';
 
     // Get reference to gc'd object
-    const fpSizes = fpl.map(primDtSize).reverse();
+    const fpSizes = fpl.map(primDtSize);
+    let totalSize = fpSizes.reduce((a, b) => a + b, 0);
     const bf = genGcBitfield(dt, fpl, fpSizes);
     const bfAddr = ctx.addStaticData(bf, true);
-    let ret = `\n\t(call $__alloc (i32.const ${bf.length}) (i32.const ${bfAddr}))`;
+    let ret = `\n\t(call $__alloc (i32.const ${totalSize / 4}) (i32.const ${bfAddr}))`;
 
     // Store raw gc reference into local
     // NOTE we could probably put it directly into the rv stack and wbbuff
@@ -83,7 +81,7 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
 
     // Copy object into heap
     const locals: { [k: string]: FunLocalTracker[] } = {}; // Recycle locals of same types
-    let totalSize = fpSizes.reduce((a, b) => a + b, 0);
+    fpSizes.reverse();
     fpl.reverse().forEach((t, i) => {
         // Swap addr with last component of object before using store instruction
         // Webassembly is poorly designed, the addr should be second arg to t.store
@@ -93,11 +91,11 @@ export function constructGc(dt: types.DataType, ctx: ModuleManager, fun: FunExpr
             ret += `${fun.setLocalWat(swapLocal)
                 }${local.getLocalWat()
                 }${fun.getLocalWat(swapLocal)
-                }(${t.name}.store offset=${totalSize -= fpSizes[i]})`;
+                }(${t.name}.store offset=${totalSize -= fpSizes[i]})\n\t`;
         } else {
             // Use Reference from ref stack
             ret += `${local.getLocalWat()
-            }(call $__ref_stack_pop)(i32.store offset=${totalSize -= fpSizes[i]})`;
+            }(call $__ref_stack_pop)(i32.store offset=${totalSize -= fpSizes[i]})\n\t`;
         }
     });
 
@@ -124,7 +122,7 @@ export function loadRef(
     // Single object
     if (fpl.length <= 1)
         return fpl.map(t => `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} (call $__ref_stack_pop))${
-            t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }`
+            t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }\n\t`
         ).join(' ');
 
     // Store pointer into a local for multiple uses
@@ -134,12 +132,7 @@ export function loadRef(
     }${
         fpl.map(t =>
             `(${t.type.getWasmTypeName()}.load offset=${t.offsetBytes} ${fun.getLocalWat(ptrLocal)})${
-                t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }`
+                t.type instanceof types.RefType ? '(call $__ref_stack_push)' : '' }\n\t`
         ).reverse().join(' ')
     }${fun.removeLocalWat(ptrLocal)}`;
-
-    // After this point `ptrLocal` is no longer needed so I could
-    // add a `fun.freeLocal()` method which allows it to get used to hold other values
-    // not a big deal for primitives since simple optimizers will catch but for
-    // references it would definitely pay off
 }

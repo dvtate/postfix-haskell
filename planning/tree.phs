@@ -121,29 +121,46 @@ I32 F64 BSTreeMap $Tree =
 #pop
 
 
-( Unit io.IO I32 I32 I32 I32 ) (:
+#(( Unit io.IO Tree I32) (Unit io.IO Tree) rec:
+#    ( $t $n ) =
+#    
+#    (: 1 ) (: "done" io.print t ) $b fun
+#    (: n 0 > ) (: 
+#        n io.print
+#        t n n n * F64 cast Tree.set
+#        n 1 -
+#        mk_tree
+#    ) $b fun
+#    b
+#) $mk_tree =
 
-    (( Unit io.IO Tree I32) (Unit io.IO Tree) rec:
-        ( $t $n ) =
-        
-        (: 1 ) (: "done" io.print t ) $b fun
-        (: n 0 > ) (: 
-            n io.print
-            t n n n * F64 cast Tree.set
-            n 1 -
-            mk_tree
-        ) $b fun
-        b
-    ) $mk_tree =
 
-    ( $n $n2 $n3 $i ) =
+( Unit io.IO I32 I32 ) (:
+
+    ( $n $n2 ) =
 
     () Tree.Nil make
     n 1.0 Tree.set
     n2 2.0 Tree.set
-    n3 3.0 Tree.set    
+    5 3.0 Tree.set
     $t =
 
-    t i Tree.get
+    #t (
+    #    Tree.Nil (: pop -1 )
+    #    Tree.Node (:
+    #        unpack ( $k $v $l $r ) =
+    #        l (
+    #            Tree.Nil (: pop -2 )
+    #            Tree.Node (: 
+    #                unpack ( $k2 $v2 $l2 $r2 ) =
+    #                k2
+    #            )
+    #        ) match
+    #    )
+    #) match
+
+    t n Tree.get
     -1.0 maybe.or_default
+    t n2 Tree.get
+    -1.0 maybe.or_default +
 ) "demo" export
