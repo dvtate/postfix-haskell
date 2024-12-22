@@ -10,6 +10,9 @@ All enums consist of 2 i32 values
 -----------
 ```
 
+## Semantics
+Normally the Index is stored on the WASM stack and the address is stored on the ref stack thus accesses can be performed in either order.
+
 ## Syntax
 
 ### Pattern Matching

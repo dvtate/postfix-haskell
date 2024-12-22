@@ -20,8 +20,14 @@ $Monad ~ class $IO =
 ) $print fun
 
 # Convert string literals to static strings
-((Any IO Syntax:Str ): 1 )
+((Any IO Syntax:Str): 1 )
 (: ( $io $strl ) =
     $strl ~ StaticStr cast $str =
     io str ( io type StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
 ) $print fun
+
+# If one branch does IO operations so should the others so that the arrow types match
+# This macro tricks the compiler so that we don't have to actually do any IO
+( ( Any IO )( Any IO ):
+    $io = $io ~
+) $nop =

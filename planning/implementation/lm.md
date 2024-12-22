@@ -6,9 +6,10 @@ TODO for some of this we might be able to define [custom sections](https://devel
 - Pointers cannot be on WASM stack because we need to be able to mark and update them
 - Will need associated mutable global `$ref_sp`
 - Size: Probably fixed 1-3 mb, modifyable via compiler flag
-#### Addendum 2022.3.17
-- Upon further [review](../brainstorm/ref_stack_vars.md) it was determined that a second stack is required for storing locals with the original stack being devoted for roots associated with temporary operations
+### Reference Variable Stack
+- This stack is used to store local variables containing references to heap objects
 - Both stacks contain roots and thus all pointers should be marked
+- There is [a way to combine these two stacks into one](../brainstorm/ref_stack_vars.md)
 
 ### User Static Data
 - Used for storing things like string literals and `static_region` + `static_init_byte`

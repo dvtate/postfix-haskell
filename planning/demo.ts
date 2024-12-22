@@ -8,6 +8,7 @@ import * as error from '../lib/error.js';
 import * as util from '../tools/file_tools.js';
 
 (async () => {
+    try {
     // Read program source
     const fname : string = process.argv[2];
     const src = readFileSync(fname).toString();
@@ -89,8 +90,14 @@ import * as util from '../tools/file_tools.js';
         console.log('test ( 4 )\t=> ', w.test(4));
         console.log('test ( 5 )\t=> ', w.test(5));
     } else if (fname.endsWith('tree.phs')) {
-        console.log('demo ( 10, 3 )\t => ', w.demo(10, 3));
+        console.log('demo ( 3,1 )\t => ', w.demo(3,1));
+        console.log('demo ( 1,3 )\t => ', w.demo(3,1));
+        console.log('demo ( 1,1 )\t => ', w.demo(1,1));
     } else {
         console.log('no demo for source file', fname);
     }
+
+} catch (e) {
+    console.error(e);
+}
 })();
