@@ -95,9 +95,11 @@ export class FunLocalTrackerStored extends FunLocalTracker {
     }
 
     setLocalWat(): string {
+        // For primitives use corresponding local
         if (this.datatype instanceof types.PrimitiveType)
             return `(local.set ${this.index})`;
 
+        // Pop pointer from the ref stack and put it into relevant slot in the local rv stack
         return this.datatype.offsetBytes === 0
             ? `(i32.store offset=${this.index} (global.get $__rv_sp) (call $__ref_stack_pop))`
             : '';
@@ -238,12 +240,12 @@ export abstract class FunExpr extends Expr {
         return `\n\t(local ${
             this.locals.slice(this.nparams).map(l => l.watTypename).join(' ')
         })\n\t${ this.rvStackOffset
-            ? `(global.set $__rv_sp (i32.sub (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`
+            ? `(global.set $__rv_sp (i32.sub (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))\n\t`
             : ''
         }${
             body
         }\n\t${ this.rvStackOffset
-            ? `(global.set $__rv_sp (i32.add (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`
+            ? `\n\t(global.set $__rv_sp (i32.add (global.get $__rv_sp) (i32.const ${this.rvStackOffset})))`
             : ''
         }`;
     }
@@ -253,6 +255,7 @@ export abstract class FunExpr extends Expr {
      * @param type type of the value to be stored in locals
      * @returns array of locals indicies designated
      */
+    // TODO names for debugging?
     addLocal(type: types.DataType): FunLocalTracker[] {
         // Drop classes
         if (type instanceof types.ClassType)
@@ -419,5 +422,12 @@ export class ParamExpr extends DataExpr {
      */
     out() {
         return this.source.getLocalWat(this.inds);
+    }
+
+    /**
+     * Free locals when no longer needed
+     */
+    freeLocals() {
+        return this.source.removeLocalWat(this.inds);
     }
 }

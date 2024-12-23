@@ -781,7 +781,7 @@ export class RefType<T extends DataType> extends DataType {
     hasRefs(): boolean {
         const bt = this.type instanceof ClassType ? this.type.getBaseType() : this.type;
         if (bt instanceof UnionType)
-            return bt.types.some(t => t instanceof RefType || t instanceof RefRefType)
+            return bt.types.some(t => t instanceof RefType)
         // TODO arrow types, scary
         return false;
     }
@@ -797,73 +797,6 @@ export class RefType<T extends DataType> extends DataType {
 
     toString(): string {
         return (this.type ? this.type.toString() : '_') + " Ref";
-    }
-}
-
-/**
- * Reference to a pointer which is stored on rv_stack to an object managed by gc
- *
- * Stored in wasm locals, point to location on, gc rv stack, where lie pointers to objects on the heap
- *
- * see: planning/brainstorm/ref_stack_vars.md
- *
- * @depricated - I feel like conversion should be implicit
- */
-export class RefRefType<T extends DataType> extends DataType {
-    /**
-     * @param token location in source code
-     * @param type type of value being referenced
-     * @param offsetBytes When accessing a member of an object need to use reference
-     */
-    constructor(token: LexerToken, public type: T, public offsetBytes = 0) {
-        super(token);
-    }
-
-    /**
-     * @override
-     */
-    check(type: Type): boolean {
-        if (type instanceof AnyType)
-            return true;
-        // Interchangeable with base type
-        return this.type.check(type);
-    }
-
-    /**
-     * @override
-     */
-    getWasmTypeName(): string {
-        return 'i32';
-    }
-
-    flatPrimitiveList(): RefType<DataType>[] {
-        // TODO this is bad, should just be [I32]
-        // let offset = 0;
-        return [new RefType(this.token, this.type)];
-        // return this.type.flatPrimitiveList().map(t => {
-        //     const oldOffset = offset;
-        //     if (t instanceof PrimitiveType)
-        //         switch (t.name) {
-        //             case 'i32': case 'f32': offset += 4; break;
-        //             case 'i64': case 'f64': offset += 8; break;
-        //             default: throw new Error('wtf?');
-        //         }
-        //     else
-        //         // Otherwise it's a pointer
-        //         offset += 4;
-
-        //     return new RefType(this.token, t, oldOffset);
-        // });
-    }
-
-    isUnit(): boolean {
-        return false;
-    }
-    size() {
-        return 1;
-    }
-    toString(): string {
-        return this.type.toString() + " Ptr";
     }
 }
 

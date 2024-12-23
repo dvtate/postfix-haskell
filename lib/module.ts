@@ -6,6 +6,19 @@ import * as error from './error.js';
 // Import WAST template as a string
 import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
 
+
+/**
+ * Convert a byte into an escaped hex character
+ * @param b - byte
+ * @returns - string of form \XX where XX is replaced by character hex equiv
+ */
+function byteToHexEsc(b: number): string {
+    const hexChrs = '0123456789ABCDEF';
+    return '\\'
+        + hexChrs[(b & 0xf0) >> 4]
+        + hexChrs[b & 0xf];
+}
+
 /**
  * Adjust compiler behavior
  */
@@ -207,12 +220,9 @@ export default class ModuleManager {
      * @returns - WebAssembly text code
      */
     compile(): string {
-        // TODO globals/stack pointer
-
         // Compile exports
         // Some expressions add helper funcitons so we have to compile
         //   until there are no more
-        // Error.stackTraceLimit = Infinity;
         do {
             const exports = this.functions;
             this.functions = [];
@@ -235,12 +245,6 @@ export default class ModuleManager {
             importDefs,
             this.definitions.filter(Boolean).join('\n\n'),
         );
-
-        // Create module as string (no runtime)
-        // return `(module \n${importDefs
-        //     }\n\n${this.definitions.filter(Boolean).join('\n\n')}
-        //     (memory (export "memory") ${this.initialPages()})
-        //     (data (i32.const 0) "${this.staticDataToHexString()}"))`;
     }
 
     /**
@@ -338,26 +342,6 @@ export default class ModuleManager {
         this.staticData[address - (this.noRuntime ? 0 : this.stackSize)] = value;
     }
 
-    /**
-     * Generates a hexstring that initializes the start of linear memory
-     * @returns
-     */
-    staticDataToHexString(): string {
-        /**
-         * Convert a byte into an escaped hex character
-         * @param b - byte
-         * @returns - string of form \XX where XX is replaced by character hex equiv
-         */
-        function byteToHexEsc(b: number): string {
-            const hexChrs = '0123456789ABCDEF';
-            return '\\'
-                + hexChrs[(b & 0xf0) >> 4]
-                + hexChrs[b & 0xf];
-        }
-
-        // Static data as a hex string
-        return this.staticData.map(byteToHexEsc).join('');
-    }
 
     /**
      * Determine the amount of memory to use
@@ -403,18 +387,6 @@ export default class ModuleManager {
         STACK_SIZE: number = this.stackSize,
         NURSERY_SIZE: number = this.nurserySize,
     ): string {
-        /**
-         * Convert a byte into an escaped hex character
-         * @param b - byte
-         * @returns - string of form \XX where XX is replaced by character hex equiv
-         */
-        function byteToHexEsc(b: number): string {
-            const hexChrs = '0123456789ABCDEF';
-            return '\\'
-                + hexChrs[(b & 0xf0) >> 4]
-                + hexChrs[b & 0xf];
-        }
-
         // Constants
         const OBJ_HEAD_SIZE = 3 * 4;
         // const EMPTY_HEAD_SIZE = 2 * 4;

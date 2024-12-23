@@ -59,8 +59,10 @@ export class EnumGetExpr extends DataExpr {
 
     out(ctx: ModuleManager, fun?: FunExpr) {
         if (!this.results)
-            return this.enumExpr.out(ctx, fun)
-                + '(drop)'
+            return '\n\t'
+                // + '(; enum get expr ;) '
+                + this.enumExpr.out(ctx, fun)
+                + '\n\t(drop)' // drop type index
                 + loadRef(new types.RefType(this.token, this._datatype), fun);
 
         this.results.forEach(r => r.inds = fun.addLocal(r.datatype));
@@ -121,11 +123,11 @@ export class EnumTypeIndexExpr extends DataExpr {
         // if (eedt instanceof types.EnumClassType)
         //     return `(i32.const ${eedt.index})`;
 
-
-        // Simply discard the reference
+        // Discard the reference, type index remains
         return this.enumExpr.out(ctx, fun)
         // equiv (call $__ref_stack_pop) (drop)
-        + '(global.set $__ref_sp (i32.add (global.get $__ref_sp) (i32.const 4)))'
+        // + '\n\t(call $__ref_stack_pop) (drop) (; pop enum reference, leave index ;)';
+        + '\n\t(global.set $__ref_sp (i32.add (global.get $__ref_sp) (i32.const 4)))'
     }
 }
 
@@ -148,7 +150,7 @@ export class EnumConstructor extends DataExpr {
         const v = this.knownValue instanceof value.Value
             ? fromDataValue([this.knownValue])
             : this.knownValue;
-        return `(i32.const ${this._datatype.index})\n\t${
+        return `\n\t(i32.const ${this._datatype.index})${
                 v.map(v => v.out(ctx, fun)).join(' ')
             }\n\t${constructGc(this.enumClassType.type, ctx, fun)}`;
     }

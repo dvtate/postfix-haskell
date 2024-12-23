@@ -372,7 +372,11 @@ export class RecursiveCallExpr extends Expr {
             this.takeExprs.map(e => e.out(ctx, fun)).join(' ')
         } ${
             this.body.helper.copiedParams.map((p: DataExpr) => p.out(ctx, fun)).join('')
-        } (call ${this.body.label})`;
+        } (call ${this.body.label})${
+            // TODO
+            // this.body.helper.copiedParams.map(p => p.freeLocals()).join('')
+            ''
+        }`;
     }
 
     /**
