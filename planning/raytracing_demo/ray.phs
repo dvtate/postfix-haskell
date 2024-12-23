@@ -1,5 +1,7 @@
 "lang" require use
 
+"./vec3.phs" require $Vec3 =
+
 (
     Vec3.Vec3   # origin
     Vec3.Vec3   # direction
@@ -7,3 +9,7 @@
 ((Ray): unpack ( $orig $dir ) = orig ) $origin =
 ((Ray): unpack ( $orig $dir ) = dir )  $direction =
 
+(( Ray F64 ):  $distance =
+    unpack ( $origin $direction ) =
+    direction distance * origin +
+) $get_point =

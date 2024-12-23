@@ -108,14 +108,13 @@
 ) $reflect =
 
 ((Vec3 F64 F64):
-    # This could be simplified
     ( $v $min $max ) =
-    (:  $x =
-        (: 1 ) (: x ) $b fun
-        (: x min < ) (: min ) $b fun
-        (: x max > ) (: max ) $b fun
-        b
-    ) $clamp_s =
+    #(:  $x =
+    #    (: 1 ) (: x ) $b fun
+    #    (: x min < ) (: min ) $b fun
+    #    (: x max > ) (: max ) $b fun
+    #    b
+    #) $clamp_s =
     ( v unpack ( $x $y $z ) =
         x min max math.clamp
         y min max math.clamp

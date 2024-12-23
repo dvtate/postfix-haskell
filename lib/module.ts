@@ -328,8 +328,8 @@ export default class ModuleManager {
 
         // Append to static data
         const ret = this.staticData.length + (this.noRuntime ? 0 : this.stackSize);
-        this.staticData.push(...bytes);
-        this.staticDataConst.push(...new Array(bytes.length).fill(isConst));
+        this.staticData = this.staticData.concat(Array.from(bytes)); // can't use .push(...) because of max stack size error
+        this.staticDataConst = this.staticDataConst.concat(new Array(bytes.length).fill(isConst));
         return ret;
     }
 

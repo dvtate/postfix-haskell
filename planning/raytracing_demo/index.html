@@ -1,10 +1,17 @@
 <canvas id="scene"></canvas>
 
 <script>
+
+function randData() {
+    const u32arr = new Uint32Array(640*480);
+    for (let i = 0; i < 640 * 480; i++) {
+        u32arr[i] =  Math.floor(Math.random() * (2**32));
+    }
+    return new Uint8ClampedArray(u32arr.buffer, 0, 640*480*4);
+}
+
+
 (async function () {
-    // Get canvas 2d context
-    const canvas = document.getElementById('scene');
-    const context = canvas.getContext('2d');
 
     // Instantiate wasm
     const resp = await fetch('raytrace.wasm');
@@ -18,18 +25,33 @@
         },
     });
 
-    function draw() {
-        const { __memory, width, height } = mod.instance.exports;
-        const ptr = mod.instance.exports.draw();
-        context.putImageData(
-            new ImageData(new Uint8ClampedArray(
-                __memory.arrayBuffer,
-                ptr,
-                width * height * 4,
-            )),
-        );
-    }
+    const { __memory, } = mod.instance.exports;
+    const width = 640;
+    const height = 480;
+    const ptr = mod.instance.exports.draw();
 
-    draw();
-})();    
+    // Get canvas 2d context
+    const canvas = document.getElementById('scene');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = width;
+    canvas.style.height = height;
+    canvas.style.border = '1px solid red';
+    const context = canvas.getContext('2d');
+
+    console.log({width,height});
+    
+    // There's probably a more elgant way to do this
+    const imgData = context.createImageData(width, height);
+    const data = new Uint8ClampedArray(
+        __memory.buffer,
+        ptr,
+        width * height * 4,
+    );
+    // const data = randData();
+    console.log(ptr, data, data.length, width * height * 4);
+    imgData.data.set(data);
+    context.putImageData(imgData, 0, 0);
+
+})();
 </script>

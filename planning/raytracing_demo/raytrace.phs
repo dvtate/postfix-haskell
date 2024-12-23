@@ -17,21 +17,23 @@
 640             $width =
 480             $height =
 width F64 cast height /  $aspect_ratio =
-width height 4 * static_region $image_ptr =
+width height 4 * * static_region $image_ptr =
 
 ((Unit Vec3.Vec3 I32 I32):
-    ( $color $x $y ) = 
-    color 0.0 1.0 Vec3.clamp unpack ( $r $g $b ) =
+    ( $color $x $y ) =
+    color # 0.0 1.0 Vec3.clamp
+    unpack ( $r $g $b ) =
 
-    # Pack color into a single i32
-    r 255 * I32 cast 24 <<
-    g 255 * I32 cast 16 << mem.bits.or
-    b 255 * I32 cast 8  << mem.bits.or
+    # Pack color into a single i32 (little endian)
+    255 24 <<# opacity = 1
+    r 255 * I32 cast 16 << mem.bits.or
+    g 255 * I32 cast 8 << mem.bits.or
+    b 255 * I32 cast mem.bits.or
     $packed_color =
 
     # Write color to memory
     packed_color
-    y width 4 * * x + 4 * image_ptr +
+    y 1 - width * x + 4 * image_ptr +
     mem.store
 ) $write_pixel =
 
@@ -61,105 +63,121 @@ math.pi 2 / $fov =
 ( 1.0 1.0 1.0 ) Vec3.Vec3 make $light_diffuse =
 ( 1.0 1.0 1.0 ) Vec3.Vec3 make $light_specular =
 
-3 $max_depth =
+0 $max_depth =
 
-((Unit)(Unit):
-    (: ( $min $max $slices $i ) =
-        min max min - slices / i * +
-    ) $lin_slice =
-    ((Unit I32) rec:
-        ( $u $i ) =
-        -1.0 1.0 width i lin_slice $x =
-        (: 1 ) (: u ) $b1 fun
-        (: i width < ) (:
-            ((Unit I32) rec:
-                ( $u $j ) =
-                1.0 aspect_ratio / -1.0 aspect_ratio / height j lin_slice $y =
-                u
-                (: 1 ) (: $x = x ) $b2 fun
-                (: j height < ) (:
-                    $u =
-                    ( x y 0.0 ) Vec3.Vec3 make $pixel =
-                    1.0 $reflection =
-                    
-                    (( Unit I32 Vec3.Vec3 F64 Ray.Ray ) ( Unit ) rec:
-                        ( $unit $i $color $reflection $ray ) =
-                        ray unpack ( $origin $direction ) =
-                    
-                        # intersect with sphere
-                        obj ( origin direction ) Ray.Ray make Sphere.intersect $maybe =
-                        ((Unit F64)(Unit):
-                            $dist =
-                            dist direction * origin + $intersection =
-                            intersection obj Sphere.center - Vec3.norm $normal_to_surface =
-                            1e-5 normal_to_surface * intersection + $shifted_point =
-                            light_pos shifted_point - Vec3.norm $intersection_to_light =
-
-                            obj ( shifted_point intersection_to_light ) Ray.Ray make Sphere.intersect $maybe2 =
-                            ((Unit F64)(Unit):
-                                # Calculate illumination
-                                camera intersection - Vec3.norm $intersection_to_camera =
-                                intersection_to_light intersection_to_camera + Vec3.norm $H =
-                                obj Sphere.material $m =
-                                ( 0.0 0.0 0.0 ) Vec3.Vec3 make
-                                m Material.ambient light_ambient * +
-                                m Material.diffuse light_diffuse * intersection_to_light normal_to_surface * * +
-                                #m Material.specular light_specular * normal_to_surface H * ** m Material.shininess 4 / ** +
-                                $illumination =
-
-                                reflection illumination * color + $color2 =
-                                m Material.reflectivity reflection * $reflection2 =
-                                shifted_point $origin2 =
-                                direction normal_to_surface Vec3.reflect $direction2 =
-
-                                (: 1 ) (: unit color2 i j write_pixel ) $b3 fun
-                                (: i max_depth 1 - < ) (:
-                                    unit
-                                    i 1 +
-                                    color2
-                                    reflection2
-                                    ( origin2 direction2 ) Ray.Ray make
-                                    rt
-                                ) $b3 fun
-                                b3
-                            )
-                            ((Unit)(Unit): color i j write_pixel )
-                            ( $act $no_v ) =
-                            maybe2
-                            (   Sphere.MaybeF64.Nothing (: unit pop no_v )
-                                Sphere.MaybeF64.Just    (: unit swap act )
-                            ) match
-                        )
-                        ((Unit)(Unit): color i j write_pixel )
-                        ( $bound $default ) =
-                        maybe
-                        (   Sphere.MaybeF64.Nothing (: unit pop default )
-                            Sphere.MaybeF64.Just    (: unit swap bound )
-                        ) match
-                        #Maybe.bind_default
-                    ) $rt =
-
-                    # Raytrace
-                    u
-                    0
-                    Vec3.zero
-                    1.0
-                    (   camera
-                        pixel camera - Vec3.norm
-                    ) Ray.Ray make
-                    rt
-
-                    j 1 + iter_y
+# Iterate over each pixel in the screen
+((Unit Any):
+    $cb =
+    (rec:
+        (: 1 ) (: ( $u $i ) = u ) $b1 fun
+        (: width < ) (:
+            (rec:
+                (: 1 ) (: ( $u $i $j ) = u i ) $b2 fun
+                (: height < ) (:
+                    cb
+                    1 + iter_y
                 ) $b2 fun
                 b2
-                i 1 + iter_x
             ) $iter_y =
-            u 0 iter_y
+            0 iter_y
+            1 + iter_x
         ) $b1 fun
         b1
     ) $iter_x =
     0 iter_x
+) $for_each_pixel =
 
-) $draw =
+(( Unit I32 I32 ) ( Unit I32 I32 ):
+    # Proportional slice
+    ((F64 F64 I32 I32)(F64) rec: ( $min $max $slices $i ) =
+        min max min - slices / i * +
+    ) $lin_slice =
 
-(Unit) (: draw image_ptr ) "draw" export
+    # Make ray from camera
+    ( $i $j ) =
+    -1.0 1.0 width i lin_slice $x =
+    1.0 aspect_ratio / -1.0 aspect_ratio / height j lin_slice $y =
+    ( x y 0.0 ) Vec3.Vec3 make $pixel =
+    (   camera
+        pixel camera - Vec3.norm
+    ) Ray.Ray make $r =
+
+
+    (( Unit I32 Vec3.Vec3 F64 Ray.Ray ) ( Unit ) rec:
+        ( $n $color $reflection $ray ) =
+        ray unpack ( $origin $direction ) =
+
+        # intersect with sphere
+        obj ray Sphere.intersect $maybe =
+        maybe (
+            # No intersect
+            Sphere.MaybeF64.Nothing (:
+                pop color i j write_pixel
+            )
+
+            # Intersect
+            Sphere.MaybeF64.Just (:
+                $dist =
+                $_ = _ # Not detecting unit
+                ray dist Ray.get_point $intersection =
+                intersection obj Sphere.center - Vec3.norm $normal_to_surface =
+
+                # Intersect with light
+                1e-5 normal_to_surface * intersection + $shifted_point =
+                light_pos shifted_point - Vec3.norm $intersection_to_light =
+                obj ( shifted_point intersection_to_light ) Ray.Ray make Sphere.intersect $maybe2 =
+                maybe2 (
+                    Sphere.MaybeF64.Nothing (: pop color i j write_pixel )
+                    Sphere.MaybeF64.Just (:
+                        $dist_to_light =
+                        # Calculate illumination
+                        camera intersection - Vec3.norm $intersection_to_camera =
+                        intersection_to_light intersection_to_camera + Vec3.norm $H =
+                        obj Sphere.material $m =
+                        ( 0.0 0.0 0.0 ) Vec3.Vec3 make
+                        m Material.ambient light_ambient * +
+                        m Material.diffuse light_diffuse * intersection_to_light normal_to_surface * * +
+                        #m Material.specular light_specular * normal_to_surface H * ** m Material.shininess 4 / ** +
+                        $illumination =
+
+                        reflection illumination * color + $color2 =
+                        m Material.reflectivity reflection * $reflection2 =
+                        shifted_point $origin2 =
+                        direction normal_to_surface Vec3.reflect $direction2 =
+
+                        (: 1 ) (:
+                            color2 i j write_pixel
+                        ) $b3 fun
+                        (: n max_depth < ) (:
+                            n 1 +
+                            color2
+                            reflection2
+                            ( origin2 direction2 ) Ray.Ray make
+                            rt
+                        ) $b3 fun
+                        b3
+                    )
+                ) match
+            )
+        ) match
+    ) $rt =
+
+    # Do Raytrace
+    0
+    ( 1.0 1.0 0.0 ) Vec3.Vec3 make
+    1.0
+    r
+    rt
+
+    # Put i and j back onto the stack
+    i j
+) $raytrace_pixel =
+
+
+(Unit) (:
+    # Trace a ray for each pixel
+    $raytrace_pixel ~ for_each_pixel
+
+    # Give a pointer to the image in static memory
+    image_ptr
+) "draw" export
