@@ -6,6 +6,22 @@ import * as error from './error.js';
 // Import WAST template as a string
 import template, { noRuntime as noRuntimeTemplate } from "./rt.wat.js";
 
+// class StaticMemoryRegion {
+//     isConst: boolean;
+//     startAddress: number;
+//     length: number;
+//     initializedData: Uint8Array = null;
+
+//     constructor() {
+
+//     }
+// }
+
+// class StaticMemory {
+//     constructor() {}
+
+// }
+
 
 /**
  * Convert a byte into an escaped hex character
@@ -280,7 +296,7 @@ export default class ModuleManager {
 
         // Encode string to utf-8
         if (typeof d === 'string')
-            return new TextEncoder().encode(d);
+            return new TextEncoder().encode(d); // UTF-8
 
         // Convert other typed arrays
         if (d instanceof Uint32Array || d instanceof Uint16Array)
@@ -309,6 +325,8 @@ export default class ModuleManager {
      */
     addStaticData(data: Array<number> | Uint8Array | Uint16Array | Uint32Array | string, isConst = false): number {
         // TODO OPTIMIZATION we should segregate strings vs non-string static data (also const vs non-const)
+        // TODO OPTIMIZATION there are often large segements of memory which are never initialized
+        //                   probably better to have an Array of sparse StaticMemoryRegions to make compilation faster
 
         // Convert data to byte array
         const bytes = ModuleManager.toByteArray(data);

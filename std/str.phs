@@ -26,19 +26,8 @@
 I32 $Char =
 
 # Strings could be represented as a list of characters
-# But generally this wouldn't be ideal in terms of performance
-# For this reason we give it a somewhat obscure name
-# And define a better default string implementation later on
+# But this doesn't interface well with the host environment
+# Also each character is represented as an i32
 Char List $ListStr =
 
 # TODO implement strings similar to Haskell's Data.Text
-
-# Type for strings generated at runtime
-( I32 I32 ) class $Str =
-((Str): 1 ) (: unpack lang.pop ) $size fun
-((Str): 1 ) (: unpack lang.swap lang.pop ) $addr fun
-
-(( StaticStr Str | lang.dup ): 1 ) (:
-    ( $lhs $rhs ) =
-    # TODO
-) $concat fun

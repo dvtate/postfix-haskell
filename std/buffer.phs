@@ -1,0 +1,10 @@
+"./lang.phs" require use
+
+(   I32 # ptr
+    I32 # len
+) class $Buf =
+
+# Currently no way to implement this without ugly hacks
+
+# make:
+#   need to call __alloc with bf addr == 0/1

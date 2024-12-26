@@ -1,5 +1,7 @@
 # String Literals
-In static memory `(data ...)` will be stored string literals and perhaps other initializer data. It will be combined into a single long string that.
+In static memory `(data ...)` will be stored string literals and perhaps other initializer data. It will be combined into a single long string that attempts to reduce duplicates.
+
+Strings are represented in UTF-8 so when interacting with a JS host environment the default TextEncoder/TextDecoder should be used.
 
 ## Goals
 ### Static Storage Space Reduction
