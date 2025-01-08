@@ -1,5 +1,6 @@
 "../std/lang.phs" require use
 "../std/maybe.phs" require $maybe =
+"../std/list.phs" require $List =
 "../std/io.phs" require $io =
 
 ((Syntax:Type Syntax:Type):
@@ -92,6 +93,42 @@
         ) match
     ) $Tree.get =
 
+    # This isn't the right way to do it
+    ((Tree):
+
+        ( KeyType ElemType ) List.List $ListType =
+
+        (rec:
+            ( $tree $ret ) =
+            
+            tree (
+                Tree.Nil (:
+                    pop
+                    ret
+                )
+                Tree.Node (:
+                    unpack ( $k $v $l $r ) =
+
+                    r ( ( k v ) ret ) ListType.Node make
+                    iter
+
+                    l swap iter
+                )
+            ) match
+        ) $iter =
+
+        () ListType.Nil make
+        iter
+    ) $Tree.entries =
+
+    ((Tree I32): # Get the elements in the tree at a specified depth from the root
+        (:
+            ( $tree $ret ) =
+
+        ) $dfs =
+
+    ) $Tree.get_row =
+
     #((() io.IO Tree) rec:
     #) $Tree.print =
 
@@ -121,29 +158,43 @@ I32 F64 BSTreeMap $Tree =
 #pop
 
 
-(( Unit io.IO Tree I32) (Unit io.IO Tree) rec:
+# Import Math.random from javascript
+Unit (F64) Arrow ( "js" "Math.random" ) import $random =
+
+# Add n elements to a tree
+(( Unit Tree I32 ) (Unit Tree) rec:
     ( $t $n ) =
-    
-    (: 1 ) (: "done" io.print t ) $b fun
-    (: n 0 > ) (: 
-        n io.print
-        t n n n * F64 cast Tree.set
+    (: 1 ) (: $u = u t ) $b fun
+    (: n 0 > ) (:
+        t random 100 * I32 cast n F64 cast Tree.set
         n 1 -
         mk_tree
     ) $b fun
     b
 ) $mk_tree =
 
+(:
+    ( $u $t ) =
+    t Tree.entries $l =
+    l type $ListType =
 
-( Unit io.IO I32 I32 ) (:
+    # <list> <initial val> <accumulator> foldl
+    #(( ListType  Any  Syntax:Macro (Any ElemType) (Any) Arrow | ):
 
-    ( $n $n2 ) =
+    l u (: 
+        unpack ( $k $v ) =
+        k io.print
+    ) ListType.foldl
+) $print_tree =
+
+( Unit io.IO I32 ) (:
+
+    $n =
 
     () Tree.Nil make
-    n 1.0 Tree.set
-    n2 2.0 Tree.set
-    5 3.0 Tree.set
+    n mk_tree
     $t =
+    t print_tree
 
     #t (
     #    Tree.Nil (: pop -1 )
@@ -159,8 +210,8 @@ I32 F64 BSTreeMap $Tree =
     #    )
     #) match
 
-    t n Tree.get
-    -1.0 maybe.or_default
-    t n2 Tree.get
-    -1.0 maybe.or_default +
+    #t n Tree.get
+    #-1.0 maybe.or_default
+    #t n2 Tree.get
+    #-1.0 maybe.or_default +
 ) "demo" export
