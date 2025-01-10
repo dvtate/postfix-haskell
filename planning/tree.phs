@@ -121,16 +121,36 @@
         iter
     ) $Tree.entries =
 
-    ((Tree I32): # Get the elements in the tree at a specified depth from the root
-        (:
-            ( $tree $ret ) =
+    # get_row - Get the keys for tree nodes at specified depth from the root
+    ((Tree I32):
+        ( $tree $depth ) =
 
+        KeyType List.List $LT =
+
+        (rec: # ret tree i
+            ( $ret $tree $i ) =
+            ret
+            tree (
+                Tree.Nil (: pop )           # dead end, return list
+                Tree.Node (:
+                    unpack ( $k $v $l $r ) =
+                    (: 1 ) (:               # i <= 0
+                        $ret =
+                        ( k ret ) LT.Node make 
+                        #k LT.cons           # append key to start of return list
+                    ) $branch fun
+                    (: i 0 > ) (:       # recursive case
+                        r i 1 - dfs     # append right side to start of list
+                        l i 1 - dfs     # append left side to start of list
+                    ) $branch fun
+                    branch   
+                )
+            ) match
         ) $dfs =
 
+        () LT.Nil make tree depth dfs
     ) $Tree.get_row =
 
-    #((() io.IO Tree) rec:
-    #) $Tree.print =
 
     $Tree ~
 ) $BSTreeMap =
@@ -184,7 +204,31 @@ Unit (F64) Arrow ( "js" "Math.random" ) import $random =
     l u (: 
         unpack ( $k $v ) =
         k io.print
-    ) ListType.foldl
+    ) ListType.foldr
+) $print_tree_keys =
+
+(:
+    $tree =
+    tree type $TT =
+    (rec:
+        ( $u $t $i ) =
+        u
+
+        t i TT.get_row $r =
+
+        r type $LT =
+
+        (: 1 ) (:
+            r swap (: io.print ) LT.foldr
+            "---" io.print
+            t i 1 + for_each_row
+        ) $branch fun
+        (: r LT.is_empty ) (: $u = $u ~ ) $branch fun
+        branch
+    ) $for_each_row =
+
+    tree 0 for_each_row
+
 ) $print_tree =
 
 ( Unit io.IO I32 ) (:
@@ -210,8 +254,8 @@ Unit (F64) Arrow ( "js" "Math.random" ) import $random =
     #    )
     #) match
 
-    #t n Tree.get
-    #-1.0 maybe.or_default
+    #t n Tree.get dup type $MT =
+    #-1.0 MT.or_default
     #t n2 Tree.get
-    #-1.0 maybe.or_default +
+    #-1.0 MT.or_default +
 ) "demo" export

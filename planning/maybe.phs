@@ -4,7 +4,7 @@
 # Identity
 (: $a = $a ~ ) $id =
 
-# Maybe monad
+# Maybe
 (:  $T =
     (:  T class $Just =
         () type class $Nothing =

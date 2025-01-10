@@ -907,11 +907,17 @@ const operators : MacroOperatorsSpec = {
                 if (k.value instanceof types.ClassType)
                     k.value = k.value.getBaseType();
                 if (k.value instanceof types.EnumBaseType) {
+                    return new error.SyntaxError('Invalid Enum base type in match expression', [k.token, token], ctx);
+
+                    // TODO allow use of base type as else case
+                    // tbh I don't think this is a good feature to have, too much work for minor syntactic sugar
+                    /*
                     if (elseCase)
                         return new error.SyntaxError('Too many else cases', [k.token, token], ctx);
 
                     enumType = k.value;
                     elseCase = m.value;
+                    */
                 } else if (k.value instanceof types.EnumClassType) {
                     if (!enumType)
                         enumType = k.value.parent;

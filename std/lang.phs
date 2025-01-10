@@ -283,7 +283,7 @@ $__can_promote ~ (: __promote >= ) $global.>= fun
 # Attempt to promote values to same type
 $__can_promote ~ (: __promote <= ) $global.<= fun
 
-# Performs two operations in order
+# Performs a tuple of operations in order
 # The results of which are stored in locals for later use out of order
 # TODO constexprs should be ignored/optimized
 (: $t =

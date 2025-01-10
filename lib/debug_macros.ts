@@ -107,6 +107,8 @@ const debugOperators: { [k: string]: (ctx: Context, token: LexerToken) => any } 
 
     // View entire stack
     ':stack' : ctx => ctx.stack,
+    ':stack_types' : ctx => ctx.stack.map(v => 
+        v.datatype ? v.datatype.toString() : { syntaxType: syntaxTypes[v.type] }),
     ':stacklen' : ctx => ctx.stack.length,
 
     // Prevent compile if value is false

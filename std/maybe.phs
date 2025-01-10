@@ -1,48 +1,52 @@
 "./lang.phs" require use
 
-(:  $T =
+(:  $ValueType =
+
     (:  () type class $Nothing =
-        T class $Just =
-    ) enum
+        ValueType class $Just =
+    ) enum $MaybeType =
+
+    # Bind calls a function on a Just value
+    # If given Nothing returns Nothing instead
+    (( MaybeType Syntax:Macro (ValueType) (MaybeType) Arrow | ): 
+        $f =
+        (   MaybeType.Nothing (: pop () MaybeType.Nothing make )
+            MaybeType.Just (: f )
+        ) match
+    ) $MaybeType.bind =
+
+    # Invokes v when given nothing, otherwise returns given value
+    (( MaybeType dup Syntax:Macro Unit (MaybeType) Arrow | | ):
+        $v =
+        (   MaybeType.Nothing (: v )
+            MaybeType.Just ((MaybeType)(MaybeType): )
+        ) match
+    ) $MaybeType.fails =
+
+    (( MaybeType ValueType ValueType ):
+        ( $bound $default ) =
+        (   MaybeType.Nothing (: pop default )
+            MaybeType.Just (: pop bound )
+        ) match
+    ) $MaybeType.bind_default =
+
+    (( MaybeType ValueType):
+        $default_value =
+        (   MaybeType.Nothing (: pop default_value )
+            MaybeType.Just    (: $v = $v ~ )
+        ) match
+    ) $MaybeType.or_default =
+
+    # Get the value from the maybe or panic (unreachable) if Nothing
+    ((MaybeType):
+        (   MaybeType.Nothing (: 
+                pop Unit ( ValueType ) Arrow "(unreachable)" __asm
+            )
+            MaybeType.Just (:
+                $v = $v ~
+            )
+        ) match
+    ) $MaybeType.or_trap =
+
+    MaybeType
 ) $Maybe =
-
-Any Maybe $AnyMaybe =
-
-# Bind calls a function on a Just value
-# If given Nothing returns Nothing instead
-(( Any Maybe  Syntax:Macro (Any) (Any Maybe) Arrow | ): 1 ) (:
-    $f =
-    dup type $TMaybe =
-    (   TMaybe.Nothing (: pop () TMaybe.Nothing make )
-        TMaybe.Just (: f )
-    ) match
-) $bind fun
-
-# Invokes v when given nothing, otherwise returns given value
-(( Any Maybe dup Syntax:Macro () type (Any Maybe) Arrow | | ): 1 ) (:
-    $v =
-    dup type $TMaybe =
-    (   TMaybe.Nothing (: v )
-        TMaybe ((TMaybe)(TMaybe): )
-    ) match
-) $fails fun
-
-(( Any Any Any ): 1 ) (:
-    ( $maybe $bound $default ) =
-    $maybe ~ type $TMaybe =
-    maybe
-    (   TMaybe.Nothing (: default )
-        TMaybe         (: bound   )
-    ) match
-) $bind_default fun
-
-(:  ( $maybe $default_value ) =
-
-    $maybe ~ type $TMaybe =
-    $default_value ~ type $TDV =
-
-    maybe
-    (   TMaybe.Nothing (: pop default_value )
-        TMaybe.Just    (: $v = $v ~ )
-    ) match
-) $or_default =

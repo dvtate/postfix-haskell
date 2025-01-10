@@ -1,0 +1,26 @@
+
+# Proposal: YodaScript style if statements
+
+# Syntax #1
+(: ... ) else
+(: ... ) (: ... ) elseif
+(: ... ) (: ... ) if
+
+# Syntax #2
+(: ... )
+(: ... ) (: ... ) if-else
+(: ... ) (: ... ) if-else
+@
+
+# but compiles to
+(: 1   ) (: ... ) $_b_<uid> fun
+(: ... ) (: ... ) $_b_<uid> fun
+(: ... ) (: ... ) $_b_<uid> fun
+_b_<uid>
+
+"
+challenges:
+- nesting
+- state is bad
+
+" pop

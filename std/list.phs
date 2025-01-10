@@ -1,4 +1,5 @@
 "./lang.phs" require $lang =
+"./maybe.phs" require $maybe =
 
 # Macro to construct a type for Linked Lists containing elements of given type
 (:  $ElemType =
@@ -19,10 +20,10 @@
     () ListType.Nil make $ListType.empty =
 
     # Append item to list head
-    ((ElemType ListType):
-        ( $m $l ) =
+    (( ListType ElemType ):
+        ( $l $m ) =
         ( m l ) ListType.Node make
-    ) $cons =
+    ) $ListType.cons =
 
     # Length of linked list
     (:  (rec:
@@ -40,22 +41,41 @@
         0 iter
     ) $ListType.length =
 
-    # Get item at specific index in list
-    "
+    # Get item at specific index in list, returns maybe
     ((ListType I32):
-        (rec: ( $ll $i ) =
-            (
-                ListType.Nil (:
-
+        $index =
+        ElemType maybe.Maybe $MT =
+        ((ListType I32) (MT) rec:
+            $i =
+            (   ListType.Nil (:
+                    pop () MT.Nothing make
                 )
-
+                ListType.Node (:
+                    unpack ( $v $tail ) =
+                    (: 1 ) (: tail i 1 + iter ) $b fun
+                    (: i index == ) (: v MT.Just make ) $b fun
+                    b
+                )
             ) match
-            (: )
         ) $iter =
-        iter
-    ) $ListType.at =
-    " pop
+        0 iter
+    ) $ListType.at_maybe =
 
+    # Get item at specific index in list, trap if OOB
+    ((ListType I32) rec:
+        $index =
+        (   ListType.Nil (:
+                # OOB! trap
+                pop Unit ( ElemType ) Arrow "(unreachable)" __asm
+            )
+            ListType.Node (:
+                unpack ( $v $tail ) =
+                (: 1 ) (: tail index 1 - ListType.at ) $b fun
+                (: index 0 == ) (: v ) $b fun
+                b
+            )
+        ) match
+    ) $ListType.at =
 
     # Apply function to each element of the list
     (( ListType  Syntax:Macro (ElemType) (Any) Arrow | ):
@@ -92,14 +112,14 @@
     ) $ListType.foldl =
 
     # Like foldl but goes the other way around (note: not tail recursive)
-    (( ListType  Any  Syntax:Macro (ElemType Any) (Any) Arrow | ):
+    (( ListType  Any  Syntax:Macro (Any ElemType) (Any) Arrow | ):
         $f =
         (rec:
             $z =
             (   ListType.Node (:
                     unpack ( $x $xs ) =
-                    x
                     xs z iter
+                    x
                         f
                 )
                 ListType.Nil (: pop z )
@@ -139,17 +159,68 @@
         iter
     ) $ListType.filter =
 
-    # TODO take drop concat ++ elem find some
+    (rec:
+        ( $a $b ) =
+        a (
+            ListType.Nil (:
+                b (
+                    ListType.Nil (: 
+                        pop true
+                    )
+                    ListType.Node (:
+                        pop false
+                    )
+                ) match
+            )
+            ListType.Node (:
+                unpack ( $a_v $a_tail ) =
+                b (
+                    ListType.Nil (:
+                        pop false
+                    )
+                    ListType.Node (:
+                        unpack ( $b_v $b_tail ) =
+                        (: 1 ) (:
+                            false
+                        ) $branch fun
+                        (: a_v b_v == ) (:
+                            a_tail b_tail ListType.equals
+                        ) $branch fun
+                        branch
+                    )
+                ) match
+            )
+        ) match
+    ) $ListType.equals =
+
+    ((ListType):
+        (
+            ListType.Nil (: pop true )
+            ListType.Node (: pop false )
+        ) match
+    ) $ListType.is_empty =
+
+    # TODO append take drop concat elem find some
 
     # Return the List type we created
     ListType
 ) $List =
 
+# Why doesn't this work??
+#(( Any List dup :stack ):
+#    ( $a $b ) =
+#    a type b type ==
+#) (:
+#    a type $LT =
+#    a b LT.equals
+#) $global.== fun
+
+
 # Honestly not sure if these should be in lang ns anymore
-(( Any List Syntax:Macro (Any) (Any) Arrow | ):
-    ( $l $f ) =
-    l type $LT =
-    f type (LT.ElemType) (Any) Arrow Syntax:Macro | ==
-)
-(: ( $l $f ) = l type $ListType = l $f ~ ListType.map )
-$lang.map fun
+#(( Any List Syntax:Macro (Any) (Any) Arrow | ):
+#    ( $l $f ) =
+#    l type $LT =
+#    f type (LT.ElemType) (Any) Arrow Syntax:Macro | ==
+#)
+#(: ( $l $f ) = l type $ListType = l $f ~ ListType.map )
+#$lang.map fun

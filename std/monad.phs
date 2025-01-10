@@ -1,14 +1,13 @@
 "./lang.phs" require use
 
-# These 'monads' rly do be cucked ngl
+# This is ugly and worthy of improvement
 
-# Cucked io monad alternative
+# Cucked IO monad alternative
 (: $T = T ) class $Monad =
 
 # These operators exist only such that we can do operations involving various monad types
-# TODO should probably check if they're truthy
 (: 1 )
 (((Any Monad) (Any Monad) Arrow (Any Monad) (Any Monad) Arrow):
     ( $a $b ) =
-    ((Any Monad) (Any Monad): $m = ( m a b ) seq )  # TODO seq does nothing here???
+    ((Any Monad) (Any Monad): $m = ( m a b ) seq )  # TODO seq does nothing here?
 ) $global.>> fun

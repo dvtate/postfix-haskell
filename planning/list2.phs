@@ -1,5 +1,6 @@
 "../std/lang.phs" require use
 "../std/list.phs" require $list =
+"../std/io.phs" require $io =
 
 # Import Math.random from javascript
 Unit (F64) Arrow ( "js" "Math.random" ) import $random =
@@ -18,6 +19,13 @@ $ll =
 ll :data
 ll DoubleList.length :data
 
+ll 1 DoubleList.at :data
+ll 2 DoubleList.at :data
+#ll 6 DoubleList.at :data
+ll 1 DoubleList.at_maybe :data
+ll 2 DoubleList.at_maybe :data
+ll 6 DoubleList.at_maybe :data
+
 # Append n randomly generated nodes to given list
 ((I32 DoubleList) (DoubleList) rec:
     ( $ll $n ) =
@@ -30,12 +38,15 @@ ll DoubleList.length :data
     branch
 ) $mk_list =
 
-(I32) (:
+(Unit io.IO I32) (:
     # Input: number of nodes to use in list
     $n =
 
     # A list with n randomly generated elements
     () DoubleList.Nil make n mk_list $list =
+
+    # Print the elements in the list
+    list swap (: io.print ) DoubleList.foldl
 
     # Give new list containing the triples of given list
     (: (: 3.0 * ) DoubleList.map ) $triple =

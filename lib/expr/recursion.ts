@@ -245,12 +245,18 @@ export class RecursiveBodyExpr extends Expr {
 /**
  * Function that gets added to module but isn't exported
  */
-// TODO need to figure out how to share rv locals between functions
-// Should reference function host function
+// TODO maybe share RV locals with host function
 export class RecFunExpr extends FunExpr {
     public takeExprs: DependentLocalExpr[];
     public copiedParams: ParamExpr[];
 
+    /**
+     * @param token location in source code
+     * @param name function label
+     * @param takeExprs ??
+     * @param copiedParams ??
+     * @param module compilation target
+     */
     constructor(
         token: LexerToken,
         name: string,

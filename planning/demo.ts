@@ -90,14 +90,13 @@ import * as util from '../tools/file_tools.js';
         console.log('test ( 4 )\t=> ', w.test(4));
         console.log('test ( 5 )\t=> ', w.test(5));
     } else if (fname.endsWith('tree.phs')) {
-        console.log('demo ( 3,1 )\t => ', w.demo(3,1));
-        console.log('demo ( 1,3 )\t => ', w.demo(3,1));
-        console.log('demo ( 1,1 )\t => ', w.demo(1,1));
+        console.log('demo ( 6 )\t => ', w.demo(6));
     } else {
         console.log('no demo for source file', fname);
     }
 
 } catch (e) {
-    console.error(e);
+    if (!(e instanceof error.SyntaxError))
+        console.error(e);
 }
 })();
