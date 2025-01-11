@@ -164,7 +164,7 @@ math.pi 2 / $fov =
 
     # Do Raytrace
     0
-    ( 1.0 1.0 0.0 ) Vec3.Vec3 make
+    ( 0.5 0.5 0.0 ) Vec3.Vec3 make
     1.0
     r
     rt

@@ -4,7 +4,7 @@
 "../std/str.phs"     require use
 
 # Lazy evaluated IO action
-(: "Testing" StaticStr cast io.print )
+(: "Testing" io.print )
 (: 888.5 io.print ) >> $action =
 
 # Export that performs IO
@@ -13,7 +13,7 @@
     action
 
     # Print string
-    "Hello, world!" StaticStr cast io.print
+    "Hello, world!" io.print
 
     # Print an i32
     123456 io.print

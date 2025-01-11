@@ -69,11 +69,7 @@ export class NumberExpr extends DataExpr {
      * @override
      */
     out() {
-        const outValue = (v: value.Value): string =>
-            v instanceof value.TupleValue
-                ? v.value.map(outValue).join()
-                : v.value.toWAST();
-        return outValue(this.value);
+        return this.value.value.toWAST();
     }
 
     children(): Expr[] {
@@ -204,11 +200,10 @@ export class InstrExpr extends DataExpr {
      */
     out(ctx: ModuleManager, fun: FunExpr) {
         // See implementation for seq in standard library
-        if (this.instr.length === 0)
-            return this.args.map(e => e.out(ctx, fun)).join('\n\t');
-        const ret = `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
-        // console.log(this.constructor.name, ret);
-        return ret;
+        if (this.instr.length !== 0 && !this.instr.startsWith('('))
+            return `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
+        else
+            return this.args.map(e => e.out(ctx, fun)).join('\n\t') + this.instr;
     }
 
     /**

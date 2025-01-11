@@ -280,6 +280,7 @@ export default class ModuleManager {
         // These properties are only referenced as we want to keep changes from smaller scopes
         ret.imports = this.imports;
         ret.staticData = this.staticData;
+        ret.staticDataConst = this.staticDataConst;
         ret.definitions = this.definitions;
         return ret;
     }
@@ -345,9 +346,11 @@ export default class ModuleManager {
             }
 
         // Append to static data
+        // Due to logic in .clone() we cannot make copies
         const ret = this.staticData.length + (this.noRuntime ? 0 : this.stackSize);
-        this.staticData = this.staticData.concat(Array.from(bytes)); // can't use .push(...) because of max stack size error
-        this.staticDataConst = this.staticDataConst.concat(new Array(bytes.length).fill(isConst));
+        bytes.forEach(b => this.staticData.push(b)); // can't use .push(...bytes) because of max stack size error
+        for (let i = 0; i < bytes.length; i++)
+            this.staticDataConst.push(isConst);
         return ret;
     }
 

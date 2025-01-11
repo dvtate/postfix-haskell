@@ -14,7 +14,8 @@ import * as util from '../tools/file_tools.js';
     const src = readFileSync(fname).toString();
 
     // Compile program
-    const ctx = parse(lex(src, fname));
+    const toks = lex(src, fname);
+    const ctx = parse(toks, new Context(toks[0].file /*, { optLevel: 2 }*/));
     if (ctx instanceof error.SyntaxError)
         console.error(util.formatErrorPos([ctx]));
     if (!(ctx instanceof Context))
@@ -90,7 +91,8 @@ import * as util from '../tools/file_tools.js';
         console.log('test ( 4 )\t=> ', w.test(4));
         console.log('test ( 5 )\t=> ', w.test(5));
     } else if (fname.endsWith('tree.phs')) {
-        console.log('demo ( 6 )\t => ', w.demo(6));
+        console.log('demo ( 10 )');
+        w.demo(10);
     } else {
         console.log('no demo for source file', fname);
     }

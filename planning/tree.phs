@@ -127,19 +127,20 @@
 
         KeyType List.List $LT =
 
-        (rec: # ret tree i
-            ( $ret $tree $i ) =
-            ret
-            tree (
-                Tree.Nil (: pop )           # dead end, return list
+        ((LT Tree I32) (LT) rec: # ret tree i
+            $i =
+            (   Tree.Nil (: pop $ret = ret )           # dead end, return list
                 Tree.Node (:
                     unpack ( $k $v $l $r ) =
+                    # PROBLEM: dep expr only unpacked in first case of branch, not both
+                    # WORKAROUND: force evaluation before branch body but this is ugly
+                    k (I32) (I32) Arrow "(;fuck;)" __asm
+                    #( k ) seq # workaroud for a bug
                     (: 1 ) (:               # i <= 0
-                        $ret =
-                        ( k ret ) LT.Node make 
-                        #k LT.cons           # append key to start of return list
+                        LT.cons           # append key to start of return list
                     ) $branch fun
                     (: i 0 > ) (:       # recursive case
+                        pop
                         r i 1 - dfs     # append right side to start of list
                         l i 1 - dfs     # append left side to start of list
                     ) $branch fun
@@ -201,7 +202,7 @@ Unit (F64) Arrow ( "js" "Math.random" ) import $random =
     # <list> <initial val> <accumulator> foldl
     #(( ListType  Any  Syntax:Macro (Any ElemType) (Any) Arrow | ):
 
-    l u (: 
+    l u (:
         unpack ( $k $v ) =
         k io.print
     ) ListType.foldr

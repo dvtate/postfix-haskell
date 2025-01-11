@@ -211,7 +211,7 @@ export class EnumMatchExpr extends Expr {
                 .map(vs => vs.map(v => v.out(ctx, fun)).join(' '))
                 .join(`(br ${branchId}) )`)
         } )`;
-        ret += this.results.map(dl => fun.setLocalWat(dl.inds));
+        ret += this.results.map(dl => fun.setLocalWat(dl.inds)).join(' ');
 
         return ret;
     }
