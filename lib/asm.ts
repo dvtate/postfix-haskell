@@ -381,7 +381,11 @@ const opInstrs: { [k : string] : HandlerFn } = {
         if (ctx.stack.length < 3)
             return ['expected 3 arguments for select instruction'];
         const [trueVal, falseVal, cond] = ctx.popn(3);
-
+        // true
+        // false
+        // cond
+        // select cond false true
+        
         // Handle constexpr
         // NOTE here we're being leaniant
         if (cond.isConstExpr()) {
@@ -413,8 +417,10 @@ const opInstrs: { [k : string] : HandlerFn } = {
         // Validate inputs
         if (![value.ValueType.Data, value.ValueType.Expr].includes(trueVal.type) || trueVal.type != falseVal.type)
             return ['syntax error'];
-        if (compilesToPrim(trueVal.datatype))
+        if (!compilesToPrim(trueVal.datatype))
             return ['invalid datatype in true case of select instruction'];
+        if (!compilesToPrim(falseVal.datatype))
+            return ['invalid datatype in false case of select instruction'];
         if (!trueVal.datatype.check(falseVal.datatype) || !falseVal.datatype.check(trueVal.datatype))
             return ['differing datatypes for different branches of select'];
 

@@ -139,6 +139,13 @@ export default class WasmNumber {
      * @returns - this
      */
     fromString(s: string): this {
+        // Character literal -- i32
+        if (s.startsWith('\'')) {
+            this._type = NumberType.I32;
+            this.value = JSON.parse(`"${s.slice(1, -1)}"`).charCodeAt(0);
+            return this;
+        }
+
         // Get size
         let isLong = false;
         if ('Ll'.includes(s[s.length - 1])) {

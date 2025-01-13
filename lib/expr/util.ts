@@ -201,7 +201,7 @@ export class InstrExpr extends DataExpr {
     out(ctx: ModuleManager, fun: FunExpr) {
         // See implementation for seq in standard library
         if (this.instr.length !== 0 && !this.instr.startsWith('('))
-            return `(${this.instr} ${this.args.map(e => e.out(ctx, fun)).join(' ')})`;
+            return `${this.args.map(e => e.out(ctx, fun)).join(' ')}(${this.instr})`;
         else
             return this.args.map(e => e.out(ctx, fun)).join('\n\t') + this.instr;
     }
@@ -310,11 +310,18 @@ export class MultiInstrExpr extends Expr {
         });
 
         // Instruction + capture results
-        return `(${this.instr} ${
-            this.args.map(e => e.out(ctx, fun)).join(' ')
-        })\n${
-            this.results.map(e => fun.setLocalWat(e.getInds())).join(' ')
-        }`;
+        if (this.instr.length !== 0 && !this.instr.startsWith('('))
+            return `${
+                this.args.map(e => e.out(ctx, fun)).join(' ')
+            }\n\t(${this.instr})\n\t${
+                this.results.map(e => fun.setLocalWat(e.getInds())).join(' ')
+            }`;
+        else
+            return `${
+                this.args.map(e => e.out(ctx, fun)).join(' ')
+            }\n\t${this.instr}\n\t${
+                this.results.map(e => fun.setLocalWat(e.getInds())).join(' ')
+            }`;
     }
 
     /**

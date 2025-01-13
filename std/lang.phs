@@ -4,7 +4,7 @@ Never $Void =
 
 # Stack
 (: $_ = ) $pop =				# Pop value
-(: $v = v v ) $dup =			# Duplicate value
+(: $v = $v ~ $v ~ ) $dup =			# Duplicate value
 (: ( $a $b ) = $b ~ $a ~ ) $swap = # swap values
 
 # Booleans

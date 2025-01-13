@@ -93,8 +93,8 @@
         ) match
     ) $Tree.get =
 
-    # This isn't the right way to do it
     ((Tree):
+        # This isn't the right way to do it
 
         ( KeyType ElemType ) List.List $ListType =
 
@@ -152,10 +152,8 @@
         () LT.Nil make tree depth dfs
     ) $Tree.get_row =
 
-
-    $Tree ~
+    Tree
 ) $BSTreeMap =
-
 
 I32 F64 BSTreeMap $Tree =
 
@@ -183,80 +181,46 @@ I32 F64 BSTreeMap $Tree =
 Unit (F64) Arrow ( "js" "Math.random" ) import $random =
 
 # Add n elements to a tree
-(( Unit Tree I32 ) (Unit Tree) rec:
+(( Tree I32 ) (Tree) rec:
     ( $t $n ) =
-    (: 1 ) (: $u = u t ) $b fun
+    (: 1 ) (: t ) $branch fun
     (: n 0 > ) (:
         t random 100 * I32 cast n F64 cast Tree.set
         n 1 -
-        mk_tree
-    ) $b fun
-    b
-) $mk_tree =
+        make_tree
+    ) $branch fun
+    branch
+) $make_tree =
 
 (:
-    ( $u $t ) =
-    t Tree.entries $l =
-    l type $ListType =
-
-    # <list> <initial val> <accumulator> foldl
-    #(( ListType  Any  Syntax:Macro (Any ElemType) (Any) Arrow | ):
-
-    l u (:
-        unpack ( $k $v ) =
-        k io.print
-    ) ListType.foldr
-) $print_tree_keys =
-
-(:
-    $tree =
-    tree type $TT =
+    dup type $TT =
     (rec:
-        ( $u $t $i ) =
-        u
+        ( $t $i ) =
 
         t i TT.get_row $r =
-
         r type $LT =
 
         (: 1 ) (:
             r swap (: io.print ) LT.foldr
             "---" io.print
-            t i 1 + for_each_row
+            t i 1 + print_each_row
         ) $branch fun
-        (: r LT.is_empty ) (: $u = $u ~ ) $branch fun
+        (: r LT.is_empty ) (: io.nop ) $branch fun
         branch
-    ) $for_each_row =
+    ) $print_each_row =
 
-    tree 0 for_each_row
-
+    0 print_each_row
 ) $print_tree =
 
 ( Unit io.IO I32 ) (:
-
     $n =
 
+    # Start with an empty tree
     () Tree.Nil make
-    n mk_tree
-    $t =
-    t print_tree
 
-    #t (
-    #    Tree.Nil (: pop -1 )
-    #    Tree.Node (:
-    #        unpack ( $k $v $l $r ) =
-    #        l (
-    #            Tree.Nil (: pop -2 )
-    #            Tree.Node (: 
-    #                unpack ( $k2 $v2 $l2 $r2 ) =
-    #                k2
-    #            )
-    #        ) match
-    #    )
-    #) match
-
-    #t n Tree.get dup type $MT =
-    #-1.0 MT.or_default
-    #t n2 Tree.get
-    #-1.0 MT.or_default +
+    # Add n random nodes
+    n make_tree
+    
+    # Print it
+    print_tree
 ) "demo" export

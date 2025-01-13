@@ -1,0 +1,13 @@
+"../std/lang.phs" require use
+"../std/str.phs" require $str =
+"../std/io.phs" require $io =
+
+( Unit io.IO I32 ) (:
+    $n =
+
+    # Converting static string to list string
+    "Provided number: " str.Str cast io.print
+
+    # Converting i32 to a list string
+    n 10 str.itoa io.print
+) "test" export

@@ -1,6 +1,13 @@
 "./lang.phs" require $lang =
 "./list.phs" require "List" "" use_some
 
+
+
+###
+# Static Strings
+# Datatype for string literals that get stored in linear memory
+###
+
 # Make concatenate string literals
 ((Syntax:Str Syntax:Str): 1 ) (:
     # I just wasted 2 mins making this lol
@@ -22,12 +29,101 @@
     ( lit ) StaticStr make
 ) $lang.cast fun
 
+###
+# List Str
+# This is used for program-generated strings
+###
+
 # Characters are stored in I32's for performance reasons
 I32 $Char =
 
 # Strings could be represented as a list of characters
 # But this doesn't interface well with the host environment
 # Also each character is represented as an i32
-Char List $ListStr =
+Char List $Str =
 
-# TODO implement strings similar to Haskell's Data.Text
+((StaticStr Syntax:Type): Str == ) (:
+    pop
+    unpack ( $size $address ) =
+
+    # Read in reverse, constructing list elements as we go
+    ((I32 I32 Str) (Str) rec:
+        ( $addr $n $ret ) =
+        (: 1 ) (:
+            ret
+        ) $branch fun
+        (: n 0 >= ) (:
+            addr n + "i32.load8_u" asm $c =
+            addr
+            n 1 -
+            ret c Str.cons
+            iter
+        ) $branch fun
+        branch
+    ) $iter =
+
+    address size Str.empty
+    iter
+) $lang.cast fun
+
+((Syntax:Str Syntax:Type): Str == ) (:
+    pop
+    StaticStr lang.cast
+    Str lang.cast
+) $lang.cast fun
+
+"./math.phs" require $math =
+
+# Recursive itoa implementation
+(rec:
+    ( $n $base $ret ) =
+
+    # Get character representation of 1's place digit
+    # note: if n == 0 this gives '0' first call
+    ret
+    n base % I32 cast $d =
+    d 9 >
+        '0'
+        'a' 10 -
+        "select" asm d +
+    Str.cons
+    $ret2 =
+
+    # Next digit
+    #n base / $value =
+
+    (: 1 ) (:
+        n base / base ret2 _itoa
+    ) $branch fun
+    (: n base / 0 == ) (:
+        ret2
+    ) $branch fun
+    branch
+) $_itoa =
+
+(( I32 I64 | I32): 1 ) (:
+    ( $n $base ) =
+
+    # Negative sign
+    (: 1 ) (:    
+        n
+        base
+        Str.empty
+        _itoa
+    ) $add_sign fun
+    (: n 0 < ) (:
+        n math.abs
+        base
+        Str.empty
+        _itoa
+        '-' Str.cons
+    ) $add_sign fun
+    add_sign
+    
+) $itoa fun
+
+
+###
+# Vec Strings
+# TODO make a Vector type with character specialization similar to haskell's Data.Text
+###

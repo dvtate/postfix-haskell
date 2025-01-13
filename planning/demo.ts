@@ -39,6 +39,44 @@ import * as util from '../tools/file_tools.js';
                     addr);
                 console.log(new TextDecoder().decode(str));
             },
+
+            // Note string here needs to be 
+            logStrList: (addr: number) => {
+                class StrLLNode {
+                    dv: DataView;
+                    constructor(addr: number) {
+                        this.dv = new DataView(mod.instance.exports.__memory.buffer, addr, 3 * 4);
+                        // console.log(
+                        //     addr, "StrLLNode(",
+                        //     this.dv.getUint32(0, true), ",",
+                        //     this.dv.getUint32(4, true), ",",
+                        //     this.dv.getUint32(8, true), ')',
+                        // );
+                    }
+                    getChar(): string {
+                        return String.fromCharCode(this.dv.getUint32(0, true));
+                        // return (this.dv.getUint32(4, true) !== 0)
+                        //     ? String.fromCharCode(this.dv.getUint32(0, true))
+                        //     : '';
+                    }
+                    next(): StrLLNode {
+                        return  (this.dv.getUint32(4, true) !== 0)
+                            ? new StrLLNode(this.dv.getUint32(8, true))
+                            : null;
+                    }
+                    getString() {
+                        let ret = '';
+                        let n: StrLLNode = this;
+                        do {
+                            ret += n.getChar();
+                            n = n.next();
+                        } while (n !== null);
+                        return ret;
+                    }
+                }
+
+                return console.log(new StrLLNode(addr).getString());
+            }
         },
     });
 
@@ -93,6 +131,13 @@ import * as util from '../tools/file_tools.js';
     } else if (fname.endsWith('tree.phs')) {
         console.log('demo ( 10 )');
         w.demo(10);
+    } else if (fname.endsWith('strl.phs')) {
+        for (let i = 0; i < 10; i++) {
+            const n = Math.floor(Math.random() * (1 << 30) - (1 << 30) / 2);
+            // let n = i * 213;
+            console.log('test(', n,')');
+            w.test(n);
+        }
     } else {
         console.log('no demo for source file', fname);
     }

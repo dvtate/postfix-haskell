@@ -189,7 +189,8 @@ function toToken(token: string, position: number, file: string): LexerToken {
         return new LexerToken(token.substring(1, token.length - 1), TokenType.String, position, file);
 
     // Number (note this makes NaN an identifier)
-    if (!isNaN(parseFloat(token)))
+    // Character literal
+    if (!isNaN(parseFloat(token)) || (token.startsWith('\'') && token.endsWith('\'')))
         return new NumberToken(token, position, file);
 
     // Separators
@@ -216,7 +217,7 @@ export function lex(src: string, file?: string): LexerToken[] {
     const addToken = (s: string) => ret.push(toToken(s, i, file));
 
     // Find end of string
-    const endStr = () => {
+    const endStr = (chr: string) => {
         // Determine if quote is escaped
         function isEscaped(s: string, i: number) {
             let e = false;
@@ -227,7 +228,7 @@ export function lex(src: string, file?: string): LexerToken[] {
 
         // Find end of string
         while (++i < src.length)
-            if (src[i] === '"' && !isEscaped(src, i))
+            if (src[i] === chr && !isEscaped(src, i))
                 break;
     };
 
@@ -252,7 +253,7 @@ export function lex(src: string, file?: string): LexerToken[] {
         } else if (['"', "'"].includes(src[i])) {
             addToken(src.substring(prev, i));
             prev = i;
-            endStr();
+            endStr(src[i]);
             i++;
             addToken(src.substring(prev, i));
 

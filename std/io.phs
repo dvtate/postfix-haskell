@@ -1,6 +1,6 @@
 "./lang.phs"    require use
 "./monad.phs"   require "Monad" "" use_some
-"./str.phs"     require "StaticStr" "" use_some
+"./str.phs"     require $str =
 
 # Deprecated
 
@@ -14,16 +14,25 @@ $Monad ~ class $IO =
 ) $print fun
 
 # Define print for strings
-((Any IO  StaticStr): 1 )
+((Any IO  str.StaticStr): 1 )
 (: ( $io $str ) =
-    io str ( io type StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
+    io str ( io type str.StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
 ) $print fun
 
 # Convert string literals to static strings
 ((Any IO Syntax:Str): 1 )
 (: ( $io $strl ) =
-    $strl ~ StaticStr cast $str =
-    io str ( io type StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
+    $strl ~ str.StaticStr cast $s =
+    io s ( io type str.StaticStr ) ( io type ) Arrow ( "js" "logStr" ) import @
+) $print fun
+
+((Any IO str.Str): 1 )
+(: ( $io $strl ) =
+    io strl
+    ( str.Str ) ( I32 ) Arrow
+        "(drop)(call $__ref_stack_pop)" __asm
+    ( io type I32 ) ( io type ) Arrow
+        ( "js" "logStrList" ) import @
 ) $print fun
 
 # If one branch does IO operations so should the others so that the arrow types match
