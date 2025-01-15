@@ -96,6 +96,8 @@
 ((I64): 1 ) (: $n = 64 n _bits.clz - ) $log2 fun
 ((F32): 1 ) (: log ln2 / ) $log2 fun # log_2 x = log_e x / log_e 2
 ((F64): 1 ) (: log ln2 / ) $log2 fun
+((F32): 1 ) (: log ln10 / ) $log10 fun # log_10 x = log_e x / log_e 10
+((F64): 1 ) (: log ln10 / ) $log10 fun
 
 " Algorithm: musl/src/math/log.c from FreeBSD
 /* log(x)
@@ -250,7 +252,7 @@
         4.1437773411068822733e-8  $c4 =
         a b + $x =
         x x * $xx =
-        x c_4 xx * c_3 + xx * c_2 + xx * c_1 + xx * c_0 + xx * - $y =
+        x c4 xx * c3 + xx * c2 + xx * c1 + xx * c0 + xx * - $y =
         y 2 y - / x * b + a +
     ) $kern_expb =
 
@@ -274,8 +276,8 @@
         ) $b2 fun
         b2
     ) $b1 fun
-    (: s 1024  > s 1024  == b > s - a && || ) (: F64 number.limits.pos_inf ) $b1 fun
-    (: s -1075 < s -1075 == b s a - < && || ) (: 0.0 ) $b1 fun
+    (: s 1024.0  > s 1024.0  == b > s - a && || ) (: F64 number.limits.pos_inf ) $b1 fun
+    (: s -1075.0 < s -1075.0 == b s a - < && || ) (: 0.0 ) $b1 fun
     b1
 ) $exp2 fun
 

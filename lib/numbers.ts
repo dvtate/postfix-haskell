@@ -218,20 +218,34 @@ export default class WasmNumber {
     {
         return {
             type: this.type,
-            value: (<any>this.value)[0] || this.value.toString(),
+            value: this.toString(),
         };
     }
 
     toString() {
+        function floatToString(num: number) {
+            // Special cases
+            if (isNaN(num))
+                return "NaN";
+            if (!isFinite(num))
+                return num > 0 ? "Infinity" : "-Infinity";
+            if (Object.is(num, -0))
+                return "-0.0";
+
+            // Convert number to string
+            let str = num.toString();
+
+            // Add ".0" if there's no decimal point
+            if (!str.includes("."))
+                str += ".0";
+            return str;
+        }
+
         switch (this.type) {
             case NumberType.F32:
-                return JSON.stringify(this.value) + 'f';
-            case NumberType.F64: {
-                let ret = JSON.stringify(this.value);
-                if (!ret.includes('.'))
-                    ret += '.0';
-                return ret;
-            }
+                return floatToString(this.value as number) + 'f';
+            case NumberType.F64:
+                return floatToString(this.value as number);
             case NumberType.I32:
                 return this.value.toString();
             case NumberType.U32:
