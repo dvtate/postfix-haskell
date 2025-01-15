@@ -55,7 +55,7 @@ export class BranchInputExpr extends DataExpr {
      * @override
      */
     get expensive(): boolean {
-        return false;
+        return this.index !== null;
     }
 
     /**

@@ -91,8 +91,7 @@ export default class Fun {
      */
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
-        // FIXME: once we know inputs and shit we then need to store them into the Branch expr so that
-        //  the value they're capturing is captured before branch body and only accessed via relevant local
+        // TODO FIXME do something similar for locals that get accessed in multiple branches (and/or conditions)
         const oldStack = ctx.stack.slice();
         ctx.stack = ctx.stack.map(v =>
             v instanceof expr.DataExpr

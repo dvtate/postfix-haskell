@@ -117,7 +117,7 @@ export abstract class DataExpr extends Expr {
      * @override
      */
     get expensive(): boolean {
-        return false;
+        return true;
     }
 
     /**

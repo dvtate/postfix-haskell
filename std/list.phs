@@ -141,6 +141,7 @@
             ) match
         ) $iter =
         () ListType.Nil make
+        iter
     ) $ListType.reverse =
 
     (( ListType Syntax:Macro (ElemType) (I32) Arrow | ):
@@ -194,13 +195,53 @@
     ) $ListType.equals =
 
     ((ListType):
-        (
-            ListType.Nil (: pop true )
+        (   ListType.Nil (: pop true )
             ListType.Node (: pop false )
         ) match
     ) $ListType.is_empty =
 
-    # TODO append take drop concat elem find some
+    ((ListType ListType):
+        (: ListType.cons ) ListType.foldr
+    ) $ListType.concat =
+
+    (( ListType I32 ):
+        ((ListType I32) (ListType) rec:
+            ( $n $i ) =
+
+            (: 1 ) (: ListType.empty ) $branch fun
+            (: i 0 > ) (:
+                n (
+                    ListType.Nil (:
+                        pop
+                        ListType.empty
+                    )
+                    ListType.Node (:
+                        unpack ( $v $tail ) =
+                        tail
+                        i 1 -
+                        iter
+                        v ListType.cons
+                    )
+                ) match
+            ) $branch fun
+            branch
+        ) $iter =
+        iter
+    ) $ListType.take =
+
+    # TODO FIXME why does adding type signature here make tree.phs compilation fail?
+    (: #( ListType I32 ):
+        $num =
+        (:  (   ListType.Nil (: ListType.Nil make )
+                ListType.Node (:
+                    unpack ( $___ $tail ) =
+                    tail
+                )
+            ) match
+        ) num lang.loop
+    ) $ListType.drop =
+
+    # TODO elem find some
 
     # Return the List type we created
     ListType

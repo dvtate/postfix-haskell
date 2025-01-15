@@ -25,12 +25,12 @@ Never $Void =
 (: pop ) (: pop @ ) $global.|| fun
 
 ##
-# Cast a value of one type to another type
+# Cast a value callable one type to another type
 # <value> <type> cast
 ##
 
 # No need to cast if already same type as target
-# Maybe remove classes?
+# Maybe remove classescallable
 (: swap type == ) (: pop ) $cast fun
 
 # Cast to I32
@@ -283,9 +283,30 @@ $__can_promote ~ (: __promote >= ) $global.>= fun
 # Attempt to promote values to same type
 $__can_promote ~ (: __promote <= ) $global.<= fun
 
+##
+# Control flow
+## 
+
 # Performs a tuple of operations in order
 # The results of which are stored in locals for later use out of order
 # TODO constexprs should be ignored/optimized
 (: $t =
 	t unpack t type dup Arrow "" __asm
 ) $seq =
+
+# Invoke given macro/value a given number of times
+# Example:	(: ( $x $n ) = x (: x * ) n loop ) $bad_pow =
+# Example2:	( 1 5 loop ) :data # ( 1 1 1 1 1 )
+(:	( $callable $n ) =
+	(rec:
+		$n =
+		(: 1 ) (: ) $branch fun
+		(: n 0 > ) (:
+			callable
+			n 1 -
+			loop_impl
+		) $branch fun
+		branch
+	) $loop_impl =
+	n loop_impl
+) $loop =

@@ -5,9 +5,15 @@
 ( Unit io.IO I32 ) (:
     $n =
 
-    # Converting static string to list string
-    "Provided number: " str.Str cast io.print
+    # Convert string literal to list string
+    "Provided number: " str.Str cast #8 str.Str.take
 
-    # Converting i32 to a list string
-    n 10 str.itoa io.print
+    # Convert i32 to a base-10 string representation
+    n 10 str.itoa
+
+    # Combine the 2 strings
+    str.Str.concat
+
+    # Print the combined string
+    io.print
 ) "test" export

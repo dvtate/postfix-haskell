@@ -16,7 +16,7 @@ I'm still not sure what exactly we can guarantee in terms of behavior for now ju
 ```
 
 5 $a =
-{ 1.2 3 } pack $v =
+( 1.2 3 ) $v =
 
 --
 I32 $Int32 =
@@ -27,19 +27,19 @@ The examples below are for Macros. This tool tells the compiler to try to replac
 the bound identifer with.
 ```
 # This Macro duplicates a value on the stack
-{ $value =
+(: $value =
 	value value
-} $dup =
+) $dup =
 
 # This macro simply wraps the + operator
-{+} $add =
+(: + ) $add =
 
 # To invoke macros simply name them
 1 dup add  # => 2
 
 # This macro ignores a value
 # Note: Identifiers don't have to be simple A-z values
-{ $_ = } $; =
+(: $_ = ) $; =
 ```
 
 ## Functions
@@ -49,6 +49,6 @@ Functions are the only supported form of branching (for now).
 
 ```
 # Not operator
-{ 1 } { ; 0 } $! fun
-{ 0 == } { ; 1 } $! fun
+(: 1 ) (: ; 0 ) $! fun
+(: 0 == ) (: ; 1 ) $! fun
 ```

@@ -33,8 +33,10 @@ export function fromDataValue(vs: Array<DataExpr | value.Value>, ctx?: Context):
             return v.toExpr();
 
         // If a macro gets here it's because it should be a rt closure
+        if (v.type === value.ValueType.Macro)
+            console.error('Invalid RT Macro');
 
-        throw new error.TypeError("incompatible value", [v.token], [v], null);
+        throw new error.TypeError('Incompatible value', [v.token], [v], null);
     }).reduce(
         (a: DataExpr[], v: DataExpr | DataExpr[]) =>
             v instanceof Array ? a.concat(v) : (a.push(v), a),
@@ -328,7 +330,7 @@ export class MultiInstrExpr extends Expr {
      * @override
      */
     get expensive(): boolean {
-        return true;
+        return !this._isCompiled;
     }
     children() {
         return this.args;

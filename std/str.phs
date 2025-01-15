@@ -34,13 +34,21 @@
 # This is used for program-generated strings
 ###
 
-# Characters are stored in I32's for performance reasons
+# Characters stored in I32's, yes, 3 wasted bytes
 I32 $Char =
 
-# Strings could be represented as a list of characters
-# But this doesn't interface well with the host environment
-# Also each character is represented as an i32
+# Non-static strings are Lists of characters
 Char List $Str =
+
+# What if we instead used the enum type index to store the character? lol
+#( $NextChar rec:
+#    NextChar class $CharA =
+#    NextChar class $CharB =
+#    NextChar class $CharC =
+#    # ... 
+#    () type class $Nil =
+#) enum $EnumStr =
+# NO!
 
 ((StaticStr Syntax:Type): Str == ) (:
     pop
@@ -104,24 +112,16 @@ Char List $Str =
 (( I32 I64 | I32): 1 ) (:
     ( $n $base ) =
 
-    # Negative sign
-    (: 1 ) (:    
-        n
-        base
-        Str.empty
-        _itoa
-    ) $add_sign fun
-    (: n 0 < ) (:
-        n math.abs
-        base
-        Str.empty
-        _itoa
-        '-' Str.cons
-    ) $add_sign fun
-    add_sign
-    
-) $itoa fun
+    n math.abs
+    base
+    Str.empty
+    _itoa
 
+    # Negative sign
+    (: 1 ) (: ) $add_sign fun
+    (: n 0 < ) (: '-' Str.cons ) $add_sign fun
+    add_sign
+) $itoa fun
 
 ###
 # Vec Strings

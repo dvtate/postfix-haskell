@@ -1,0 +1,161 @@
+"../std/lang.phs" require $lang =
+"../std/maybe.phs" require $maybe =
+"../std/list.phs" require $list =
+
+# Binary search tree
+((Syntax:Type Syntax:Type):
+    ( $KeyType $ElemType ) =
+
+    lang use
+
+    ( $TreeType rec:
+        () type class $Nil =
+        ( KeyType ElemType TreeType TreeType ) class $Node =
+    ) enum $TreeType =
+
+    ((TreeType KeyType ElemType) rec: # set tree key value
+        ( $t $key $value ) =
+
+        t (
+            # Make new [sub]tree
+            TreeType.Nil (:
+                pop
+                (
+                    key
+                    value
+                    () TreeType.Nil make
+                    () TreeType.Nil make
+                ) TreeType.Node make
+            )
+
+            # Search Existing tree
+            TreeType.Node (:
+                unpack ( $k $v $l $r ) =
+
+                # Same key -> update node with new value
+                (: 
+                    # k key == 
+                    1
+                ) (()(TreeType):
+                    ( k value l r ) TreeType.Node make
+                ) $branch fun
+
+                # GT: branch right
+                (: k key > ) (()(TreeType):
+                    # Recurse into right branch
+                    r key value TreeType.set $new_r =
+                    ( k v l new_r ) TreeType.Node make
+                ) $branch fun
+
+                # LT: branch left
+                (: k key < ) (()(TreeType):
+                    # Recurse into left branch
+                    l key value TreeType.set $new_l =
+                    ( k v new_l r ) TreeType.Node make
+                ) $branch fun
+                branch
+            )
+        ) match
+    ) $TreeType.set =
+
+    ((TreeType KeyType) rec:
+        ( $t $key ) =
+
+        ElemType maybe.Maybe $Maybe =
+
+        t (
+            # Not in empty tree
+            TreeType.Nil (:
+                pop
+                () Maybe.Nothing make
+            )
+
+            TreeType.Node (:
+                unpack ( $k $v $l $r ) =
+
+                # Same key: We found it!
+                (: 
+                    # k key == 
+                    true
+                ) (:
+                    v Maybe.Just make
+                ) $branch fun
+
+                # GT: branch right
+                (: k key > ) (:
+                    r key TreeType.get
+                ) $branch fun
+
+                # LT: branch left
+                (: k key < ) (:
+                    l key TreeType.get
+                ) $branch fun
+                branch
+            )
+        ) match
+    ) $TreeType.get =
+
+    (:  TreeType.get
+        dup type $MT =
+        (   MT.Nothing (: pop false )
+            MT.Just (: pop true )
+        ) match
+    ) $TreeType.has =
+
+    ((TreeType):
+        # This isn't the right way to do it
+
+        ( KeyType ElemType ) list.List $ListType =
+
+        (rec:
+            ( $tree $ret ) =
+            
+            tree (
+                TreeType.Nil (:
+                    pop
+                    ret
+                )
+                TreeType.Node (:
+                    unpack ( $k $v $l $r ) =
+
+                    r ( ( k v ) ret ) ListType.Node make
+                    iter
+
+                    l swap iter
+                )
+            ) match
+        ) $iter =
+
+        () ListType.Nil make
+        iter
+    ) $TreeType.entries =
+
+    # get_row - Get the keys for tree nodes at specified depth from the root
+    ((TreeType I32):
+        ( $tree $depth ) =
+
+        KeyType list.List $LT =
+
+        ((LT TreeType I32) (LT) rec: # ret tree i
+            $i =
+            (   TreeType.Nil (: pop $ret = ret )           # dead end, return list
+                TreeType.Node (:
+                    unpack ( $v $l $r ) =
+                    (: 1 ) (:               # i <= 0
+                        LT.cons           # append key to start of return list
+                    ) $branch fun
+                    (: i 0 > ) (:       # recursive case
+                        pop
+                        r i 1 - dfs     # append right side to start of list
+                        l i 1 - dfs     # append left side to start of list
+                    ) $branch fun
+                    branch
+                )
+            ) match
+        ) $dfs =
+
+        () LT.Nil make tree depth dfs
+    ) $TreeType.get_row =
+
+    TreeType
+) $Map =

@@ -16,7 +16,8 @@ F64 list.List $DoubleList =
     DoubleList.Node make
 $ll =
 
-ll :data
+ll 2 DoubleList.take :data
+ll 2 DoubleList.drop :data
 ll DoubleList.length :data
 
 ll 1 DoubleList.at :data

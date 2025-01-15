@@ -1,162 +1,8 @@
 "../std/lang.phs" require use
-"../std/maybe.phs" require $maybe =
-"../std/list.phs" require $List =
 "../std/io.phs" require $io =
+"../std/map.phs" require $map =
 
-((Syntax:Type Syntax:Type):
-    ( $KeyType $ElemType ) =
-
-    ( $Tree rec:
-        () type class $Nil =
-        ( KeyType ElemType Tree Tree ) class $Node =
-    ) enum $Tree =
-
-    ((Tree KeyType ElemType) rec: # set tree key value
-        ( $t $key $value ) =
-
-        t (
-            # Make new [sub]tree
-            Tree.Nil (:
-                pop
-                (
-                    key
-                    value
-                    () Tree.Nil make
-                    () Tree.Nil make
-                ) Tree.Node make
-            )
-
-            # Search Existing tree
-            Tree.Node (:
-                unpack ( $k $v $l $r ) =
-
-                # Same key -> update node with new value
-                (: 
-                    # k key == 
-                    1
-                ) (()(Tree):
-                    ( k value l r ) Tree.Node make
-                ) $branch fun
-
-                # GT: branch right
-                (: k key > ) (()(Tree):
-                    # Recurse into right branch
-                    r key value Tree.set $new_r =
-                    ( k v l new_r ) Tree.Node make
-                ) $branch fun
-
-                # LT: branch left
-                (: k key < ) (()(Tree):
-                    # Recurse into left branch
-                    l key value Tree.set $new_l =
-                    ( k v new_l r ) Tree.Node make
-                ) $branch fun
-                branch
-            )
-        ) match
-    ) $Tree.set =
-
-    ((Tree KeyType) rec:
-        ( $t $key ) =
-
-        ElemType maybe.Maybe $Maybe =
-
-        t (
-            # Not in empty tree
-            Tree.Nil (:
-                pop
-                () Maybe.Nothing make
-            )
-
-            Tree.Node (:
-                unpack ( $k $v $l $r ) =
-
-                # Same key: We found it!
-                (: 
-                    # k key == 
-                    true
-                ) (:
-                    v Maybe.Just make
-                ) $branch fun
-
-                # GT: branch right
-                (: k key > ) (:
-                    r key Tree.get
-                ) $branch fun
-
-                # LT: branch left
-                (: k key < ) (:
-                    l key Tree.get
-                ) $branch fun
-                branch
-            )
-        ) match
-    ) $Tree.get =
-
-    ((Tree):
-        # This isn't the right way to do it
-
-        ( KeyType ElemType ) List.List $ListType =
-
-        (rec:
-            ( $tree $ret ) =
-            
-            tree (
-                Tree.Nil (:
-                    pop
-                    ret
-                )
-                Tree.Node (:
-                    unpack ( $k $v $l $r ) =
-
-                    r ( ( k v ) ret ) ListType.Node make
-                    iter
-
-                    l swap iter
-                )
-            ) match
-        ) $iter =
-
-        () ListType.Nil make
-        iter
-    ) $Tree.entries =
-
-    # get_row - Get the keys for tree nodes at specified depth from the root
-    ((Tree I32):
-        ( $tree $depth ) =
-
-        KeyType List.List $LT =
-
-        ((LT Tree I32) (LT) rec: # ret tree i
-            $i =
-            (   Tree.Nil (: pop $ret = ret )           # dead end, return list
-                Tree.Node (:
-                    unpack ( $k $v $l $r ) =
-                    # PROBLEM: dep expr only unpacked in first case of branch, not both
-                    # WORKAROUND: force evaluation before branch body but this is ugly
-                    k (I32) (I32) Arrow "(;fuck;)" __asm
-                    #( k ) seq # workaroud for a bug
-                    (: 1 ) (:               # i <= 0
-                        LT.cons           # append key to start of return list
-                    ) $branch fun
-                    (: i 0 > ) (:       # recursive case
-                        pop
-                        r i 1 - dfs     # append right side to start of list
-                        l i 1 - dfs     # append left side to start of list
-                    ) $branch fun
-                    branch   
-                )
-            ) match
-        ) $dfs =
-
-        () LT.Nil make tree depth dfs
-    ) $Tree.get_row =
-
-    Tree
-) $BSTreeMap =
-
-I32 F64 BSTreeMap $Tree =
-
+I32 F64 map.Map $Tree =
 
 #() Tree.Nil make
 #2 2.0 Tree.set
@@ -175,7 +21,6 @@ I32 F64 BSTreeMap $Tree =
 #dup 5 Tree.get :data
 #dup 6 Tree.get :data
 #pop
-
 
 # Import Math.random from javascript
 Unit (F64) Arrow ( "js" "Math.random" ) import $random =
@@ -220,7 +65,7 @@ Unit (F64) Arrow ( "js" "Math.random" ) import $random =
 
     # Add n random nodes
     n make_tree
-    
+
     # Print it
     print_tree
 ) "demo" export
