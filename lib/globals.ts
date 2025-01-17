@@ -740,9 +740,9 @@ const operators : MacroOperatorsSpec = {
                 return ['invalid input types received'];
             }
             if (inputTypes.some(t => !(t instanceof types.DataType)))
-                return ['unexpcted compile-only type'];
+                return ['unexpected compile-only type'];
             if (outputTypes.some(t => !(t instanceof types.DataType)))
-                return ['unexpcted compile-only type'];
+                return ['unexpected compile-only type'];
 
             // Create expression
             if (outputTypes.length > 1) {
@@ -763,6 +763,10 @@ const operators : MacroOperatorsSpec = {
             if (ctx.stack.length < 2)
                 return ['missing values'];
             const [a, b] = ctx.popn(2).reverse();
+            if (b.type !== value.ValueType.Type)
+                return new error.SyntaxError('expected a type', [b.token, token], ctx);
+            if (a.type !== value.ValueType.Type)
+                return new error.SyntaxError('expected a type', [a.token, token], ctx);
             ctx.push(toBool(b.value.check(a.value), token));
         }
     },

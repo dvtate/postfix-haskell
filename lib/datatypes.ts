@@ -149,6 +149,7 @@ export class UnionType extends Type {
             return false;
 
         // Don't care about classes
+        // ??? Pretty sure this is wrong
         if (type instanceof ClassType) {
             type = type.getBaseType();
             if (!type)
@@ -701,8 +702,12 @@ export class ArrowType extends DataType {
         return false;
     }
     toString(): string {
-        const inpTypes = this.inputTypes.map(t => t.toString()).join(' ');
-        const outTypes = this.outputTypes.map(t => t.toString()).join(' ');
+        const inpTypes = this.inputTypes 
+            ? this.inputTypes.map(t => t.toString()).join(' ')
+            : '???';
+        const outTypes = this.outputTypes
+            ? this.outputTypes.map(t => t.toString()).join(' ')
+            : '???';
         return `( ${inpTypes} ) ( ${outTypes} ) Arrow`;
     }
 }

@@ -81,12 +81,11 @@ export abstract class Macro extends value.Value {
         // Trace the macro
         // TODO when given number of inputs we should include untouched values as outputs
         const ios = ctx.traceIO(this, token);
+        ctx.popn(inputs.length);
         if (ios instanceof error.SyntaxError)
             return ios;
         if (ios === null)
             return new error.SyntaxError('Cannot infer datatype (probably due to recursion)', token, ctx);
-
-        ctx.popn(inputs.length);
 
         // Validate trace
         if (ios.takes.length > inputs.length)

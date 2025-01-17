@@ -414,6 +414,9 @@ export default class ModuleManager {
         // Align to 4 bytes if non-zero
         const STATIC_DATA_LEN = this.staticData.length
             && (this.staticData.length | 0b11) + 1;
+
+        // TODO is linear memory by default zero-initialized?
+        //  if so we can do a sparse version of this instead
         const STATIC_DATA_STR = this.staticData.map(byteToHexEsc).join('');
         // const STACK_START = 0;
         const STACK_END = STACK_SIZE;

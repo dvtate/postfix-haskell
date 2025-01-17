@@ -409,8 +409,9 @@ export default class Context {
             throw new Error('wtf?');
 
         // Type check
+        // TODO print types on error
         if (!v.checkInputs(this.stack))
-            return new error.SyntaxError('Type mismatch', token, this);
+            return new error.StackTypeError('Type mismatch', [v.token, token], this.stack, v._datatype.inputTypes, this);
 
         // TODO handle constexprs specially
         if (!v.recursive || isTrace) {

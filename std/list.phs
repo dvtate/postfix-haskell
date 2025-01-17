@@ -1,6 +1,10 @@
 "./lang.phs" require $lang =
 "./maybe.phs" require $maybe =
 
+###
+# Type and methods
+### 
+
 # Macro to construct a type for Linked Lists containing elements of given type
 (:  $ElemType =
 
@@ -59,7 +63,7 @@
             ) match
         ) $iter =
         0 iter
-    ) $ListType.at_maybe =
+    ) $ListType.at =
 
     # Get item at specific index in list, trap if OOB
     ((ListType I32) rec:
@@ -70,12 +74,12 @@
             )
             ListType.Node (:
                 unpack ( $v $tail ) =
-                (: 1 ) (: tail index 1 - ListType.at ) $b fun
+                (: 1 ) (: tail index 1 - ListType.at_unsafe ) $b fun
                 (: index 0 == ) (: v ) $b fun
                 b
             )
         ) match
-    ) $ListType.at =
+    ) $ListType.at_unsafe =
 
     # Apply function to each element of the list
     (( ListType  Syntax:Macro (ElemType) (Any) Arrow | ):
@@ -144,20 +148,34 @@
         iter
     ) $ListType.reverse =
 
-    (( ListType Syntax:Macro (ElemType) (I32) Arrow | ):
+    #(( ListType Syntax:Macro (ElemType) (I32) Arrow | ):
+    #    $cond =
+    #    (rec:
+    #        $ret =
+    #        (   ListType.Node (:
+    #                unpack ( $x $xs ) =
+    #                # Skip element if cond fails
+    #                (: 1 ) (: xs ret iter ) $branch fun
+    #                (: x cond ) (:
+    #                    ret x ListType.cons $ret2 =
+    #                    xs ret2 iter
+    #                ) $branch fun
+    #                branch
+    #            )
+    #            ListType.Nil (: pop ret )
+    #        ) match
+    #    ) $iter =
+    #    ListType.empty
+    #    iter
+    #) $ListType.filter_ =
+
+    ((ListType Syntax:Macro (ElemType) (I32) Arrow | ):
         $cond =
-        (rec:
-            $ret =
-            (   ListType.Node (:
-                    unpack ( $x $xs ) =
-                    # Skip element if cond fails
-                    (: 1 ) (: xs ret iter ) $branch fun
-                    (: x cond ) (: ( x xs ret iter ) ListType.Node make )
-                )
-                ListType.Nil (: pop ret )
-            ) match
-        ) $iter =
-        iter
+        ListType.empty (:
+            (: 1 ) (: pop ) $branch fun
+            (: cond ) (: ListType.cons ) $branch fun
+            branch
+        ) ListType.foldl
     ) $ListType.filter =
 
     (rec:
@@ -229,8 +247,7 @@
         iter
     ) $ListType.take =
 
-    # TODO FIXME why does adding type signature here make tree.phs compilation fail?
-    (: #( ListType I32 ):
+    (( ListType I32 ):
         $num =
         (:  (   ListType.Nil (: ListType.Nil make )
                 ListType.Node (:
@@ -241,27 +258,100 @@
         ) num lang.loop
     ) $ListType.drop =
 
+    (( ListType ListType) rec:
+        ( $a $b ) =
+        a (
+            ListType.Nil (: pop
+                b ( ListType.Nil (: pop 0 )
+                    ListType.Node (: pop -1 )
+                ) match
+            )
+            ListType.Node (:
+                unpack ( $v_a $next_a ) =
+                b ( ListType.Nil (: pop 1 )
+                    ListType.Node (:
+                        unpack ( $v_b $next_b ) =
+                        (: 1 ) (:
+                            v_b v_a < "select"
+                                1 -1
+                            asm
+                        ) $branch fun
+                        (: v_a v_b == ) (:
+                            next_a next_b ListType.cmp
+                        ) $branch fun
+                        branch
+                    )
+                ) match
+            )
+        ) match
+    ) $ListType.cmp =
+
+    # This doesn't work, probably beacuse the (: pivot < ) is a closure?
+    ((ListType) rec:
+        #quicksort []     = []
+        #quicksort (p:xs) = (quicksort lesser) ++ [p] ++ (quicksort greater)
+        #    where
+        #        lesser  = filter (< p) xs
+        #        greater = filter (>= p) xs
+
+        (   ListType.Nil (: pop ListType.empty )
+            ListType.Node (:
+                unpack ( $pivot $tail ) =
+                tail (: pivot <  ) ListType.filter ListType.sort $lesser =
+                tail (: pivot >= ) ListType.filter ListType.sort $greater =
+                lesser greater pivot ListType.cons ++
+            )
+        ) match
+    ) $ListType.sort =
+
     # TODO elem find some
 
     # Return the List type we created
     ListType
 ) $List =
 
-# Why doesn't this work??
-#(( Any List dup :stack ):
-#    ( $a $b ) =
-#    a type b type ==
-#) (:
-#    a type $LT =
-#    a b LT.equals
-#) $global.== fun
+###
+# Operator overloading
+###
 
+Any List $AnyList =
+(( AnyList AnyList ):
+    ( $a $b ) =
+    a type b type ==
+) $__2_lists_same_type =
 
-# Honestly not sure if these should be in lang ns anymore
-#(( Any List Syntax:Macro (Any) (Any) Arrow | ):
-#    ( $l $f ) =
-#    l type $LT =
-#    f type (LT.ElemType) (Any) Arrow Syntax:Macro | ==
-#)
-#(: ( $l $f ) = l type $ListType = l $f ~ ListType.map )
-#$lang.map fun
+$__2_lists_same_type ~ (:
+    ( $a $b ) =
+    a type $LT =
+    a b LT.equals
+) $global.== fun
+
+$__2_lists_same_type ~ (:
+    ( $a $b ) =
+    a type $LT =
+    a b LT.cmp 0 <=
+) $global.<= fun
+
+$__2_lists_same_type ~ (:
+    ( $a $b ) =
+    a type $LT =
+    a b LT.cmp 0 <
+) $global.< fun
+
+$__2_lists_same_type ~ (:
+    ( $a $b ) =
+    a type $LT =
+    a b LT.cmp 0 >
+) $global.> fun
+
+$__2_lists_same_type ~ (:
+    ( $a $b ) =
+    a type $LT =
+    a b LT.cmp 0 >=
+) $global.>= fun
+
+$__2_lists_same_type ~ (:
+    ( $a $b ) =
+    a type $LT =
+    a b LT.concat
+) $global.++ fun

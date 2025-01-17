@@ -214,6 +214,10 @@ export default class Fun {
             })
             .filter(io => io !== null); // skip recursive cases for now
 
+        // All cases are recursive and cannot be traced yets
+        if (traceResults.length === 0)
+            return new error.SyntaxError("All branches of fun are recursive", this.tokens, ctx);
+
         // Look for an error
         const err = traceResults.find(t => !(t instanceof TraceResults)) as error.SyntaxError;
         if (err)

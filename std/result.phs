@@ -1,0 +1,7 @@
+
+(: ( $SuccessType $ErrorType ) =
+    (:  SuccessType class $Ok =
+        ErrorType class $Err =
+    ) enum $ResultType =
+    ResultType
+) $Result =

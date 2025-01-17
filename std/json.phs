@@ -1,0 +1,85 @@
+
+"../std/list.phs" require $list =
+"../std/map.phs" require $map =
+"../std/str.phs" require $str =
+"../std/result.phs" require $result =
+
+( $JSONValue rec:
+    JSONValue list.List class $Array =
+    str.Str class $String =
+    str.Str JSONValue map.Map class $Object =
+    F64 class $Number =
+    I32 class $Boolean =
+    Unit class $Null =
+) enum $JSONValue =
+
+
+(   str.Str     # Error message
+    I32         # Character index
+) $ParseError =
+
+JSONValue ParseError result.Result $ParseResult =
+
+(rec:
+    ( $s $i ) =
+
+    # Drop leading whitespace
+    (rec:
+        ( $s $i ) =
+        s (
+            str.Str.Nil (: pop str.Str.empty i 1 + )
+            str.Str.Node (:
+                unpack ( $c $t ) =
+                (: 1 ) (: s i ) $b fun
+                (: c str.is_space ) (: t i 1 + drop_ws ) $b fun
+                b
+            )
+        ) match
+    ) $drop_ws =
+
+    (:
+        ( $s $i ) =
+
+        (: 1 ) (:
+            s i
+            ( "invalid keyword" str.Str cast i ) ParseResult.Err make
+        ) $branch fun
+        (: "true" str.Str cast s 4 str.Str.take == ) (:
+            s 4 str.Str.drop
+            i 4 +
+            1 JSONValue.Boolean make ParseResult.Ok make
+        ) $branch fun
+        branch
+    ) $keyword =
+
+    s ( str.Str.Nil (: 
+            pop ( "unexpected end" str.Str cast i ) ParseResult.Error make
+        )
+        str.Str.Node (:
+            unpack ( $c $t ) =
+
+            # Else: syntax error
+            (: 1 ) (:
+                ( "Syntax error" str.Str cast i ) ParseResult.Error make
+            ) $branch fun
+
+            # Skip whitespace
+            (: c is_whitespace ) (:
+                t i 1 + __json_parse_impl
+            ) $branch fun
+            branch
+
+            # 
+        )
+    ) match
+
+) $__json_parse_impl =
+
+
+((str.Str)(ParseResult):
+    0 __json_parse_impl
+) $JSONValue.parse =
+
+((JSONValue)(str.Str):
+
+) $JSONValue.stringify =

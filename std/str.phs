@@ -1,7 +1,5 @@
 "./lang.phs" require $lang =
-"./list.phs" require "List" "" use_some
-
-
+"./list.phs" require $list =
 
 ###
 # Static Strings
@@ -37,19 +35,15 @@
 # Characters stored in I32's, yes, 3 wasted bytes
 I32 $Char =
 
+(: $c =
+    c 0x09 >= c 0x0d <= && # \t \n \v \f \r
+    c ' ' == ||
+) $is_space =
+
 # Non-static strings are Lists of characters
-Char List $Str =
+Char list.List $Str =
 
-# What if we instead used the enum type index to store the character? lol
-#( $NextChar rec:
-#    NextChar class $CharA =
-#    NextChar class $CharB =
-#    NextChar class $CharC =
-#    # ... 
-#    () type class $Nil =
-#) enum $EnumStr =
-# NO!
-
+# Convert from compile-time string type to runtime string type
 ((StaticStr Syntax:Type): Str == ) (:
     pop
     unpack ( $size $address ) =
@@ -73,12 +67,21 @@ Char List $Str =
     address size Str.empty
     iter
 ) $lang.cast fun
-
 ((Syntax:Str Syntax:Type): Str == ) (:
     pop
     StaticStr lang.cast
     Str lang.cast
 ) $lang.cast fun
+
+# Repeat str (like in python "-" * 5 => "-----")
+((Str I32): 1 )
+(:
+    ( $s $n ) =
+    s (:
+        s swap ++
+    ) n loop
+) $global.* fun
+
 
 "./math.phs" require $math =
 
@@ -122,6 +125,23 @@ Char List $Str =
     (: n 0 < ) (: '-' Str.cons ) $add_sign fun
     add_sign
 ) $itoa fun
+
+((Str I32 I64 | ): 1 )
+(:
+    ( $s $n ) =
+    s n itoa ++
+) $global.++ fun
+
+
+#(( F32 F64 | ): 1 ) (:
+#    
+#) $ftoa fun
+#
+#((Str)(Syntax:Type):
+#    I64 ==
+#) (:
+#
+#) $lang.cast fun
 
 ###
 # Vec Strings
