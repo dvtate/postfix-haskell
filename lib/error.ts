@@ -88,16 +88,15 @@ export class StackTypeError extends SyntaxError {
         ctx?: Context,
     ) {
         super(message, tokens, ctx);
-        // TODO this probably gets logged incorrectly
-        this.message += this.typeMismatchStr() + '\n\nContext:';
+        this.message += `\n  ${this.typeMismatchStr()}\n  Context`;
     }
 
     typeMismatchStr(): string {
         const vs = this.values.slice(0 - this.expected.length);
         const matching = this.expected.map((t, i) => t.check(vs[i].datatype));
         const typeMatchStr = matching.map((m, i) => m
-            ? `\t- ${this.expected[i].toString()}\n`
-            : `\t- Expected ${this.expected[i].toString()} got ${vs[i].datatype.toString()}`
+            ? `    - ${this.expected[i].toString()}\n`
+            : `    - Expected ${this.expected[i].toString()} got ${vs[i].datatype.toString()}`
         ).join('\n');
         return 'Stack Types Alignment:\n' + typeMatchStr;
     }

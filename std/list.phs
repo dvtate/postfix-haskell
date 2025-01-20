@@ -249,7 +249,7 @@
 
     (( ListType I32 ):
         $num =
-        (:  (   ListType.Nil (: ListType.Nil make )
+        (:  (   ListType.Nil (: pop ListType.empty )
                 ListType.Node (:
                     unpack ( $___ $tail ) =
                     tail
@@ -287,7 +287,7 @@
     ) $ListType.cmp =
 
     # This doesn't work, probably beacuse the (: pivot < ) is a closure?
-    ((ListType) rec:
+    ((ListType) rec: # Quick sort
         #quicksort []     = []
         #quicksort (p:xs) = (quicksort lesser) ++ [p] ++ (quicksort greater)
         #    where
@@ -303,6 +303,76 @@
             )
         ) match
     ) $ListType.sort =
+
+    # Merge sort
+    ((ListType):
+        ((ListType) (ListType ListType):  $l =
+            l ListType.length 2 / $half_len =
+            l half_len ListType.take l half_len ListType.drop
+        ) $split_halves =
+
+        ((ListType ListType) (ListType) rec: ( $a $b ) =
+            a ( ListType.Nil (: pop b )
+                ListType.Node (:
+                    unpack ( $av $atail ) =
+                    b ( ListType.Nil (: pop a )
+                        ListType.Node (:
+                            unpack ( $bv $btail ) =
+                            (: 1 ) (: a btail merge bv ListType.cons ) $branch fun
+                            (: av bv < ) (: atail b merge av ListType.cons ) $branch fun
+                            (: 0 defer ) (: a ) $branch fun # Work-around to make recursive trace work
+                            branch
+                        )
+                    ) match
+                )
+            ) match
+        ) $merge =
+
+        ((ListType) (ListType) rec:
+            $ll =
+            (: 1 ) (: ll ) $branch fun
+            (: ll ListType.length 1 > ) (:
+                ll split_halves ( $ls $rs ) =
+                
+                ls mergesort
+                rs mergesort
+                merge
+            ) $branch fun
+            branch
+        ) $mergesort =
+
+        mergesort    
+    ) $ListType.msort =
+
+    # Bubble sort
+    ((ListType)(ListType):
+        ((ListType)(ListType) rec:
+            $l =
+            l ( ListType.Nil (: l )
+                ListType.Node (:
+                    unpack ( $x $tail ) =
+                    tail (
+                        ListType.Nil (: l )
+                        ListType.Node (:
+                            unpack ( $y $tail ) =
+                            (: 1 ) (: tail y ListType.cons iter x ListType.cons ) $branch fun
+                            (: x y > ) (: tail x ListType.cons iter y ListType.cons ) $branch fun
+                            branch
+                        )
+                    ) match
+                )
+            ) match
+        ) $bsort_iter =
+
+        ((ListType)(ListType) rec:
+            ( $xs $i ) =
+            (: 1 ) (: xs bsort_iter i 1 + impl ) $branch fun
+            (: xs ListType.length i == ) (: xs ) $branch fun
+            branch
+        ) $impl =
+
+        0 impl
+    ) $ListType.bsort =
 
     # TODO elem find some
 

@@ -90,10 +90,10 @@ export class EnumGetExpr extends DataExpr {
             retDt = retDt.getBaseType();
         if (retDt instanceof types.TupleType) {
 
-            // Shouldn't have to check this
-            const badT = retDt.types.find(t => !(t instanceof types.DataType));
-            if (badT)
-                return new error.SyntaxError('Compile-time only type cannot be used in an enum', [badT.token, token], ctx);
+            // False positives from ctx.traceIO()
+            // const badT = retDt.types.find(t => !(t instanceof types.DataType));
+            // if (badT)
+            //     throw new error.SyntaxError('Compile-time only type cannot be used in an enum', [badT.token, token], ctx);
 
             // Pack Components of loaded value into a tuple
             const ret = new EnumGetExpr(token, enumExpr, dt);
@@ -156,7 +156,9 @@ export class EnumConstructor extends DataExpr {
     }
 
     children(): Expr[] {
-        return [];
+        return this.knownValue instanceof value.Value
+            ? [] as Expr[]
+            : this.knownValue.map(v => v.children()).reduce((a, v) => a.concat(v), []);
     }
 }
 

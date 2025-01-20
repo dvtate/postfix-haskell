@@ -17,8 +17,6 @@ import * as util from '../tools/file_tools.js';
     const toks = lex(src, fname);
     const ctx = parse(toks, new Context(toks[0].file /*, { optLevel: 2 }*/));
     if (ctx instanceof error.SyntaxError)
-        console.error(util.formatErrorPos([ctx]));
-    if (!(ctx instanceof Context))
         throw ctx;
 
     // Generate WASM and check validity
@@ -143,7 +141,9 @@ import * as util from '../tools/file_tools.js';
     }
 
 } catch (e) {
-    if (!(e instanceof error.SyntaxError))
+    if (e instanceof error.SyntaxError)
+        console.error(util.formatErrorPos([e]));
+    else
         console.error(e);
 }
 })();
