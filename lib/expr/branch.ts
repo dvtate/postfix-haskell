@@ -3,7 +3,7 @@ import * as error from '../error.js';
 import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
 import { DataExpr, Expr } from './expr.js';
-import type { FunExpr, FunLocalTracker } from './fun.js';
+import type { FunExpr, FunLocalTracker } from './func.js';
 import { DependentLocalExpr } from './util.js';
 
 /**
@@ -11,6 +11,7 @@ import { DependentLocalExpr } from './util.js';
  *
  * These expressions are stored into local variables to reduce duplication within branch
  */
+// TODO probably should convert to DependentLocalExpr's
 export class BranchInputExpr extends DataExpr {
     /**
      * Id for local variable into which it should be stored
@@ -104,6 +105,8 @@ export class BranchExpr extends Expr {
      * @param token - location in code
      * @param conditions - conditions for branches
      * @param actions - actions for brances
+     * @param inputExprs - stack inputs
+     * @param name - branch name
      */
     constructor(
         tokens: LexerToken[],
@@ -204,4 +207,13 @@ export class BranchExpr extends Expr {
     children(): Expr[] {
         return this.conditions.concat(this.actions.reduce((a, v)=>a.concat(v)));
     }
+    // inputs(): Expr[] {
+    //     return this.inputExprs;
+    // }
+    // outputs(): Expr[] {
+    //     return this.results;
+    // }
+    // getLocals(): FunLocalTracker[] {
+    //     return this.inputExprs.map(l => l.getLocals()).concat(this.results.map(r => r.getLocals()))
+    // }
 }

@@ -1,6 +1,6 @@
 import * as types from '../datatypes.js';
 import type ModuleManager from '../module.js';
-import type { FunExpr, FunLocalTracker } from './fun.js';
+import type { FunExpr, FunLocalTracker } from './func.js';
 
 /**
  * Size of primitve datatype, otherwise assume it's a reference thus sizeof(i32) => 4

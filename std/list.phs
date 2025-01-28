@@ -345,7 +345,7 @@
     ) $ListType.msort =
 
     # Bubble sort
-    ((ListType)(ListType):
+    (: #(ListType)(ListType):
         ((ListType)(ListType) rec:
             $l =
             l ( ListType.Nil (: l )
@@ -355,8 +355,8 @@
                         ListType.Nil (: l )
                         ListType.Node (:
                             unpack ( $y $tail ) =
-                            (: 1 ) (: tail y ListType.cons iter x ListType.cons ) $branch fun
-                            (: x y > ) (: tail x ListType.cons iter y ListType.cons ) $branch fun
+                            (: 1 ) (: tail y ListType.cons bsort_iter x ListType.cons ) $branch fun
+                            (: x y > ) (: tail x ListType.cons bsort_iter y ListType.cons ) $branch fun
                             branch
                         )
                     ) match
@@ -364,10 +364,10 @@
             ) match
         ) $bsort_iter =
 
-        ((ListType)(ListType) rec:
-            ( $xs $i ) =
-            (: 1 ) (: xs bsort_iter i 1 + impl ) $branch fun
-            (: xs ListType.length i == ) (: xs ) $branch fun
+        (rec:
+            $i =
+            (: 1 ) (: bsort_iter i 1 + impl ) $branch fun
+            (: ListType.length i == ) (: $ll = ll ) $branch fun
             branch
         ) $impl =
 

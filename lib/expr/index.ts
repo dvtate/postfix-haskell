@@ -3,7 +3,7 @@ export * from './branch.js';
 export * from './recursion.js';
 export * from './util.js';
 export * from './enum.js';
-export * from './fun.js';
+export * from './func.js';
 export * from './closure.js';
 
 /*

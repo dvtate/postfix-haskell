@@ -4,8 +4,8 @@ import { LexerToken } from '../scan.js';
 import ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
 import { TeeExpr, DependentLocalExpr, } from './util.js';
-import { FunExpr, ParamExpr } from './fun.js';
-import { BranchExpr } from './branch.js';
+import { FunExpr, ParamExpr } from './func.js';
+import { BranchExpr, BranchInputExpr } from './branch.js';
 
 /**
  * Used to wrap arguments passed to recursive functions as they are being traced in a way that
@@ -137,12 +137,12 @@ export class RecursiveBodyExpr extends Expr {
             .filter(e => {
                 // Should not already be bound, right?
                 const eInds = e instanceof DependentLocalExpr && e.getInds();
-                if ( (eInds && eInds.length)
-                    || (e instanceof TeeExpr && e.inds)) {
-                // console.error(e, e instanceof DependentLocalExpr && e.getInds());
-                // throw new Error("wtf?");
+                if (eInds && eInds.length)
                     return true;
-                }
+                if (e instanceof TeeExpr && e.inds && e.inds.length)
+                    return true;
+                if (e instanceof BranchInputExpr && e.index && e.index.length)
+                    return true;
 
                 // Parameters need to be passed as arguments to helper
                 if (e instanceof ParamExpr)

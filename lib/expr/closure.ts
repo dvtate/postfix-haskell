@@ -7,9 +7,9 @@ import { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 
 import { DataExpr, Expr } from './expr.js';
-import { InternalFunExpr, FunExpr, ParamExpr } from './fun.js';
+import { InternalFunExpr, FunExpr, ParamExpr } from './func.js';
 import { LiteralMacro, Macro } from '../macro.js';
-import { DependentLocalExpr, ProxyExpr, TeeExpr } from './util.js';
+import { DependentLocalExpr, TeeExpr } from './util.js';
 import Context from '../context.js';
 
 /**
@@ -21,7 +21,7 @@ export class ClosureCreateExpr extends DataExpr {
     /**
      * Lexically scoped variables to be captured
      */
-    captured: ProxyExpr[] = [];
+    captured: DataExpr[] = [];
 
     func: InternalFunExpr;
 
@@ -109,6 +109,13 @@ export class ClosureCreateExpr extends DataExpr {
 
         return '';
     }
+
+    outInline(ctx: ModuleManager, fun: FunExpr) {
+        // We may not actually need to make this a proper closure
+        // for example if used within tail-recursive body it doesn't need to capture locals
+        return '';
+    }
+
     children(): Expr[] {
         throw new Error('todo');
     }
@@ -129,6 +136,7 @@ export class ClosureInvokeExpr extends Expr {
             throw new Error('wtf');
         this.outputs = this.closure.datatype.outputTypes.map(t =>
             new DependentLocalExpr(token, t as types.DataType, this));
+        throw new Error('gggg');
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {

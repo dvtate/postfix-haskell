@@ -942,7 +942,7 @@ const operators : MacroOperatorsSpec = {
             const edt = (enumv.datatype instanceof types.ClassType)
                 ? enumv.datatype.getBaseType()
                 : enumv.datatype;
-            if (!edt.check(enumType)) {
+            if (!edt.check(enumType)) { // shouldn't this .check be the other way around?
                 // console.log('edt:', edt.toString());
                 // if (edt.toString() == 'F64')
                 //     console.log(enumv);
@@ -978,8 +978,6 @@ const operators : MacroOperatorsSpec = {
             }
 
             // To prevent duplicate expressions we can copy input exprs to locals
-            // FIXME: once we know inputs and shit we then need to store them into the Branch expr so that
-            //  the value they're capturing is captured before branch body and only accessed via relevant local
             const oldStack = ctx.stack.slice();
             ctx.stack = ctx.stack.map(v =>
                 v instanceof expr.DataExpr && v.expensive
@@ -1004,8 +1002,10 @@ const operators : MacroOperatorsSpec = {
 
                         // Trace
                         const trs = ctx.traceIO(elseCase, token);
-                        if (trs === null)
+                        if (trs === null) {
+                            console.log('trs null');
                             continue;
+                        }
                         if (trs instanceof error.SyntaxError)
                             return trs;
 

@@ -6,7 +6,7 @@ import { Expr, DataExpr } from './expr.js';
 import type ModuleManager from '../module.js';
 import Context from '../context.js';
 import { EnumValue } from '../enum.js';
-import { FunExpr, FunLocalTracker, FunLocalTrackerStored, InternalFunExpr } from './fun.js';
+import { FunExpr, FunLocalTracker, FunLocalTrackerStored, InternalFunExpr } from './func.js';
 import { loadRef } from './gc_util.js';
 
 /**
@@ -91,6 +91,9 @@ export class NumberExpr extends DataExpr {
  * For when the output of an expression is stored in a local variable
  *
  * used to handle multi-returns so that they don't get used out of order
+ * 
+ * `source` expr stores its results in locals, this expr acts as a proxy for those locals
+ * so that they can be treated like normal expressions
  */
 export class DependentLocalExpr extends DataExpr {
     // Expression produces the output captured by this one
@@ -163,6 +166,19 @@ export class DependentLocalExpr extends DataExpr {
                 (v as DependentLocalExpr).setInds(fun));
         else
             this._inds = fun.addLocal(this._datatype);
+    }
+
+    /**
+     * Store into locals
+     * @param ctx
+     * @param fun
+     * @returns WAT
+     */
+    capture(ctx: ModuleManager, fun: FunExpr) {
+        // if (this.index)
+        //     return '';
+        this.inds = fun.addLocal(this.value.datatype);
+        return `${this.value.out(ctx, fun)}\n${fun.setLocalWat(this.inds)}`;
     }
 
     out(ctx: ModuleManager, fun: FunExpr) {
@@ -338,74 +354,6 @@ export class MultiInstrExpr extends Expr {
 }
 
 /**
- * Expression to be used for indentifiers, similar behavior to TeeExpr
- */
-// class IdExpr extends DataExpr {
-//     declare public value: DataExpr;
-
-//     /**
-//      * Should this identifier be stored in a local?
-//      */
-//     public stored = false;
-
-//     /**
-//      * Indicies for the locals
-//      */
-//     public locals: FunLocalTracker[] = null;
-
-//     /**
-//      * @constructor
-//      * @param token location in code
-//      * @param expr expression stored by the local
-//      */
-//     constructor(token: LexerToken, expr: DataExpr) {
-//         super(token, expr.datatype);
-//         this.value = expr;
-//     }
-
-//     // Proxy
-//     get expensive(): boolean { return this.value.expensive; }
-//     children(): Expr[] { return [this.value]; }
-//     getLeaves(): Expr[] { return this.value.getLeaves(); }
-
-//     /**
-//      * Similar to .out except only stores value. Use when storing before use
-//      * @param ctx Relevant WASM Module context
-//      * @param fun Relevant Function context
-//      * @returns
-//      */
-//     store(ctx: ModuleManager, fun?: FunExpr): string {
-//         // Cheap operations don't need caching
-//         if (!this.expensive)
-//             return '';
-//         this.locals = fun.addLocal(this.value.datatype);
-//         return `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)
-//             }\n\t${fun.getLocalWat(this.locals)}`;
-//     }
-
-//     /**
-//      * @override
-//      */
-//     out(ctx: ModuleManager, fun?: FunExpr): string {
-//         // Store expensive exprs in locals, otherwise just get resulting expr
-//         if (this.stored && this.value.expensive)
-//             if (!this.locals) {
-//                 // TODO maybe should define locals at top of function instead of at use case
-//                 this.locals = fun.addLocal(this.value.datatype);
-//                 if (this.locals.length === 1)
-//                     return `${this.value.out(ctx, fun)}\n\t(local.tee ${this.locals[0]})`;
-//                 else
-//                     return  `${this.value.out(ctx, fun)}\n\t${fun.setLocalWat(this.locals)
-//                         }\n\t${fun.getLocalWat(this.locals)}`;
-//             } else {
-//                 return fun.getLocalWat(this.locals);
-//             }
-//         else
-//             return this.value.out(ctx, fun);
-//     }
-// }
-
-/**
  * This expression is only used for macro type inference and thus cannot be compiled
  */
 export class DummyDataExpr extends DataExpr {
@@ -484,27 +432,6 @@ export class DummyDataExpr extends DataExpr {
     }
 }
 
-/**
- * Wrapper around another, mutable expr with possibly different datatype
- */
-export class ProxyExpr extends DataExpr {
-    constructor(
-        token: LexerToken,
-        public expr: DataExpr,
-        public fun?: FunExpr,
-        dt: types.DataType = expr.datatype,
-    ) {
-        super(token, dt);
-    }
-    children() { return this.expr.children(); }
-    out(ctx: ModuleManager, fun: FunExpr) {
-        this._isCompiled = true;
-        return this.expr.out(ctx, fun);
-    }
-    clone() {
-        return new ProxyExpr(this.token, this.expr, this.fun, this._datatype);
-    }
-}
 
 export class UnpackExpr extends Expr {
     results: DependentLocalExpr[];
@@ -534,6 +461,7 @@ export class UnpackExpr extends Expr {
     }
     out(ctx: ModuleManager, fun: FunExpr): string {
         this._isCompiled = true;
+        console.warn("Unpacking runtime tuple");
         if (this.refType)
             return loadRef(this.refType, fun);
         else

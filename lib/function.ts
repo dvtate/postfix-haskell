@@ -92,6 +92,7 @@ export default class Fun {
     action(ctx : Context, token: LexerToken): error.SyntaxError | Context | Array<string> | null {
         // To prevent duplicate expressions we can copy input exprs to locals
         // TODO FIXME do something similar for locals that get accessed in multiple branches (and/or conditions)
+        // does this work for tuples?
         const oldStack = ctx.stack.slice();
         ctx.stack = ctx.stack.map(v =>
             v instanceof expr.DataExpr
@@ -216,7 +217,8 @@ export default class Fun {
 
         // All cases are recursive and cannot be traced yets
         if (traceResults.length === 0)
-            return new error.SyntaxError("All branches of fun are recursive", this.tokens, ctx);
+            return null;
+            // return new error.SyntaxError("All branches of fun are recursive", this.tokens, ctx);
 
         // Look for an error
         const err = traceResults.find(t => !(t instanceof TraceResults)) as error.SyntaxError;
@@ -227,9 +229,13 @@ export default class Fun {
 
         // Verify consistent # i/o's
         if (ios.some(t => t.delta !== ios[0].delta)) {
-            console.error('Fun.action ios inconsistent:', ios);
-            return ['functions must have runtime consistency for number of inputs/outputs'];
-        }
+            console.error('Fun', this.name, ': ios inconsistent:', ios);
+            return new error.SyntaxError(
+                'functions must have runtime consistency for number of inputs/outputs', 
+                [...this.actions.map(a => a.token), token],
+                ctx,
+            );
+    }
 
         // Figure out how many args to pull
         const maxTakes = ios.map(t => t.takes).reduce((acc, v) => v.length > acc.length ? v : acc, []);

@@ -4,7 +4,7 @@ import * as error from '../error.js';
 import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
 import { Expr, DataExpr } from './expr.js';
-import type { FunExpr } from './fun.js';
+import type { FunExpr } from './func.js';
 import { constructGc, loadRef } from './gc_util.js';
 import { DependentLocalExpr, fromDataValue } from './util.js';
 import { BranchInputExpr } from './branch.js';

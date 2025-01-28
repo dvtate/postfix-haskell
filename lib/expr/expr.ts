@@ -2,7 +2,8 @@ import * as value from '../value.js';
 import * as types from '../datatypes.js';
 import type { LexerToken } from '../scan.js';
 import type ModuleManager from '../module.js';
-import type { FunExpr } from './fun.js';
+import type { FunExpr, FunLocalTracker } from './func.js';
+import * as error from '../error.js';
 
 // This file defines the abstract base types for expressions
 
@@ -56,11 +57,6 @@ export abstract class Expr extends value.Value {
      */
     abstract children(): Expr[];
 
-    // TODO use these instead of .children()
-    //      IR is a DAG, not an AST so above method makes no sense
-    // abstract inputExprs(): Expr[];
-    // abstract outputExprs(): Expr[];
-
     /**
      * Would it be better to store the value in a local or inline it multiple times?
      * @returns true if performance would improve with caching false if inlining better
@@ -97,6 +93,34 @@ export abstract class Expr extends value.Value {
 
         return [...ret];
     }
+
+    /* Replacing .children() + .getLeaves()
+     * Things we need
+     * - all locals that need to be captured for an expression
+     * - `fun`'s: locals set in conditions + actions
+     * - 
+     */
+
+    // /**
+    //  * Expressions that this expression takes as inputs
+    //  */
+    // abstract inputs(): Expr[];
+
+    // /**
+    //  * Expressions that this expression gives as output
+    //  */
+    // abstract outputs(): Expr[];
+
+    // /**
+    //  * Expressions used in the body of this expression
+    //  */
+    // abstract bodyExprs(): Expr[];
+
+    // /**
+    //  * Locals used by this expression
+    //  */
+    // abstract getLocals(): FunLocalTracker[];
+
 }
 
 /**
@@ -133,4 +157,5 @@ export abstract class DataExpr extends Expr {
     set datatype(t: typeof this._datatype) {
         this._datatype = t;
     }
+
 }
