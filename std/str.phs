@@ -1,5 +1,6 @@
 "./lang.phs" require $lang =
 "./list.phs" require $list =
+"./maybe.phs" require $maybe =
 
 ###
 # Static Strings
@@ -112,7 +113,7 @@ Char list.List $Str =
     branch
 ) $_itoa =
 
-(( I32 I64 | I32): 1 ) (:
+(( I32 I64 | I32):
     ( $n $base ) =
 
     n math.abs
@@ -124,14 +125,62 @@ Char list.List $Str =
     (: 1 ) (: ) $add_sign fun
     (: n 0 < ) (: '-' Str.cons ) $add_sign fun
     add_sign
-) $itoa fun
+) $itoa =
 
-((Str I32 I64 | ): 1 )
+(( Str I32 I64 | ): 1 )
 (:
     ( $s $n ) =
     s n itoa ++
 ) $global.++ fun
 
+# Convert parse string as U64
+I64 maybe.Maybe $MaybeI64 =
+(( I64 Str ) ( MaybeI64 ) rec:
+    ( $ret $str ) =
+    str :type
+    str (
+        Str.Nil (:
+            pop ret MaybeI64.Just make
+        )
+        Str.Node (:
+            unpack ( $c $tail ) =
+            (: 1 ) (:
+                c '0' - I64 lang.cast $d =
+                ret 10 * d + $ret2 =
+                ret2 tail _atou
+            ) $invalid_char fun
+            (: c '0' < c '9' > || ) (:
+                MaybeI64.nothing
+            ) $invalid_char fun
+            invalid_char
+        )
+    ) match
+) $_atou =
+
+# Parse string as i64
+(( Str ) ( MaybeI64 ):
+    $s =
+    s (
+        Str.Nil (:
+            pop () MaybeI64.Nothing make
+        )
+        Str.Node (:
+            unpack ( $head $tail ) =
+            (: 1 ) (: 0L s _atou ) $b_neg fun
+            (: head '-' == ) (:
+                0L tail _atou
+                (   MaybeI64.Nothing (: pop MaybeI64.nothing )
+                    MaybeI64.Just (: lang.neg MaybeI64.Just make )
+                ) match
+            ) $b_neg fun
+            b_neg
+        )
+    ) match
+
+    # this should work but doesn't...
+    # Str.empty '-' Str.cons s 1 Str.take == $is_neg =
+
+) $atoi =
 
 #(( F32 F64 | ): 1 ) (:
 #    

@@ -942,12 +942,11 @@ const operators : MacroOperatorsSpec = {
             const edt = (enumv.datatype instanceof types.ClassType)
                 ? enumv.datatype.getBaseType()
                 : enumv.datatype;
-            if (!edt.check(enumType)) { // shouldn't this .check be the other way around?
+            if (!enumType.check(edt)) { // swapped
                 // console.log('edt:', edt.toString());
-                // if (edt.toString() == 'F64')
-                //     console.log(enumv);
                 // console.log('enumType:', enumType.toString());
                 // console.log('enumType.c(edt):', enumType.check(edt));
+                // console.log('edt.check(enumType):', edt.check(enumType));
                 return new error.SyntaxError(
                     'Attempt to match on type incompatible with that of given value',
                     [edt.token, enumv.token, enumType.token, token],

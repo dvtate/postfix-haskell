@@ -5,15 +5,22 @@
 ( Unit io.IO I32 ) (:
     $n =
 
-    # Convert string literal to list string
-    "Provided number: " str.Str cast #8 str.Str.take
-
     # Convert i32 to a base-10 string representation
-    n 10 str.itoa
+    # Then parse the string into an i64
+    n 10 str.itoa $n_as_str =
+    n_as_str str.atoi $str_as_n =
 
-    # Combine the 2 strings
-    str.Str.concat
+    # Convert string literal to list string
+    "Provided number: " str.Str cast
+    
+    # Add the string representation of the number    
+    n_as_str str.Str.concat
 
     # Print the combined string
+    io.print
+
+    # Print the atoi i64
+    str_as_n type $MT =
+    str_as_n 0L MT.or_default
     io.print
 ) "test" export

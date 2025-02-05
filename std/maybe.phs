@@ -6,6 +6,8 @@
         ValueType class $Just =
     ) enum $MaybeType =
 
+    () MaybeType.Nothing make $MaybeType.nothing =
+
     # Bind calls a function on a Just value
     # If given Nothing returns Nothing instead
     (( MaybeType Syntax:Macro (ValueType) (MaybeType) Arrow | ): 
