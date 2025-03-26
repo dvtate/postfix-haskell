@@ -60,7 +60,7 @@
     window.makeLL = () => {
         push_ref(constructNode(alloc(3, node_bf)).addr);
 
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 2719; i++) {
             const naddr = alloc(3, node_bf);
             push_ref(
                 constructNode(
@@ -73,7 +73,20 @@
             push_ref(n.addr);
         }
 
-        console.log('made 100 nodes');
+        console.log('made 2719 nodes');
+    };
+
+    window.make1more = () => {
+        const naddr = alloc(3, node_bf);
+        push_ref(
+            constructNode(
+                naddr,
+                pop_ref(),
+                3000,
+            ).addr);
+        const n = new Node(pop_ref());
+        // console.log(n.toString(), n);
+        push_ref(n.addr);
     };
 
     // Iterate over LL
@@ -92,6 +105,8 @@
         }
         console.log(l);
     };
+
+    makeLL();
 
     // Reverse LL
     // TODO

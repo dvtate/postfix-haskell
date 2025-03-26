@@ -431,7 +431,7 @@ export default class ModuleManager {
         const PAGES_NEEDED = this.noRuntime
             ? Math.ceil(STATIC_DATA_LEN / 65536)
             : Math.ceil((FREE_START + 2 + 10) / 65536);
-        const INIT_FREE_SIZE = PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE;
+        const INIT_FREE_SIZE = (PAGES_NEEDED * 65536 - HEAP_START - OBJ_HEAD_SIZE) >> 2; // in multiples of i32's
         const USER_TABLE = this.genTable();
 
         // Little-endian hex-string representation

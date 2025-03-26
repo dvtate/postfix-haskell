@@ -1,5 +1,5 @@
-"../std/lang.phs"       require use
-"../std/static_mem.phs" require use
+"../../std/lang.phs"       require use
+"../../std/mem.phs" require use
 
 1 static_region $reg =
 
