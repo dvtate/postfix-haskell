@@ -24,6 +24,14 @@ Never $Void =
 (: swap pop ) (: swap pop @ ) $global.|| fun
 (: pop ) (: pop @ ) $global.|| fun
 
+# If statement
+(:
+	( $cond $then $else ) =
+	(: 1 ) (: else ) $b fun
+	(: cond ) (: then ) $b fun
+	b
+) $if_then_else =
+
 ##
 # Cast a value callable one type to another type
 # <value> <type> cast

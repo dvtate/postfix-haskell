@@ -399,7 +399,7 @@
                 local.get $user_ptr
                 i32.add
                 i32.load
-                call $__minor_mark
+                call $__minor_mark ;; FIXME this overflows the stack
             end
 
             ;; Do while ++bit_ind < size
@@ -416,7 +416,7 @@
     )
 
     ;; Allocate an object onto the heap
-    ;; Note this also copies the given mark if included in size-bf
+    ;; Note mark_size also copies the given mark
     ;; Note that size is measured in multiples of 32 bits
     (func $__alloc_heap (param $mark_size i32) (param $bf_ptr i32) (result i32)
         (local $free_p i32)         ;; current gc_heap_empty_t*
@@ -431,13 +431,11 @@
         local.get $mark_size
         i32.const 0x1
         i32.or
-        i32.const 0x3fffffff
+        i32.const 0x3fffffff ;; ignore mark bitfield component
         i32.and
         local.tee $mark_size
 
-        ;; Extract size + header
-        ;; i32.const 2
-        ;; i32.shl ;; * 4 (i32 -> bytes)
+        ;; add size of header
         i32.const 3
         i32.add
         local.set $just_size
@@ -642,7 +640,7 @@
                         i32.shl ;; * bytes/page
                         global.set $__free_head
 
-                        ;; Extend lm by page (64 KiB)
+                        ;; Extend lm by a page (64 KiB)
                         i32.const 1
                         memory.grow
                         i32.const -1
@@ -1228,7 +1226,7 @@
         global.get $__free_head
         local.set $p
         loop $walk
-            ;; if (p + p->size === p->next)
+            ;; if (p + p->size == p->next)
             local.get $p
             local.get $p
             i32.load

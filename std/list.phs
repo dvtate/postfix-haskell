@@ -1,5 +1,6 @@
 "./lang.phs" require $lang =
 "./maybe.phs" require $maybe =
+"./math.phs" require $math =
 
 ###
 # Type and methods
@@ -373,6 +374,30 @@
 
         0 impl
     ) $ListType.bsort =
+
+    # Maximum value in the list
+    ((ListType):
+        ElemType maybe.Maybe $MT =
+        (   # Make sure list isn't empty
+            ListType.Nil (: pop MT.nothing )
+            ListType.Node (:
+                unpack ( $v $tail ) =
+                tail v (: math.max ) ListType.foldl MT.Just make
+            )
+        ) match
+    ) $ListType.max =
+
+    # Minimum value in the list
+    ((ListType)):
+        ElemType maybe.Maybe $MT =
+        (   # Make sure list isn't empty
+            ListType.Nil (: pop MT.nothing )
+            ListType.Node (:
+                unpack ( $v $tail ) =
+                tail v (: math.min ) ListType.foldl MT.Just make
+            )
+        ) match
+    ) $ListType.min =
 
     # TODO elem find some
 

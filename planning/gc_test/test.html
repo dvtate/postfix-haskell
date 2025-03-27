@@ -57,10 +57,10 @@
     }
 
     // Make a list linked list of 300 i32 nodes in reverse numerical order
-    window.makeLL = () => {
+    window.makeLL = (n = 2719) => {
         push_ref(constructNode(alloc(3, node_bf)).addr);
 
-        for (let i = 0; i < 2719; i++) {
+        for (let i = 0; i < n; i++) {
             const naddr = alloc(3, node_bf);
             push_ref(
                 constructNode(
@@ -73,7 +73,7 @@
             push_ref(n.addr);
         }
 
-        console.log('made 2719 nodes');
+        console.log('made %d nodes', n);
     };
 
     window.make1more = () => {
@@ -106,11 +106,6 @@
         console.log(l);
     };
 
-    makeLL();
-
-    // Reverse LL
-    // TODO
-
-    // Verify LL gets GC'd
+    // TODO Verify LL gets GC'd
 })();
 </script>
