@@ -280,7 +280,7 @@
                 local.get $user_ptr
                 i32.add
                 i32.load
-                call $__mark
+                call $__mark ;; this could overflow the stack
             end
 
             ;; Do while ++bit_ind < size

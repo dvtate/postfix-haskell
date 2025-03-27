@@ -388,7 +388,7 @@
     ) $ListType.max =
 
     # Minimum value in the list
-    ((ListType)):
+    ((ListType):
         ElemType maybe.Maybe $MT =
         (   # Make sure list isn't empty
             ListType.Nil (: pop MT.nothing )
