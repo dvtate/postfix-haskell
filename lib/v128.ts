@@ -1,7 +1,7 @@
 
 
 function enumMap(...strs: string[]) {
-    let ret: { [k: number | string] : number | string } = {};
+    const ret: { [k: number | string] : number | string } = {};
     strs.forEach((s, i) => ret[ret[s] = i] = s);
     return ret;
 }
@@ -46,36 +46,42 @@ export default class PackedV128 {
                 if (parts.length !== 16)
                     throw new Error('invalid v128 literal - expected 16 i8\'s');
                 parts.forEach((e, i) => arr[i] = parseInt(e));
+                break;
             }
             case 'i16': {
                 const arr = new Int16Array(this.buffer);
                 if (parts.length !== 8)
                     throw new Error('invalid v128 literal - expected 8 i16\'s');
                 parts.forEach((e, i) => arr[i] = parseInt(e));
+                break;
             }
             case 'i32': {
                 const arr = new Int32Array(this.buffer);
                 if (parts.length !== 4)
                     throw new Error('invalid v128 literal - expected 4 i32\'s');
                 parts.forEach((e, i) => arr[i] = parseInt(e));
+                break;
             }
             case 'i64': {
                 const arr = new BigInt64Array(this.buffer);
                 if (parts.length !== 2)
                     throw new Error('invalid v128 literal - expected 2 i64\'s');
                 parts.forEach((e, i) => arr[i] = BigInt(e));
+                break;
             }
             case 'f32': {
                 const arr = new Float32Array(this.buffer);
                 if (parts.length !== 4)
                     throw new Error('invalid v128 literal - expected 4 f32\'s');
                 parts.forEach((e, i) => arr[i] = Number(e));
+                break;
             }
             case 'f64': {
                 const arr = new Float64Array(this.buffer);
                 if (parts.length !== 2)
                     throw new Error('invalid v128 literal - expected 2 f64\'s');
                 parts.forEach((e, i) => arr[i] = Number(e));
+                break;
             }
         default: 
             throw new Error('invalid v128 literal expression');

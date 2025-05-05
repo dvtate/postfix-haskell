@@ -45,7 +45,7 @@ export function genGcBitfield(
     }
 
     // Convert to Uint8Array
-    let ret = new Uint8Array(bfStr.length / 8);
+    const ret = new Uint8Array(bfStr.length / 8);
     for (let i = 0; i < bfStr.length; i += 8) {
         const byteString = bfStr.slice(i, i + 8);
         ret[i] = parseInt(byteString, 2);

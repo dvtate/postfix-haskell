@@ -1,6 +1,5 @@
 import { uid } from '../util.js';
 
-import * as value from '../value.js';
 import * as types from '../datatypes.js';
 import * as error from '../error.js';
 import { LexerToken } from '../scan.js';
@@ -8,7 +7,7 @@ import type ModuleManager from '../module.js';
 
 import { DataExpr, Expr } from './expr.js';
 import { InternalFunExpr, FunExpr, ParamExpr } from './func.js';
-import { LiteralMacro, Macro } from '../macro.js';
+import { LiteralMacro } from '../macro.js';
 import { DependentLocalExpr, TeeExpr } from './util.js';
 import Context from '../context.js';
 
@@ -53,7 +52,7 @@ export class ClosureCreateExpr extends DataExpr {
             `closure_${uid()}`,
             this.macro.inputTypes as types.DataType[],
         );
-        const paramsExprs = this.macro.inputTypes.map((t, i) =>
+        const paramsExprs = this.macro.inputTypes.map(t =>
             new ParamExpr(this.token, t as types.DataType, this.func, null));
 
         // Trace, with relevant context modifications
@@ -78,7 +77,7 @@ export class ClosureCreateExpr extends DataExpr {
         // Get things to capture
         // proxiedLocals.filter(l => l.)
         const leaves = [].concat(...ios.gives.map(e => e instanceof Expr ? e.getLeaves() : []));
-        const specialLeaves = leaves.find(l => [ParamExpr, DependentLocalExpr, TeeExpr, ].includes(l.constructor));
+        // const specialLeaves = leaves.find(l => [ParamExpr, DependentLocalExpr, TeeExpr, ].includes(l.constructor));
 
         // Closure object is always the first argument
         const closureObjectType = new types.TupleType(this.token, [

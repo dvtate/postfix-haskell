@@ -79,6 +79,8 @@
     powf
 ) $pow fun
 
+# TODO pow for real exponents
+
 # ** for power operator
 ((number.Float number.Int): 1 ) (: pow ) $global.** fun
 ((Any number.Int): $n = n is_const n 2 == && ) (: pop dup * ) $global.** fun
@@ -280,5 +282,3 @@
     (: s -1075.0 < s -1075.0 == b s a - < && || ) (: 0.0 ) $b1 fun
     b1
 ) $exp2 fun
-
-# TODO pow
