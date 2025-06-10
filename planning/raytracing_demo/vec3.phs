@@ -10,13 +10,25 @@
 
 ( 0.0 0.0 0.0 ) Vec3 make $zero =
 
-# Overload * for dot-product
+# Dot-product
 ((Vec3 Vec3): 1 ) (:
     ( $a $b ) =
     a _x  b _x *
     a _y  b _y * +
     a _z  b _z * +
-) $global.* fun
+) $dot fun
+
+# Cross-product
+((Vec3 Vec3): 1 ) (:
+    ( $a $b ) =
+    a unpack ( $a_0 $a_1 $a_2 ) =
+    b unpack ( $b_0 $b_1 $b_2 ) =
+
+    (   a_1 b_2 * a_2 b_1 * -
+        a_2 b_0 * a_0 b_2 * -
+        a_0 b_1 * a_1 b_0 * -
+    ) Vec3 make
+) $cross fun
 
 # Scalar multiplication
 ((Vec3 math.number.Num): 1 ) (:
@@ -24,6 +36,13 @@
     (   a _x  b *
         a _y  b *
         a _z  b *
+    ) Vec3 make
+) $global.* fun
+((Vec3 Vec3): 1 ) (:
+    ( $a $b ) =
+    (   a _x b _x *
+        a _y b _y *
+        a _z b _z *
     ) Vec3 make
 ) $global.* fun
 ((math.number.Num Vec3): 1 ) (: swap global.* ) $global.* fun

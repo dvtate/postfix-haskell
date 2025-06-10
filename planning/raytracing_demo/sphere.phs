@@ -18,23 +18,44 @@
     unpack ( $center $radius $material ) = material
 ) $material =
 
-
 F64 Maybe.Maybe $MaybeF64 =
-((Sphere Ray.Ray) (MaybeF64) rec:
+(( Sphere Ray.Ray ) ( MaybeF64 ) rec:
     ( $sphere $ray ) =
     ray unpack ( $ray_origin $ray_direction ) =
-    
-    ray_direction ray_origin sphere center - * 2.0 * $b =
-    ray_origin sphere center - Vec3.norm 2 ** sphere radius 2 ** - $c =
-    b 2 ** 4.0 c * - $delta =
+    sphere unpack ( $center $radius $material ) =
 
-    (: 1 ) (: () MaybeF64.Nothing make ) $branch fun
-    (: delta 0 > ) (:
-        delta math.sqrt b - 2.0 / $t1 =
-        0.0 b - delta math.sqrt - 2.0 / $t2 =
-        (: 1 ) (: () MaybeF64.Nothing make ) $b2 fun
-        (: t1 0.0 > t2 0.0 > * ) (: t1 t2 math.min MaybeF64.Just make ) $b2 fun
-        b2
+    center ray_origin - $oc =
+    ray_direction dup Vec3.dot $a =
+    -2.0 ray_direction oc Vec3.dot * $b =
+    oc dup Vec3.dot radius dup * - $c =
+    b b * 4.0 a c * * - $discriminant =
+
+    (: 1 ) (:
+        b neg discriminant math.sqrt - 2.0 a * /  MaybeF64.Just make
+    ) $branch fun
+    (: discriminant 0 < ) (:
+        () MaybeF64.Nothing make
     ) $branch fun
     branch
 ) $intersect =
+
+
+#((Sphere Ray.Ray) (MaybeF64) rec:
+#    ( $sphere $ray ) =
+#    ray unpack ( $ray_origin $ray_direction ) =
+#    
+#    ray_direction ray_origin sphere center - Vec3.dot 2.0 * $b =
+#    ray_origin sphere center - Vec3.norm dup * sphere radius 2 ** - $c =
+#    b 2 ** 4.0 c * - $delta =
+#
+#    (: 1 ) (: () MaybeF64.Nothing make ) $branch fun
+#    (: delta 0.0 :stack_types > ) (:
+#        delta math.sqrt b - 2.0 / $t1 =
+#        0.0 b - delta math.sqrt - 2.0 / $t2 =
+#        (: 1 ) (: () MaybeF64.Nothing make ) $b2 fun
+#        (: t1 0.0 > t2 0.0 > * ) (: t1 t2 math.min MaybeF64.Just make ) $b2 fun
+#        b2
+#    ) $branch fun
+#    branch
+#) $intersect =
+#
