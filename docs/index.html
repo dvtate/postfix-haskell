@@ -1,0 +1,160 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>postfix-haskell</title><meta name="description" content="Documentation for postfix-haskell"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script><script async src="assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">postfix-haskell</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>postfix-haskell</h1></div><div class="tsd-panel tsd-typography"><h1 id="postfix-haskell" class="tsd-anchor-link">postfix-haskell<a href="#postfix-haskell" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><p>A very low-level functional programming language designed to compile to WebAssembly in the browser. The language actually bears very little resemblance to Haskell despite the name.</p>
+<h2 id="how-to-use" class="tsd-anchor-link">How to use<a href="#how-to-use" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>The all examples can be run in an interactive shell like below. Alternatively you can install <a href="https://www.npmjs.com/package/postfix-haskell">the more stable npm package</a>). For better examples check out the recently edited files in the <code>planning/*</code> folder. Also note the standard library in <code>/std/*</code>.</p>
+<pre><code><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-0">clone</span><span class="hl-1"> </span><span class="hl-2">https</span><span class="hl-1">:</span><span class="hl-3">//github.com/dvtate/postfix-haskell</span><br/><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-0">postfix</span><span class="hl-1">-</span><span class="hl-0">haskell</span><br/><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build</span><br/><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> --</span><span class="hl-0">global</span><br/><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">phc</span><span class="hl-1"> </span><span class="hl-0">shell</span><br/><span class="hl-1">&gt; </span><span class="hl-4">&quot;lang&quot;</span><span class="hl-1"> </span><span class="hl-0">require</span><span class="hl-1"> </span><span class="hl-0">use</span><br/><span class="hl-1">&gt; </span><span class="hl-5">1</span><span class="hl-1"> </span><span class="hl-5">2</span><span class="hl-1"> + :</span><span class="hl-0">data</span><br/><span class="hl-1">:</span><span class="hl-0">data</span><span class="hl-1"> - </span><span class="hl-5">3</span><span class="hl-6">n</span>
+</code><button>Copy</button></pre>
+
+<h2 id="utilities" class="tsd-anchor-link">Utilities<a href="#utilities" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>The compiler now has a main program that lets you use it through the command line. This can be done by first doing <code>npm run build</code> and then either run it locally as <code>node dist/index.js</code> or install it to your machine via <code>npm install --global</code> so that you can use it via <code>phc</code>.</p>
+<pre><code><span class="hl-1">[</span><span class="hl-0">postfix</span><span class="hl-1">-</span><span class="hl-0">haskell</span><span class="hl-1">]</span><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build</span><br/><span class="hl-1">[</span><span class="hl-0">postfix</span><span class="hl-1">-</span><span class="hl-0">haskell</span><span class="hl-1">]</span><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">sudo</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> --</span><span class="hl-0">global</span><br/><span class="hl-1">[</span><span class="hl-0">postfix</span><span class="hl-1">-</span><span class="hl-0">haskell</span><span class="hl-1">]</span><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">phc</span><span class="hl-1"> --</span><span class="hl-0">help</span><br/><span class="hl-0">phc</span><span class="hl-1"> &lt;</span><span class="hl-0">command</span><span class="hl-1">&gt; [</span><span class="hl-0">args</span><span class="hl-1">]</span><br/><br/><span class="hl-2">Commands</span><span class="hl-1">:</span><br/><span class="hl-1">  </span><span class="hl-0">phc</span><span class="hl-1"> </span><span class="hl-0">shell</span><span class="hl-1"> [</span><span class="hl-0">options</span><span class="hl-1">]        </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">interactive</span><span class="hl-1"> </span><span class="hl-0">shell</span><span class="hl-1">                     [</span><span class="hl-0">default</span><span class="hl-1">]</span><br/><span class="hl-1">  </span><span class="hl-0">phc</span><span class="hl-1"> </span><span class="hl-0">file</span><span class="hl-1"> &lt;</span><span class="hl-0">name</span><span class="hl-1">&gt; [</span><span class="hl-0">options</span><span class="hl-1">]  </span><span class="hl-0">compile</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">file</span><span class="hl-1"> </span><span class="hl-0">to</span><span class="hl-1"> </span><span class="hl-7">WAT</span><br/><br/><span class="hl-2">Options</span><span class="hl-1">:</span><br/><span class="hl-1">      --</span><span class="hl-0">version</span><span class="hl-1">  </span><span class="hl-0">Show</span><span class="hl-1"> </span><span class="hl-0">version</span><span class="hl-1"> </span><span class="hl-0">number</span><span class="hl-1">                                   [</span><span class="hl-0">boolean</span><span class="hl-1">]</span><br/><span class="hl-1">  -</span><span class="hl-0">v</span><span class="hl-1">, --</span><span class="hl-0">verbose</span><span class="hl-1">  </span><span class="hl-0">include</span><span class="hl-1"> </span><span class="hl-0">verbose</span><span class="hl-1"> </span><span class="hl-0">output</span><span class="hl-1">               [</span><span class="hl-0">boolean</span><span class="hl-1">] [</span><span class="hl-0">default</span><span class="hl-1">: </span><span class="hl-6">false</span><span class="hl-1">]</span><br/><span class="hl-1">      --</span><span class="hl-0">help</span><span class="hl-1">     </span><span class="hl-0">Show</span><span class="hl-1"> </span><span class="hl-0">help</span><span class="hl-1">                                             [</span><span class="hl-0">boolean</span><span class="hl-1">]</span><br/><span class="hl-1">  -</span><span class="hl-0">l</span><span class="hl-1">, --</span><span class="hl-0">lex</span><span class="hl-1">      </span><span class="hl-0">debug</span><span class="hl-1"> </span><span class="hl-0">lexer</span><span class="hl-1"> </span><span class="hl-0">tokens</span><span class="hl-1">                   [</span><span class="hl-0">boolean</span><span class="hl-1">] [</span><span class="hl-0">default</span><span class="hl-1">: </span><span class="hl-6">false</span><span class="hl-1">]</span>
+</code><button>Copy</button></pre>
+
+<h3 id="shell" class="tsd-anchor-link">Shell<a href="#shell" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>The shell is probably the best way to learn the language, allowing you to run short bits of code and test expected compiler behavior. In addition to normal code there exist some compiler macros that make debugging easier you can find these in <code>lib/debug_macros.ts</code>, for example:</p>
+<pre><code><span class="hl-1">[</span><span class="hl-0">postfix</span><span class="hl-1">-</span><span class="hl-0">haskell</span><span class="hl-1">]</span><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">start</span><br/><span class="hl-1">&gt; </span><span class="hl-4">&quot;lang&quot;</span><span class="hl-1"> </span><span class="hl-0">require</span><span class="hl-1"> </span><span class="hl-0">use</span><br/><span class="hl-1">&gt; </span><span class="hl-5">1</span><span class="hl-1"> </span><span class="hl-5">2</span><span class="hl-1"> + :</span><span class="hl-0">data</span><br/><span class="hl-1">:</span><span class="hl-0">data</span><span class="hl-1"> - </span><span class="hl-5">3</span><span class="hl-6">n</span><br/><br/><span class="hl-1">&gt; </span><span class="hl-5">1</span><span class="hl-1"> </span><span class="hl-5">2</span><span class="hl-1"> + :</span><span class="hl-0">type</span><br/><span class="hl-1">:</span><span class="hl-0">type</span><span class="hl-1"> - {</span><br/><span class="hl-1">  </span><span class="hl-2">syntaxType</span><span class="hl-1">: </span><span class="hl-4">&#39;Data&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">datatype</span><span class="hl-1">: </span><span class="hl-0">PrimitiveType</span><span class="hl-1"> { </span><span class="hl-2">token</span><span class="hl-1">: </span><span class="hl-6">undefined</span><span class="hl-1">, </span><span class="hl-2">name</span><span class="hl-1">: </span><span class="hl-4">&#39;i32&#39;</span><span class="hl-1"> }</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-1">&gt; ( </span><span class="hl-7">I32</span><span class="hl-1"> ) (: </span><span class="hl-5">1</span><span class="hl-1"> + ) </span><span class="hl-4">&quot;incr&quot;</span><span class="hl-1"> </span><span class="hl-6">export</span><span class="hl-1"> :</span><span class="hl-0">compile</span><br/><span class="hl-1">:</span><span class="hl-0">compile</span><span class="hl-1"> - (</span><span class="hl-8">module</span><br/><span class="hl-1">  (</span><span class="hl-9">func</span><span class="hl-1"> (;</span><span class="hl-5">0</span><span class="hl-1">;) (</span><span class="hl-0">param</span><span class="hl-1"> </span><span class="hl-0">i32</span><span class="hl-1">) (</span><span class="hl-0">result</span><span class="hl-1"> </span><span class="hl-0">i32</span><span class="hl-1">)</span><br/><span class="hl-1">    </span><span class="hl-0">local</span><span class="hl-1">.</span><span class="hl-0">get</span><span class="hl-1"> </span><span class="hl-5">0</span><br/><span class="hl-1">    </span><span class="hl-0">i32</span><span class="hl-1">.</span><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-5">1</span><br/><span class="hl-1">    </span><span class="hl-0">i32</span><span class="hl-1">.</span><span class="hl-0">add</span><span class="hl-1">)</span><br/><span class="hl-1">  (</span><span class="hl-0">export</span><span class="hl-1"> </span><span class="hl-4">&quot;incr&quot;</span><span class="hl-1"> (</span><span class="hl-0">func</span><span class="hl-1"> </span><span class="hl-5">0</span><span class="hl-1">))</span><br/><span class="hl-1">  (</span><span class="hl-9">memory</span><span class="hl-1"> (;</span><span class="hl-5">0</span><span class="hl-1">;) </span><span class="hl-5">1</span><span class="hl-1">)</span><br/><span class="hl-1">  (</span><span class="hl-0">export</span><span class="hl-1"> </span><span class="hl-4">&quot;memory&quot;</span><span class="hl-1"> (</span><span class="hl-0">memory</span><span class="hl-1"> </span><span class="hl-5">0</span><span class="hl-1">))</span><br/><span class="hl-1">  (</span><span class="hl-9">data</span><span class="hl-1"> (;</span><span class="hl-5">0</span><span class="hl-1">;) (</span><span class="hl-0">i32</span><span class="hl-1">.</span><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-5">0</span><span class="hl-1">) </span><span class="hl-4">&quot;&quot;</span><span class="hl-1">)</span><br/><span class="hl-1">  (</span><span class="hl-9">type</span><span class="hl-1"> (;</span><span class="hl-5">0</span><span class="hl-1">;) (</span><span class="hl-9">func</span><span class="hl-1"> (</span><span class="hl-0">param</span><span class="hl-1"> </span><span class="hl-0">i32</span><span class="hl-1">) (</span><span class="hl-0">result</span><span class="hl-1"> </span><span class="hl-0">i32</span><span class="hl-1">))))</span>
+</code><button>Copy</button></pre>
+
+<h3 id="file" class="tsd-anchor-link">File<a href="#file" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>For compiling a file to WASM Text format with expectation of errors. Once you know it compiles you can use <code>tools/optimized.sh</code> to get an optimized binary</p>
+<pre><code><span class="hl-0">phc</span><span class="hl-1"> </span><span class="hl-0">file</span><span class="hl-1"> &lt;</span><span class="hl-0">name</span><span class="hl-1">&gt; [</span><span class="hl-0">options</span><span class="hl-1">]</span><br/><br/><span class="hl-0">compile</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">file</span><span class="hl-1"> </span><span class="hl-0">to</span><span class="hl-1"> </span><span class="hl-7">WAT</span><br/><br/><span class="hl-2">Positionals</span><span class="hl-1">:</span><br/><span class="hl-1">  </span><span class="hl-0">name</span><span class="hl-1">  </span><span class="hl-0">name</span><span class="hl-1"> </span><span class="hl-6">of</span><span class="hl-1"> </span><span class="hl-0">the</span><span class="hl-1"> </span><span class="hl-0">file</span><span class="hl-1"> </span><span class="hl-0">to</span><span class="hl-1"> </span><span class="hl-0">open</span><span class="hl-1">                             [</span><span class="hl-0">string</span><span class="hl-1">] [</span><span class="hl-0">required</span><span class="hl-1">]</span><br/><br/><span class="hl-2">Options</span><span class="hl-1">:</span><br/><span class="hl-1">      --</span><span class="hl-0">version</span><span class="hl-1">     </span><span class="hl-0">Show</span><span class="hl-1"> </span><span class="hl-0">version</span><span class="hl-1"> </span><span class="hl-0">number</span><span class="hl-1">                                [</span><span class="hl-0">boolean</span><span class="hl-1">]</span><br/><span class="hl-1">  -</span><span class="hl-0">v</span><span class="hl-1">, --</span><span class="hl-0">verbose</span><span class="hl-1">     </span><span class="hl-0">include</span><span class="hl-1"> </span><span class="hl-0">verbose</span><span class="hl-1"> </span><span class="hl-0">output</span><span class="hl-1">            [</span><span class="hl-0">boolean</span><span class="hl-1">] [</span><span class="hl-0">default</span><span class="hl-1">: </span><span class="hl-6">false</span><span class="hl-1">]</span><br/><span class="hl-1">      --</span><span class="hl-0">help</span><span class="hl-1">        </span><span class="hl-0">Show</span><span class="hl-1"> </span><span class="hl-0">help</span><span class="hl-1">                                          [</span><span class="hl-0">boolean</span><span class="hl-1">]</span><br/><span class="hl-1">  -</span><span class="hl-0">t</span><span class="hl-1">, --</span><span class="hl-0">track</span><span class="hl-1">-</span><span class="hl-0">time</span><span class="hl-1">  </span><span class="hl-0">track</span><span class="hl-1"> </span><span class="hl-0">time</span><span class="hl-1"> </span><span class="hl-0">spent</span><span class="hl-1"> </span><span class="hl-0">compiling</span><span class="hl-1">         [</span><span class="hl-0">boolean</span><span class="hl-1">] [</span><span class="hl-0">default</span><span class="hl-1">: </span><span class="hl-6">true</span><span class="hl-1">]</span><br/><span class="hl-1">      --</span><span class="hl-0">fast</span><span class="hl-1">        </span><span class="hl-0">skip</span><span class="hl-1"> </span><span class="hl-0">validation</span><span class="hl-1"> </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">pretty</span><span class="hl-1">-</span><span class="hl-0">print</span><span class="hl-1"> </span><span class="hl-0">steps</span><br/><span class="hl-1">                                                      [</span><span class="hl-0">boolean</span><span class="hl-1">] [</span><span class="hl-0">default</span><span class="hl-1">: </span><span class="hl-6">false</span><span class="hl-1">]</span><br/><span class="hl-1">      --</span><span class="hl-0">folding</span><span class="hl-1">     </span><span class="hl-0">use</span><span class="hl-1"> </span><span class="hl-0">folding</span><span class="hl-1">/</span><span class="hl-0">s</span><span class="hl-1">-</span><span class="hl-0">expr</span><span class="hl-1"> </span><span class="hl-7">WAT</span><span class="hl-1"> </span><span class="hl-0">syntax</span><span class="hl-1">     [</span><span class="hl-0">boolean</span><span class="hl-1">] [</span><span class="hl-0">default</span><span class="hl-1">: </span><span class="hl-6">false</span><span class="hl-1">]</span><br/><span class="hl-1">  -</span><span class="hl-7">O</span><span class="hl-1">, --</span><span class="hl-0">optimize</span><span class="hl-1">    </span><span class="hl-0">pass</span><span class="hl-1"> </span><span class="hl-0">compiled</span><span class="hl-1"> </span><span class="hl-0">output</span><span class="hl-1"> </span><span class="hl-0">through</span><span class="hl-1"> </span><span class="hl-0">binaryen</span><span class="hl-1"> </span><span class="hl-0">optimizer</span><br/><span class="hl-1">                                                                [</span><span class="hl-0">default</span><span class="hl-1">: </span><span class="hl-6">false</span><span class="hl-1">]</span>
+</code><button>Copy</button></pre>
+
+<h3 id="inline" class="tsd-anchor-link">Inline<a href="#inline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>You can embed the language in JavaScript or TypeScript. See a demo in <code>planning/inline.ts</code>.</p>
+<h1 id="quick-intro-to-language" class="tsd-anchor-link">Quick intro to language<a href="#quick-intro-to-language" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><ul>
+<li>functional: immutable variables defined via <code>=</code> operator</li>
+<li>postfix: operators follow the operands they act on (ie - <code>1 2 +</code>)
+<ul>
+<li>the stack (place where expressions are put) is a compile-time abstraction, and values stored on it often aren't included in the compiled code</li>
+</ul>
+</li>
+<li>All the below examples assume you've imported the standard library which contains many basic operators like <code>+</code> and <code>&amp;&amp;</code>.
+<ul>
+<li>to import it use <code>&quot;/[path to this repo]/postfix-haskell/std/lang.phs&quot; require use</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="identifiers" class="tsd-anchor-link">Identifiers<a href="#identifiers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Escaped identifiers (ie - <code>$name</code>) can be used to store any type of value</li>
+<li>Unescaped identifiers will invoke stored value, either running it in place or pushing it's value onto the stack</li>
+<li>There are two operators which act on identifiers:
+<ul>
+<li><code>@</code> : this is the same as unecaping the identifier, it will invoke values</li>
+<li><code>~</code> : this will unescape the the value but will not invoke it</li>
+</ul>
+</li>
+</ul>
+<pre><code class="php"># equiv to `let a = 4 * (1 + 2)`
+1 2 + 4 * $a =
+
+# Prints `:data - 12` at compile time
+a :data
+</code><button type="button">Copy</button></pre>
+
+<h2 id="macros" class="tsd-anchor-link">Macros<a href="#macros" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Macros are equivalent to functions in other languages</li>
+<li>Conceptually similar to executable arrays in postscript</li>
+<li>When invoked, compiler will do as needed to make them run in place</li>
+</ul>
+<pre><code class="php"># Macro that returns the next number
+# Notice we specified optional type annotations
+((I32)(I32): 1 + ) $incr =
+
+# :data - 6
+5 incr :data
+5 1 +  :data
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>macros aren't functions however and aren't limited to a single return value</li>
+</ul>
+<pre><code class="php"># (a,b)->(b,a)
+(: ( $a $b ) = b a ) $swap =
+
+# (a)->()
+(: $_ = ) $pop =
+
+# ()->(a,b)
+# Notice the optional type annotations
+(()(F64 F64): 1.0 2.0 ) $nums =
+
+nums / :data # 0.5
+nums swap / :data # 2
+nums pop :data # 1
+</code><button type="button">Copy</button></pre>
+
+<p>Notice that if we want to get the macro stored in a variable we cannot simply unescape it, and must use the <code>~</code> operator.</p>
+<pre><code class="php">(: $op = 1 2 op ) $apply_operator =
+(: + 2 *) $add_and_double =
+
+# This is valid
+$add_and_double ~ apply_operator :data # 6
+
+# This is wrong and will not compile
+add_and_double apply_operator :data
+</code><button type="button">Copy</button></pre>
+
+<h2 id="branching" class="tsd-anchor-link">Branching<a href="#branching" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Functions are like macros but overloadable with conditions</li>
+<li>Functions are the only way to do branching in the language</li>
+<li>When invoked, the conditions are checked until reaching one which is truthy</li>
+<li>The truthy branch is taken</li>
+<li>If there are no possible branches the compiler will error</li>
+<li>they syntax for functions is <code>{ condition } { action } $identifier fun</code></li>
+</ul>
+<pre><code class="php"># Use bigger of two values
+
+# Here we're checking a runtime condition
+(: true ) (: pop ) $max fun
+(: < ) (: ( $a $b ) = b ) $max fun
+
+# Here we're checking a compile-time condition
+((F32): 1 ) (: "f32.max" asm ) $max fun
+
+# This does basically the same as before but for F64
+(: type F64 == ) (: "f64.max" asm ) $max fun
+
+# This takes the F64 branch
+1.0 30.1 max :data # 30.1
+
+# This takes the (: < ) branch
+# Condition: 30 gets promoted to 30.0 causing it to take the branch
+# Action: the other 30 remains on the stack as the result
+1.2 30 max :data # 30
+</code><button type="button">Copy</button></pre>
+
+<h2 id="namespaces-and-modules" class="tsd-anchor-link">Namespaces and Modules<a href="#namespaces-and-modules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Namespaces are used to organize identifiers</li>
+<li>Namespaces are made using the <code>namespace</code> keyword</li>
+<li>To use an identifier stored in a namespace simply add a <code>.</code> between the namespace identifier and the identifier to access.</li>
+<li>The <code>global</code> namespace is available at all scopes</li>
+<li>The <code>use</code> keyword applies namespaces identifiers to current scope</li>
+<li>Modules are imported using the <code>require</code> keyword which gives a namespace</li>
+<li>the <code>export</code> keyword</li>
+</ul>
+<pre><code class="php"># Import basic language features such as `+` and `-` among other things
+# And apply it to the current scope
+"./std/lang.phs" require use
+
+# Create a namespace 'ns'
+(:
+    5 $five =
+    (: + ) $add =
+) namespace $ns =
+
+10 $five =
+
+( global.I32 ) (:
+    # Get 'five' from the namespace
+    ns.five
+
+    # Invoke 'add' from the namespace
+    ns.add
+
+    five -
+) "demo" export
+</code><button type="button">Copy</button></pre>
+
+<h2 id="syntactic-types" class="tsd-anchor-link">Syntactic Types<a href="#syntactic-types" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>TODO</p>
+<h1 id="should-to-add-to-guide" class="tsd-anchor-link">Should to add to guide<a href="#should-to-add-to-guide" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><ul>
+<li>Complete list of operators</li>
+<li>List of data and syntactic types</li>
+<li>namespaces elaborate on modules</li>
+<li>recursion</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#postfix-haskell"><span>postfix-<wbr/>haskell</span></a><ul><li><a href="#how-to-use"><span>How to use</span></a></li><li><a href="#utilities"><span>Utilities</span></a></li><li><ul><li><a href="#shell"><span>Shell</span></a></li><li><a href="#file"><span>File</span></a></li><li><a href="#inline"><span>Inline</span></a></li></ul></li></ul><a href="#quick-intro-to-language"><span>Quick intro to language</span></a><ul><li><a href="#identifiers"><span>Identifiers</span></a></li><li><a href="#macros"><span>Macros</span></a></li><li><a href="#branching"><span>Branching</span></a></li><li><a href="#namespaces-and-modules"><span>Namespaces and <wbr/>Modules</span></a></li><li><a href="#syntactic-types"><span>Syntactic <wbr/>Types</span></a></li></ul><a href="#should-to-add-to-guide"><span>Should to add to guide</span></a></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">postfix-haskell</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
