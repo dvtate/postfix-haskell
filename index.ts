@@ -27,7 +27,7 @@ yargs(process.argv.slice(2))
                     alias: 'l' },
             }),
         argv =>
-            runShell(argv.lex, argv.verbose))
+            runShell(!!argv.lex, !!argv.verbose))
     .command('file <name> [options]', 'compile a file to WAT',
         yargs => yargs
             .positional('name', {
@@ -75,7 +75,7 @@ yargs(process.argv.slice(2))
                     type: 'boolean',
                 },
             }),
-        async argv => {
+        async (argv: any) => {
             const ret = await compileFile(
                 argv.name,
                 argv['track-time'],

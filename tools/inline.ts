@@ -17,10 +17,10 @@ export async function compile(src: string, importObject = {}) {
     if (!(ctx instanceof Context))
         throw ctx;
     const wasm = await ctx.outWasm();
-    const valid = WebAssembly.validate(wasm.buffer);
+    const valid = WebAssembly.validate(wasm.buffer as BufferSource);
     if (!valid)
         throw new Error("WebAssembly.validate() failed");
-    return await WebAssembly.instantiate(wasm.buffer, importObject);
+    return await WebAssembly.instantiate(wasm.buffer as BufferSource, importObject);
 }
 
 // Tagged template string literal
@@ -70,7 +70,7 @@ export async function compileWat(src: string, importObject = {}) {
     mod.validate();
 
     const bin = mod.toBinary({log: true});
-    const valid = WebAssembly.validate(bin.buffer);
+    const valid = WebAssembly.validate(bin.buffer as any);
     if (!valid)
         return console.error("wasm invalid!", valid);
 

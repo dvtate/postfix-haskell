@@ -21,7 +21,7 @@ import * as util from '../tools/file_tools.js';
 
     // Generate WASM and check validity
     const wasm = await ctx.outWasm();
-    const valid = WebAssembly.validate(wasm.buffer);
+    const valid = WebAssembly.validate(wasm.buffer as any);
     if (!valid)
         throw new Error("WebAssembly.validate() failed");
 
@@ -38,7 +38,7 @@ import * as util from '../tools/file_tools.js';
                 console.log(new TextDecoder().decode(str));
             },
 
-            // Note string here needs to be 
+            // Note string here needs to be
             logStrList: (addr: number) => {
                 class StrLLNode {
                     dv: DataView;

@@ -10,7 +10,7 @@ import { phs } from '../tools/inline';
         (I32) (: 42 == ) "is_answer" export
     `;
 
-    const { is_answer } = program.instance.exports as any;
+    const { is_answer } = (program as any).instance.exports as any;
     for (let i = 1; i < 100; i++)
         if (is_answer(i))
             console.log('the magic number is ' + i);
