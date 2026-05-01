@@ -10,7 +10,7 @@
     "ppc": "NO_TSC=1 node build.js",
     "start": "node --experimental-specifier-resolution=node ./dist/index.js",
     "lint": "eslint . --ext .ts",
-    "docs": "typedoc --entryPointStrategy expand index.ts lib/* tools/*.ts --out docs && cp -r planning/implementation docs/markdown_docs"
+    "docs": "typedoc --plugin typedoc-plugin-rename-defaults --entryPointStrategy expand index.ts lib/* tools/*.ts --out docs && cp -r planning/implementation docs/markdown_docs"
   },
   "repository": {
     "type": "git",
@@ -43,6 +43,7 @@
     "@typescript-eslint/parser": "^8.48.1",
     "eslint": "^9.39.1",
     "typedoc": "^0.28.15",
+    "typedoc-plugin-rename-defaults": "^0.7.3",
     "typescript": "^5.9.3"
   }
 }
