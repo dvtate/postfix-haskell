@@ -316,7 +316,7 @@ export abstract class FunExpr extends Expr {
     /**
      * Generate webassembly to push locals onto the stack
      * @param locals locals to push onto stack
-     * @param args @depricated passed tracker method
+     * @param args @deprecated passed tracker method
      * @returns webassembly text
      */
     getLocalWat(locals: FunLocalTracker[], ...args: any[]): string {

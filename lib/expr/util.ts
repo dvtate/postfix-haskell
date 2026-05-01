@@ -359,7 +359,7 @@ export class MultiInstrExpr extends Expr {
 export class DummyDataExpr extends DataExpr {
     /**
      * Create a dummy expression to represent an unknown value of this type.
-     * @note behavior with tuples
+     * @remarks note behavior with tuples
      * @param token location in code
      * @param datatype result type
      * @returns Expression or tuple of expressions with given datatype

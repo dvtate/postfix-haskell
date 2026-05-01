@@ -61,7 +61,6 @@ export class SyntaxError extends ParseError {
 
 export class TypeError extends SyntaxError {
     /**
-     * @constructor
      * @param message Reason
      * @param tokens location in code
      * @param vs offending value/expression

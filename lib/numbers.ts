@@ -272,18 +272,19 @@ export default class WasmNumber {
     equals(other : WasmNumber): boolean {
         return this.type === other.type
             && ((<any>this._repr)[0] || this._repr)
-            === ((<any>other._repr)[0] || other._repr);
+                === ((<any>other._repr)[0] || other._repr);
     }
 
     /**
-     * @alias equals to match wasm instruction
+     * WASM *.eq instruction
+     * @see {@link WasmNumber.equals} equality check logic
      */
     eq(other: WasmNumber) {
         return new WasmNumber(NumberType.I32, this.equals(other) ? 1 : 0);
     }
 
     /**
-     * Not of this.eq()
+     * NOT of this.eq()
      * @param other Number to compare against
      */
     ne(other: WasmNumber) {
@@ -654,7 +655,7 @@ export default class WasmNumber {
 
     /**
      * Round to nearest ties go to even
-     * @note this differs from JS and C!
+     * @remarks this differs from JS and C!
      */
     nearest() {
         // Check types
@@ -678,7 +679,7 @@ export default class WasmNumber {
 
     /**
      * Reinterpret the bits of float types into ints and vice versa
-     * @note little endian because webassembly
+     * @remarks little endian because webassembly
      */
     reinterpret() {
         switch(this.type) {
@@ -727,7 +728,7 @@ export default class WasmNumber {
 
     /**
      * Extend an i32 into an i64
-     * @note reference: https://en.wikipedia.org/wiki/Sign_extension
+     * @remarks reference: https://en.wikipedia.org/wiki/Sign_extension
      * @param nbits number of bits to sign extend to
      * @param signed should we emulate the _s version of this instruction (true) or _u version (false)?
      */

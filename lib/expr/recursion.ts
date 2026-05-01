@@ -320,7 +320,7 @@ export class RecFunExpr extends FunExpr {
     }
 
     /**
-     * @overrride
+     * @override
      */
     children(): Expr[] {
         return []

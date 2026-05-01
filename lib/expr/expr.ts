@@ -33,7 +33,6 @@ export abstract class Expr extends value.Value {
     _isCompiled = false;
 
     /**
-     * @constructor
      * @param token - Source location
      */
     constructor(token: LexerToken) {

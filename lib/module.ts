@@ -202,7 +202,7 @@ export default class ModuleManager {
      * Define a helper/utility function that we don't really care about
      * If it's already been defined return early
      * @param helperId identifier for the helper function
-     * @depricated should just generate helper manually. Currently unused.
+     * @deprecated should just generate helper manually. Currently unused.
      */
     addHelper(helperId: string): void {
         if (this.definedHelpers.has(helperId))
@@ -400,7 +400,7 @@ export default class ModuleManager {
      * @param STACK_SIZE size of the references stack
      * @param NURSERY_SIZE
      * @returns wasm module text
-     * @remark see planning/implementation/lm.md for more on memory layout
+     * @remarks see planning/implementation/lm.md for more on memory layout
      */
     generateRuntime(
         USER_IMPORTS: string,
