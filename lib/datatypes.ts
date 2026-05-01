@@ -233,7 +233,7 @@ export class SyntaxType extends Type {
     }
 
     /**
-     * @overrride
+     * @override
      */
     toString(): string {
         return 'Syntax:' + ValueType[this.valueType];

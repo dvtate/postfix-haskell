@@ -35,7 +35,7 @@ export default class Fun {
 
     /**
      * Identifier function is bound to
-     * @note only used in debugging
+     * @remarks only used in debugging
      */
     name: string;
 

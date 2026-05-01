@@ -80,7 +80,7 @@ export class Value {
     }
 
     /**
-     * @depricated
+     * @deprecated
      */
     set datatype(t: typeof this._datatype) {
         this._datatype = t;
